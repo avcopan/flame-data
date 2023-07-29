@@ -11,7 +11,7 @@ export default function Header() {
     <nav className="navbar">
       <div className="navbar-start gap-6">
         <img className="h-16" src={fireIcon} alt="Fire icon" />
-        <div className="text-3xl">Flask-React Auth Starter</div>
+        <div className="text-3xl">FlameData</div>
       </div>
       <div className="navbar-end">
         <div>
