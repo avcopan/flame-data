@@ -1,17 +1,21 @@
 import {
-  retypeError,
+  setRetypeError,
   getUser,
   loginUser,
   logoutUser,
   registerUser,
+  addNewSpecies,
+  clearNewSpecies,
 } from "./store";
 
 const actions = {
-  retypeError,
+  setRetypeError,
   getUser,
   loginUser,
   logoutUser,
   registerUser,
+  addNewSpecies,
+  clearNewSpecies,
 };
 
 export default actions;

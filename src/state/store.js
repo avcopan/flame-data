@@ -27,16 +27,16 @@ const errorSlice = createSlice({
   name: "error",
   initialState: "",
   reducers: {
-    loginError: () => {
+    setLoginError: () => {
       return "Your credentials were not accepted. Please try again.";
     },
-    registrationError: () => {
+    setRegistrationError: () => {
       return "This email is already registered. Please log in instead.";
     },
-    retypeError: () => {
-      return "The re-typed password does not match. Please try again."
+    setRetypeError: () => {
+      return "The re-typed password does not match. Please try again.";
     },
-    codelessError: () => {
+    setCodelessError: () => {
       return "Something isn't right on the server...";
     },
     clearError: () => {
@@ -45,12 +45,30 @@ const errorSlice = createSlice({
   },
 });
 
-const loginError = errorSlice.actions.loginError;
-const registrationError = errorSlice.actions.registrationError;
-export const retypeError = errorSlice.actions.retypeError;
-const codelessError = errorSlice.actions.codelessError;
-const clearError = errorSlice.actions.clearError;
+const setLoginError = errorSlice.actions.setLoginError;
+const setRegistrationError = errorSlice.actions.setRegistrationError;
+export const setRetypeError = errorSlice.actions.setRetypeError;
+const setCodelessError = errorSlice.actions.setCodelessError;
+const setClearError = errorSlice.actions.clearError;
 const errorReducer = errorSlice.reducer;
+
+// 3. add species cart slice/reducer
+const newSpeciesSlice = createSlice({
+  name: "newSpecies",
+  initialState: [],
+  reducers: {
+    addNewSpecies: (state, action) => {
+      return [...state, action.payload];
+    },
+    clearNewSpecies: () => {
+      return [];
+    },
+  },
+});
+
+export const addNewSpecies = newSpeciesSlice.actions.addNewSpecies;
+export const clearNewSpecies = newSpeciesSlice.actions.clearNewSpecies;
+const newSpeciesReducer = newSpeciesSlice.reducer;
 
 // WIRING: create saga middleware
 const sagaMiddleware = createSagaMiddleware();
@@ -60,6 +78,7 @@ const store = configureStore({
   reducer: {
     user: userReducer,
     error: errorReducer,
+    newSpecies: newSpeciesReducer,
   },
   middleware: (defaultMiddleware) => defaultMiddleware().concat(sagaMiddleware),
 });
@@ -88,15 +107,15 @@ const LOGIN_USER = "LOGIN_USER";
 
 function* loginUserSaga(action) {
   try {
-    yield put(clearError());
+    yield put(setClearError());
     const res = yield axios.post("/api/login", action.payload);
     yield put(getUser());
   } catch (error) {
     console.error(error);
     if (error.response.status === 401) {
-      yield put(loginError());
+      yield put(setLoginError());
     } else {
-      yield put(codelessError());
+      yield put(setCodelessError());
     }
   }
 }
@@ -126,15 +145,15 @@ const REGISTER_USER = "REGISTER_USER";
 
 function* registerUserSaga(action) {
   try {
-    yield put(clearError());
+    yield put(setClearError());
     const res = yield axios.post("/api/register", action.payload);
     yield put(getUser());
   } catch (error) {
     console.error(error);
     if (error.response.status === 409) {
-      yield put(registrationError());
+      yield put(setRegistrationError());
     } else {
-      yield put(codelessError());
+      yield put(setCodelessError());
     }
   }
 }
