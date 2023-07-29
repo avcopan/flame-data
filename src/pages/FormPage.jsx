@@ -32,7 +32,12 @@ export default function FormPage() {
         </div>
         <Molecule2DView className="m-4 w-96" smiles={smiles} />
       </div>
-      <SideCart speciesHeader="New Species Cart" speciesList={newSpecies} />
+      <SideCart
+        speciesHeader="New Species"
+        speciesList={newSpecies}
+        buttonText="Post"
+        buttonOnClick={() => dispatch(actions.postNewSpecies())}
+      />
     </div>
   );
 }

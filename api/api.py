@@ -7,6 +7,7 @@ app = api_utils.start_app()
 bcrypt = flask_bcrypt.Bcrypt(app)
 
 
+# AUTHENTICATION ROUTES
 @app.route("/api/@me", methods=["GET"])
 def get_current_user():
     """@api {get} /api/@me Get user identity for this session, based on cookies
@@ -77,3 +78,15 @@ def register_user():
     flask.session["user_id"] = user["id"]
 
     return api_utils.response(201, **user)
+
+
+# SPECIES ROUTES
+@app.route("/api/conn_species", methods=["POST"])
+def add_connectivity_species_batch():
+    """@api {post} /api/conn_species Add new connectivity species in batch
+
+    @apiBody {String[]} smilesList A list of SMILES strings for the species to be added
+    """
+    smiles_list = flask.request.json.get("smilesList")
+    print(smiles_list)
+    return api_utils.response(201)

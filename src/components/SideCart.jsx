@@ -1,4 +1,4 @@
-export default function SideCart({ speciesHeader, speciesList }) {
+export default function SideCart({ speciesHeader, speciesList, buttonText, buttonOnClick }) {
   return (
     <div className="h-full">
       <div className="pb-4 flex flex-col overflow-auto outline outline-1 outline-primary rounded-t-lg w-56">
@@ -13,9 +13,9 @@ export default function SideCart({ speciesHeader, speciesList }) {
       </div>
       <button
         className="btn btn-primary w-full outline outline-primary outline-1 rounded-b-lg"
-        onClick={() => {}}
+        onClick={buttonOnClick}
       >
-        Request Calculations
+        {buttonText}
       </button>
     </div>
   );

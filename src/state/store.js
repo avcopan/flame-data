@@ -1,7 +1,7 @@
 import axios from "axios";
 import { configureStore, createSlice } from "@reduxjs/toolkit";
 import createSagaMiddleware from "redux-saga";
-import { put, takeLatest } from "redux-saga/effects";
+import { select, put, takeLatest, takeEvery } from "redux-saga/effects";
 
 // SLICES/REDUCERS
 // 1. user slice/reducer
@@ -52,7 +52,7 @@ const setCodelessError = errorSlice.actions.setCodelessError;
 const setClearError = errorSlice.actions.clearError;
 const errorReducer = errorSlice.reducer;
 
-// 3. add species cart slice/reducer
+// 3. new species slice/reducer
 const newSpeciesSlice = createSlice({
   name: "newSpecies",
   initialState: [],
@@ -162,12 +162,31 @@ export const registerUser = (payload) => {
   return { type: REGISTER_USER, payload };
 };
 
+// 3. new species saga
+const POST_NEW_SPECIES = "POST_NEW_SPECIES";
+
+function* postNewSpeciesSaga() {
+  try {
+    const smilesList = yield select((store) => store.newSpecies);
+    const requestBody = { smilesList };
+    const res = yield axios.post("/api/conn_species", requestBody);
+    yield put(clearNewSpecies());
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const postNewSpecies = (payload) => {
+  return { type: POST_NEW_SPECIES, payload };
+};
+
 // WIRING: create watcher saga
 function* watcherSaga() {
   yield takeLatest(GET_USER, getUserSaga);
   yield takeLatest(LOGIN_USER, loginUserSaga);
   yield takeLatest(LOGOUT_USER, logoutUserSaga);
   yield takeLatest(REGISTER_USER, registerUserSaga);
+  yield takeEvery(POST_NEW_SPECIES, postNewSpeciesSaga);
 }
 
 // WIRING: run watcher saga
