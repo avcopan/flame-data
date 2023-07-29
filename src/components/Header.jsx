@@ -8,15 +8,13 @@ export default function Header() {
   const user = useSelector((store) => store.user);
 
   return (
-    <nav className="navbar">
+    <nav className="navbar mb-8">
       <div className="navbar-start gap-6">
         <img className="h-16" src={fireIcon} alt="Fire icon" />
         <div className="text-3xl">FlameData</div>
       </div>
       <div className="navbar-end">
-        <div>
-          {user && user.email}
-        </div>
+        <div>{user && user.email}</div>
         <div className="dropdown dropdown-end dropdown-hover">
           <label tabIndex={0} className="btn btn-ghost m-1">
             <svg
@@ -41,6 +39,11 @@ export default function Header() {
             <li>
               <Link to="/">Home</Link>
             </li>
+            {user && user.admin && (
+              <li>
+                <Link to="/add-new">Add new...</Link>
+              </li>
+            )}
             {user ? (
               <li>
                 <a onClick={() => dispatch(actions.logoutUser())}>Log Out</a>

@@ -88,9 +88,6 @@ export default function LoginPage() {
       </div>
       <div>
         {errorMessage}
-        <p>{email}</p>
-        <p>{password}</p>
-        <p>{password2}</p>
       </div>
     </div>
   );

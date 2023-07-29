@@ -2,8 +2,9 @@ import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import Layout from "./Layout";
-import HomePage from "../pages/HomePage";
 import LoginPage from "../pages/LoginPage";
+import HomePage from "../pages/HomePage";
+import FormPage from "../pages/FormPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import actions from "../state/actions";
 
@@ -18,13 +19,16 @@ export default function App() {
   return (
     <Layout>
       <Routes>
-        <Route exact path="/" Component={HomePage} />
+        <Route exact path="/" element={<HomePage />} />
         <Route
           exact
           path="/login/:mode?"
           element={user ? <Navigate to="/" /> : <LoginPage />}
         />
-        <Route path="*" Component={NotFoundPage} />
+        {user && user.admin && (
+          <Route exact path="/add-new" element={<FormPage />} />
+        )}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Layout>
   );
