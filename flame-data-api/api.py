@@ -1,6 +1,7 @@
 import flask
 import flask_bcrypt
 import flame_data_api
+import automol
 
 # Create a bcrypt instance
 app = flame_data_api.start_app()
@@ -89,4 +90,7 @@ def add_connectivity_species_batch():
     """
     smiles_list = flask.request.json.get("smilesList")
     print(smiles_list)
+    graphs_list = list(map(automol.smiles.graph, smiles_list))
+    for graph in graphs_list:
+        print(automol.graph.string(graph))
     return flame_data_api.response(201)
