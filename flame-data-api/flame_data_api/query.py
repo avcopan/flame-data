@@ -1,4 +1,4 @@
-from api_utils.db import database_connection
+from flame_data_api.db import database_connection
 
 conn = database_connection()
 

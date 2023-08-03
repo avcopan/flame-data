@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "server": "cd api && env/bin/flask run --no-debugger",
+    "server": "cd flame-data-api && .venv/bin/flask run --no-debugger",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
