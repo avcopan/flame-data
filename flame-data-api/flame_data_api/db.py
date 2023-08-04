@@ -22,12 +22,12 @@ pool = psycopg_pool.ConnectionPool(
 def with_pool_cursor(func: Callable) -> Callable:
     """A decorator to place a function in a contet with a cursor connected to the pool
 
-    Args:
-        func (Callable): The function
-
-    Returns:
-        Callable: The function with `cursor` passed in to the first argument
+    :param func: A function, whose first argument takes in the cursor
+    :type func: Callable
+    :return: A copy of the function, with cursor passed in
+    :rtype: Callable
     """
+
     def func_with_cursor(*args, **kwargs):
         with pool.connection() as connection:
             with connection.cursor(row_factory=psycopg.rows.dict_row) as cursor:

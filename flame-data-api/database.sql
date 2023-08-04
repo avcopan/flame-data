@@ -4,23 +4,23 @@ CREATE TABLE users (
   password VARCHAR(100) NOT NULL
 );
 
-CREATE TABLE species_conn (
+CREATE TABLE species_connectivity (
   conn_id BIGSERIAL PRIMARY KEY,
   formula TEXT,
   conn_smiles TEXT,
   conn_inchi TEXT,
-  conn_inchi_key CHAR(27) UNIQUE,
+  conn_inchi_hash CHAR(14) UNIQUE,
   conn_amchi TEXT,
-  conn_amchi_key CHAR(27) UNIQUE
+  conn_amchi_hash CHAR(14) UNIQUE
 );
 
 CREATE TABLE species_estate (
   estate_id BIGSERIAL PRIMARY KEY,
   spin_mult SMALLINT,
-  conn_id BIGINT REFERENCES species_conn(conn_id)
+  conn_id BIGINT REFERENCES species_connectivity(conn_id)
 );
 
-CREATE TABLE species (
+CREATE TABLE species_stereo (
   id BIGSERIAL PRIMARY KEY,
   geometry TEXT,
   smiles TEXT,

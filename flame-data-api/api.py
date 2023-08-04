@@ -89,9 +89,15 @@ def add_connectivity_species_batch():
 
     @apiBody {String[]} smilesList A list of SMILES strings for the species to be added
     """
-    smiles_list = flask.request.json.get("smilesList")
-    print(smiles_list)
-    graphs_list = list(map(automol.smiles.graph, smiles_list))
-    for graph in graphs_list:
-        print(automol.graph.string(graph))
+    smis = flask.request.json.get("smilesList")
+    new_smis = flame_data_api.query.identify_missing_species_by_smiles(smis)
+    print("Ignoring these species which are already present:", set(smis) - set(new_smis))
+    for smi in new_smis:
+        print(f"Attempting to add species {smi}")
+        try:
+            flame_data_api.query.add_species_by_smiles(smi)
+            print("It worked!")
+        except Exception as exc:
+            print("It failed with this exception:", exc)
+
     return flame_data_api.response(201)
