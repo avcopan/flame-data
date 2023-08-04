@@ -911,6 +911,20 @@ pool = ["psycopg-pool"]
 test = ["anyio (>=3.6.2)", "mypy (>=1.2)", "pproxy (>=2.7)", "pytest (>=6.2.5)", "pytest-cov (>=3.0)", "pytest-randomly (>=3.5)"]
 
 [[package]]
+name = "psycopg-pool"
+version = "3.1.7"
+description = "Connection Pool for Psycopg"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "psycopg-pool-3.1.7.tar.gz", hash = "sha256:d02741dc48303495f4021900630442af87d6b1c3bfd1a3ece54cc11aa43d7dde"},
+    {file = "psycopg_pool-3.1.7-py3-none-any.whl", hash = "sha256:ca1f2c366b5910acd400e16e812912827c57836af638c1717ba495111d22073b"},
+]
+
+[package.dependencies]
+typing-extensions = ">=3.10"
+
+[[package]]
 name = "ptyprocess"
 version = "0.7.0"
 description = "Run a subprocess in a pseudo terminal"
@@ -934,6 +948,20 @@ files = [
 
 [package.extras]
 tests = ["pytest"]
+
+[[package]]
+name = "py3dmol"
+version = "2.0.3"
+description = "An IPython interface for embedding 3Dmol.js views in Jupyter notebooks"
+optional = false
+python-versions = "*"
+files = [
+    {file = "py3Dmol-2.0.3-py2.py3-none-any.whl", hash = "sha256:09f56d9942502ba8a6cc96c80e7506f41c5e53f801880df4610a2bc29fd62523"},
+    {file = "py3Dmol-2.0.3.tar.gz", hash = "sha256:b2725e3a64a838c21342e5e4b56c343b41d90cf18fb61f7cc6a1130a1705e443"},
+]
+
+[package.extras]
+ipython = ["IPython"]
 
 [[package]]
 name = "pydantic"
@@ -1512,4 +1540,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "4c5eb04b41ae4c4350005a386db20ddfa06673a6d4dc1136185dec09e088b393"
+content-hash = "9a873b1beb8b7dc2e8035b5c335f11df73c3885c27135b6f1c0d66566bd7b47c"

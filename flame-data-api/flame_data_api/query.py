@@ -1,9 +1,9 @@
-from flame_data_api.db import database_connection
-
-conn = database_connection()
+from flame_data_api.db import with_pool_cursor
 
 
-def get_user(id: int, return_password: bool = False) -> dict:
+# User table
+@with_pool_cursor
+def get_user(cursor, id: int, return_password: bool = False) -> dict:
     """Look up a user by ID
 
     :param id: The user's ID
@@ -18,17 +18,16 @@ def get_user(id: int, return_password: bool = False) -> dict:
     """
     query_params = [id]
 
-    user = None
-    with conn.cursor() as curs:
-        curs.execute(query_string, query_params)
-        user = curs.fetchone()
-        if user and not return_password:
-            user.pop("password")
+    cursor.execute(query_string, query_params)
+    user = cursor.fetchone()
+    if user and not return_password:
+        user.pop("password")
 
     return user
 
 
-def get_user_by_email(email: str, return_password: bool = False):
+@with_pool_cursor
+def get_user_by_email(cursor, email: str, return_password: bool = False):
     """Look up a user by email
 
     :param email: The user's email
@@ -43,17 +42,16 @@ def get_user_by_email(email: str, return_password: bool = False):
     """
     query_params = [email]
 
-    user = None
-    with conn.cursor() as curs:
-        curs.execute(query_string, query_params)
-        user = curs.fetchone()
-        if user and not return_password:
-            user.pop("password")
+    cursor.execute(query_string, query_params)
+    user = cursor.fetchone()
+    if user and not return_password:
+        user.pop("password")
 
     return user
 
 
-def add_user(email: str, password: str, return_password: bool = False):
+@with_pool_cursor
+def add_user(curs, email: str, password: str, return_password: bool = False):
     """Add a new user, returning the user's data with their assigned ID
 
     :param email: The user's email
@@ -71,16 +69,17 @@ def add_user(email: str, password: str, return_password: bool = False):
     """
     query_params = [email, password]
 
-    user = None
-    with conn.cursor() as curs:
-        curs.execute(query_string, query_params)
-        user = curs.fetchone()
-        if user and not return_password:
-            user.pop("password")
+    curs.execute(query_string, query_params)
+    user = curs.fetchone()
+    if user and not return_password:
+        user.pop("password")
 
     return user
 
 
+# Species connectivity table
+
+
 if __name__ == "__main__":
-    print(add_user("bob@gmail.com", "BOB"))
-    print(get_user_by_email("bob@gmail.com"))
+    print(get_user(1))
+    print(get_user(12))

@@ -1,7 +1,7 @@
+import automol
+import flame_data_api
 import flask
 import flask_bcrypt
-import flame_data_api
-import automol
 
 # Create a bcrypt instance
 app = flame_data_api.start_app()
@@ -50,8 +50,7 @@ def login_user():
 
 @app.route("/api/logout", methods=["POST"])
 def logout_user():
-    """@api {post} /api/logout Logout and end this session, clearing cookies
-    """
+    """@api {post} /api/logout Logout and end this session, clearing cookies"""
     flask.session.pop("user_id")
     return flame_data_api.response(200)
 
@@ -69,7 +68,9 @@ def register_user():
     password = flask.request.json.get("password")
 
     if flame_data_api.query.get_user_by_email(email) is not None:
-        return flame_data_api.response(409, error="A user with this email already exists")
+        return flame_data_api.response(
+            409, error="A user with this email already exists"
+        )
 
     hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
 

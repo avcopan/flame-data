@@ -39,7 +39,7 @@ export default function Header() {
             <li>
               <Link to="/">Home</Link>
             </li>
-            {user && user.admin && (
+            {user && (
               <li>
                 <Link to="/add-new">Add new...</Link>
               </li>

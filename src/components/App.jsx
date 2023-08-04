@@ -25,9 +25,7 @@ export default function App() {
           path="/login/:mode?"
           element={user ? <Navigate to="/" /> : <LoginPage />}
         />
-        {user && user.admin && (
-          <Route exact path="/add-new" element={<FormPage />} />
-        )}
+        {user && <Route exact path="/add-new" element={<FormPage />} />}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Layout>

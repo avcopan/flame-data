@@ -1,10 +1,11 @@
 import os
+
+import dotenv
 import flask
-import flask_session
 import flask_cors
+import flask_session
 import flask_sqlalchemy
 import sqlalchemy
-import dotenv
 
 dotenv.load_dotenv()
 
