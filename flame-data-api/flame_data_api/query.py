@@ -1,9 +1,12 @@
 from typing import List
-from flame_data_api.db import with_pool_cursor
+
+import automol
+
 from flame_data_api import chem
+from flame_data_api.db import with_pool_cursor
 
 
-# User table
+# USER TABLE
 @with_pool_cursor
 def get_user(cursor, id: int, return_password: bool = False) -> dict:
     """Look up a user by ID
@@ -79,7 +82,54 @@ def add_user(cursor, email: str, password: str, return_password: bool = False) -
     return user
 
 
-# Species connectivity table
+# SPECIES TABLES
+@with_pool_cursor
+def get_connectivity_species_grouped_by_formula(
+    cursor, fml_str: str = None, is_partial: bool = False
+) -> List[dict]:
+    """Get connectivity species grouped by formula
+
+    Optionally, search for species matching a particular formula
+
+    :param fml_str: A formula string to search for, defaults to None
+    :type fml: str, optional
+    :param is_partial: Whether the formula is partial, defaults to False
+    :type is_partial: bool, optional
+    :return: Connectivity species information
+    :rtype: List[dict]
+    """
+    query_string = """
+        SELECT * FROM species_connectivity
+    """
+    query_params = []
+
+    # Add formula matching to query string, if requested
+    if fml_str is not None:
+        fml_str = fml_str.upper()
+
+        if not is_partial:
+            query_string += "WHERE formula = %s"
+            query_params = [fml_str]
+        else:
+            fml = automol.formula.from_string(fml_str)
+            query_string += "WHERE " + " AND ".join(["formula ~ %s"] * len(fml))
+            query_params = [
+                f"(?!\d){symb}{count}(?!\d)" if count > 1 else f"(?!\d){symb}(?!\d)"
+                for symb, count in fml.items()
+            ]
+
+    query_string += ";"
+
+    print("query_string:")
+    print(query_string)
+    print("query_params:")
+    print(query_params)
+
+    cursor.execute(query_string, query_params)
+    conn_species = cursor.fetchall()
+    return conn_species
+
+
 @with_pool_cursor
 def identify_missing_species_by_smiles(cursor, smis: List[str]) -> List[str]:
     """Identify species that are missing from the database, from a list of SMILES
@@ -143,7 +193,6 @@ def add_species_by_smiles(cursor, smi: str):
     query_params2 = {**query_result1, **estate_row}
     cursor.execute(query_string2, query_params2)
     query_result2 = cursor.fetchone()
-    print("query_result2:", query_result2)
 
     # INSERT INTO species_stereo
     query_string3 = """

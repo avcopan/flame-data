@@ -83,6 +83,21 @@ def register_user():
 
 
 # SPECIES ROUTES
+@app.route("/api/conn_species", methods=["GET"])
+def get_connectivity_species():
+    """@api {get} /api/conn_species Get all connectivity species
+
+    @apiQuery formula {String} A formula to search for, e.g. 'CH4O'
+    @apiQuery partial If present, allows for partial formula matches
+    @apiSuccess {Object[]} species An array of objects with keys `conn_id`, `formula`,
+        `conn_smiles`, `conn_inchi`, `conn_inchi_hash`, `conn_amchi`, `conn_amchi_hash`
+    """
+    fml_str = flask.request.args.get("formula")
+    is_partial = flask.request.args.get("partial") is not None
+    conn_species = flame_data_api.query.get_connectivity_species_grouped_by_formula(fml_str, is_partial)
+    return flame_data_api.response(200, species=conn_species)
+
+
 @app.route("/api/conn_species", methods=["POST"])
 def add_connectivity_species_batch():
     """@api {post} /api/conn_species Add new connectivity species in batch
