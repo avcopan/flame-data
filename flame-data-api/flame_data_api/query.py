@@ -1,3 +1,4 @@
+import itertools
 from typing import List
 
 import automol
@@ -120,13 +121,22 @@ def get_connectivity_species_grouped_by_formula(
 
     query_string += ";"
 
-    print("query_string:")
-    print(query_string)
-    print("query_params:")
-    print(query_params)
-
     cursor.execute(query_string, query_params)
     conn_species = cursor.fetchall()
+
+    # Sort the species by formula
+    # 1. Generate sorting information
+    fmls = [automol.formula.from_string(row["formula"]) for row in conn_species]
+    symbs = automol.formula.sorted_symbols_in_sequence(fmls)
+    counts = [automol.formula.heavy_atom_count(f) for f in fmls]
+    srt_vecs = [automol.formula.sort_vector(f, symbs) for f in fmls]
+    # 2. Do the sorting
+    conn_species = [
+        row
+        for _, _, row in sorted(
+            zip(counts, srt_vecs, conn_species), key=lambda x: x[:-1]
+        )
+    ]
     return conn_species
 
 
