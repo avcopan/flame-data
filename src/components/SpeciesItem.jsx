@@ -1,6 +1,7 @@
-import ViewSpecies2D from "./ViewSpecies2D";
+import { Link } from "react-router-dom";
 import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 import FormattedFormula from "./FormattedFormula";
+import ViewSpecies2D from "./ViewSpecies2D";
 
 export default function SpeciesItem({ species, firstInGroup }) {
   return (
@@ -13,11 +14,14 @@ export default function SpeciesItem({ species, firstInGroup }) {
           </div>
         </>
       )}
-      <ViewSpecies2D
-        key={species.conn_id}
-        svgString={species.svg_string}
-        className="m-6 w-48"
-      />
+      <Link to={`/details/${species.conn_id}`}>
+        <ViewSpecies2D
+          key={species.conn_id}
+          svgString={species.svg_string}
+          className="m-6 w-48"
+          hoverText={species.conn_smiles}
+        />
+      </Link>
     </div>
   );
 }

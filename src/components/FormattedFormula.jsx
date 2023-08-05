@@ -3,8 +3,12 @@ export default function FormattedFormula({ formula }) {
     <>
       {formula
         .split(/(\d+)/)
-        .map((string) =>
-          string.match(/^\d+$/) ? <sub>{string}</sub> : <>{string}</>
+        .map((string, i) =>
+          string.match(/^\d+$/) ? (
+            <sub key={i}>{string}</sub>
+          ) : (
+            <span key={i}>{string}</span>
+          )
         )}
     </>
   );
