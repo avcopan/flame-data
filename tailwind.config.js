@@ -18,7 +18,7 @@ export default {
           "primary-content": "#131616",
           secondary: "#bd93f9",
           accent: "#ffb86c",
-          neutral: "#414558",
+          neutral: "#9ca3af",
           "base-100": "#212121",
           "base-content": "#f8f8f2",
           info: "#8be9fd",
