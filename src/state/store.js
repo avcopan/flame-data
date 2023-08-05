@@ -180,9 +180,16 @@ export const registerUser = (payload) => {
 // 2. species saga
 const GET_SPECIES = "GET_SPECIES";
 
-function* getSpeciesSaga() {
+function* getSpeciesSaga(action) {
   try {
-    const res = yield axios.get("/api/conn_species");
+    let requestUrl = "/api/conn_species";
+    if (action.payload && action.payload.formula) {
+      const formula = action.payload.formula;
+      const partial = action.payload.partial ? "partial" : "";
+      requestUrl += `?formula=${formula}&${partial}`;
+      console.log(requestUrl);
+    }
+    const res = yield axios.get(requestUrl);
     const data = yield res.data;
     yield put(setSpecies(data["species"]));
   } catch (error) {
@@ -190,8 +197,8 @@ function* getSpeciesSaga() {
   }
 }
 
-export const getSpecies = () => {
-  return { type: GET_SPECIES };
+export const getSpecies = (payload) => {
+  return { type: GET_SPECIES, payload };
 };
 
 // 3. new species saga
@@ -208,8 +215,8 @@ function* postNewSpeciesSaga() {
   }
 }
 
-export const postNewSpecies = (payload) => {
-  return { type: POST_NEW_SPECIES, payload };
+export const postNewSpecies = () => {
+  return { type: POST_NEW_SPECIES };
 };
 
 // WIRING: create watcher saga

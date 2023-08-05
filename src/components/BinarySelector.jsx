@@ -13,7 +13,7 @@ export default function BinarySelector({
           checked={topSelected}
           onChange={() => setTopSelected(!topSelected)}
         />
-        <div className={!topSelected && "text-neutral"}>{topText}</div>
+        <div className={topSelected ? "" : "text-neutral"}>{topText}</div>
       </div>
       <div className="flex flex-row gap-4">
         <input
@@ -22,7 +22,7 @@ export default function BinarySelector({
           checked={!topSelected}
           onChange={() => setTopSelected(!topSelected)}
         />
-        <div className={topSelected && "text-neutral"}>{bottomText}</div>
+        <div className={topSelected ? "text-neutral" : ""}>{bottomText}</div>
       </div>
     </div>
   );
