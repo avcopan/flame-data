@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import * as OCL from "openchemlib/full";
+import ViewSpecies2D from "./ViewSpecies2D";
 
-export default function Molecule2DView({ smiles, className }) {
+export default function DrawSpecies2DFromSmiles({ smiles, className }) {
   let svgString, formulaString;
   const [molecule, setMolecule] = useState(null);
   const smilesOptions = { noStereo: true };
@@ -32,18 +33,10 @@ export default function Molecule2DView({ smiles, className }) {
     formulaString = molecule.getMolecularFormula().formula;
   }
   return (
-    <div
-      className={`bg-white aspect-square flex flex-col justify-center items-center rounded-3xl ${className}`}
-    >
-      {molecule && (
-        <>
-          <img
-            className="w-full"
-            src={`data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`}
-          />
-          <span>{formulaString}</span>
-        </>
-      )}
-    </div>
+    <ViewSpecies2D
+      svgString={svgString}
+      stringList={[formulaString]}
+      className={className}
+    />
   );
 }

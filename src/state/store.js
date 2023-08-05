@@ -52,7 +52,21 @@ const setCodelessError = errorSlice.actions.setCodelessError;
 const setClearError = errorSlice.actions.clearError;
 const errorReducer = errorSlice.reducer;
 
-// 3. new species slice/reducer
+// 3. species slice/reducer
+const speciesSlice = createSlice({
+  name: "species",
+  initialState: [],
+  reducers: {
+    setSpecies: (_, action) => {
+      return action.payload;
+    },
+  },
+});
+
+const setSpecies = speciesSlice.actions.setSpecies;
+const speciesReducer = speciesSlice.reducer;
+
+// 4. new species slice/reducer
 const newSpeciesSlice = createSlice({
   name: "newSpecies",
   initialState: [],
@@ -78,6 +92,7 @@ const store = configureStore({
   reducer: {
     user: userReducer,
     error: errorReducer,
+    species: speciesReducer,
     newSpecies: newSpeciesReducer,
   },
   middleware: (defaultMiddleware) => defaultMiddleware().concat(sagaMiddleware),
@@ -162,15 +177,32 @@ export const registerUser = (payload) => {
   return { type: REGISTER_USER, payload };
 };
 
+// 2. species saga
+const GET_SPECIES = "GET_SPECIES";
+
+function* getSpeciesSaga() {
+  try {
+    const res = yield axios.get("/api/conn_species");
+    const payload = yield res.data;
+    yield put(setSpecies(payload));
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const getSpecies = () => {
+  return { type: GET_SPECIES };
+};
+
 // 3. new species saga
 const POST_NEW_SPECIES = "POST_NEW_SPECIES";
 
 function* postNewSpeciesSaga() {
   try {
     const smilesList = yield select((store) => store.newSpecies);
+    yield put(clearNewSpecies());
     const requestBody = { smilesList };
     const res = yield axios.post("/api/conn_species", requestBody);
-    yield put(clearNewSpecies());
   } catch (error) {
     console.error(error);
   }
@@ -186,6 +218,7 @@ function* watcherSaga() {
   yield takeLatest(LOGIN_USER, loginUserSaga);
   yield takeLatest(LOGOUT_USER, logoutUserSaga);
   yield takeLatest(REGISTER_USER, registerUserSaga);
+  yield takeLatest(GET_SPECIES, getSpeciesSaga);
   yield takeEvery(POST_NEW_SPECIES, postNewSpeciesSaga);
 }
 

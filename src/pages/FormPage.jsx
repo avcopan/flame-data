@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import Molecule2DView from "../components/Molecule2DView";
+import DrawSpecies2DFromSmiles from "../components/DrawSpecies2DFromSmiles";
 import SideCart from "../components/SideCart";
 import actions from "../state/actions";
 
@@ -11,6 +11,11 @@ export default function FormPage() {
 
   const addToCart = () => {
     dispatch(actions.addNewSpecies(smiles));
+  };
+
+  const postNewSpecies = () => {
+    dispatch(actions.postNewSpecies());
+    setSmiles("");
   };
 
   return (
@@ -30,13 +35,13 @@ export default function FormPage() {
             Add
           </button>
         </div>
-        <Molecule2DView className="m-4 w-96" smiles={smiles} />
+        <DrawSpecies2DFromSmiles className="m-4 w-96" smiles={smiles} />
       </div>
       <SideCart
         speciesHeader="New Species"
         speciesList={newSpecies}
         buttonText="Post"
-        buttonOnClick={() => dispatch(actions.postNewSpecies())}
+        buttonOnClick={postNewSpecies}
       />
     </div>
   );

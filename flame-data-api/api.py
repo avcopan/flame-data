@@ -1,4 +1,3 @@
-import automol
 import flame_data_api
 import flask
 import flask_bcrypt
