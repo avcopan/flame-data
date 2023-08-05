@@ -85,7 +85,7 @@ def add_user(cursor, email: str, password: str, return_password: bool = False) -
 
 # SPECIES TABLES
 @with_pool_cursor
-def get_connectivity_species_grouped_by_formula(
+def get_connectivity_species(
     cursor, fml_str: str = None, is_partial: bool = False
 ) -> List[dict]:
     """Get connectivity species grouped by formula
@@ -215,6 +215,29 @@ def add_species_by_smiles(cursor, smi: str):
     """
     query_params3 = [{**query_result2, **stereo_row} for stereo_row in stereo_rows]
     cursor.executemany(query_string3, query_params3)
+
+
+@with_pool_cursor
+def get_connectivity_species_details(cursor, conn_id: int) -> List[dict]:
+    """Get details for
+
+    :param cursor: _description_
+    :type cursor: _type_
+    :param conn_id: _description_
+    :type conn_id: int
+    :return: _description_
+    :rtype: List[dict]
+    """
+    query_string = """
+        SELECT * FROM species_connectivity
+        JOIN species_estate ON species_connectivity.conn_id = species_estate.conn_id
+        JOIN species_stereo ON species_estate.estate_id = species_stereo.estate_id
+        WHERE species_connectivity.conn_id = %s;
+    """
+    query_params = [conn_id]
+    cursor.execute(query_string, query_params)
+    conn_species_details = cursor.fetchall()
+    return conn_species_details
 
 
 if __name__ == "__main__":

@@ -93,7 +93,7 @@ def get_connectivity_species():
     """
     fml_str = flask.request.args.get("formula")
     is_partial = flask.request.args.get("partial") is not None
-    conn_species = flame_data_api.query.get_connectivity_species_grouped_by_formula(fml_str, is_partial)
+    conn_species = flame_data_api.query.get_connectivity_species(fml_str, is_partial)
     return flame_data_api.response(200, species=conn_species)
 
 
@@ -115,3 +115,17 @@ def add_connectivity_species_batch():
             print("It failed with this exception:", exc)
 
     return flame_data_api.response(201)
+
+
+@app.route("/api/conn_species/<conn_id>", methods=["GET"])
+def get_connectivity_species_details(conn_id):
+    """@api {get} /api/conn_species/:conn_id Get details for one connectivity species
+
+    @apiparam {Number} conn_id The ID of this connectivity species
+    @apiSuccess {Object[]} species An array of objects with keys `id`, `geometry`,
+        `smiles`, `inchi`, `amchi`, `amchi_key`, `estate_id`, `spin_mult`, `conn_id`,
+        `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
+        `conn_amchi`, `conn_amchi_hash`
+    """
+    conn_species_details = flame_data_api.query.get_connectivity_species_details(conn_id)
+    return flame_data_api.response(200, species=conn_species_details)
