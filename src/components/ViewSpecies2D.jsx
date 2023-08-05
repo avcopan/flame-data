@@ -1,4 +1,8 @@
-export default function ViewSpecies2D({ svgString, descriptors, className }) {
+export default function ViewSpecies2D({
+  svgString,
+  descriptors = [],
+  className,
+}) {
   return (
     <div
       className={`bg-white aspect-square flex flex-col justify-center items-center rounded-3xl ${className}`}

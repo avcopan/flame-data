@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import * as OCL from "openchemlib/full";
 import ViewSpecies2D from "./ViewSpecies2D";
+import FormattedFormula from "./FormattedFormula";
 
 export default function DrawSpecies2DFromSmiles({ smiles, className }) {
   let svgString, formulaString;
@@ -35,7 +36,7 @@ export default function DrawSpecies2DFromSmiles({ smiles, className }) {
   return (
     <ViewSpecies2D
       svgString={svgString}
-      descriptors={[formulaString]}
+      descriptors={[<FormattedFormula formula={formulaString} />]}
       className={className}
     />
   );

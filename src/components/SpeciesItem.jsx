@@ -1,5 +1,6 @@
 import ViewSpecies2D from "./ViewSpecies2D";
 import { ChevronLeftIcon } from "@heroicons/react/24/outline";
+import FormattedFormula from "./FormattedFormula";
 
 export default function SpeciesItem({ species, firstInGroup }) {
   return (
@@ -7,13 +8,14 @@ export default function SpeciesItem({ species, firstInGroup }) {
       {firstInGroup && (
         <>
           <ChevronLeftIcon className="text-neutral rotate-45 h-6" />
-          <div className="pl-6 text-neutral">{species.formula}</div>
+          <div className="pl-6 text-neutral">
+            <FormattedFormula formula={species.formula} />
+          </div>
         </>
       )}
       <ViewSpecies2D
         key={species.conn_id}
         svgString={species.svg_string}
-        descriptors={[species.formula]}
         className="m-6 w-48"
       />
     </div>
