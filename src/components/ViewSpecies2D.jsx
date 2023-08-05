@@ -9,8 +9,10 @@ export default function ViewSpecies2D({ svgString, descriptors, className }) {
             className="h-3/4 rounded-3xl"
             src={`data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`}
           />
-          {descriptors.map((string, idx) => (
-            <span key={idx}>{string}</span>
+          {descriptors.map((descriptor, idx) => (
+            <div key={idx} className="text-neutral text-lg">
+              {descriptor}
+            </div>
           ))}
         </>
       )}

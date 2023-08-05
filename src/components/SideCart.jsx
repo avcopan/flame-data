@@ -12,7 +12,7 @@ export default function SideCart({ speciesHeader, speciesList, buttonText, butto
         ))}
       </div>
       <button
-        className="btn btn-primary w-full outline outline-primary outline-1 rounded-b-lg"
+        className="btn btn-primary w-full outline outline-primary outline-1 rounded-t-none rounded-b-lg"
         onClick={buttonOnClick}
       >
         {buttonText}
