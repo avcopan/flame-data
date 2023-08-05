@@ -183,8 +183,8 @@ const GET_SPECIES = "GET_SPECIES";
 function* getSpeciesSaga() {
   try {
     const res = yield axios.get("/api/conn_species");
-    const payload = yield res.data;
-    yield put(setSpecies(payload));
+    const data = yield res.data;
+    yield put(setSpecies(data["species"]));
   } catch (error) {
     console.error(error);
   }

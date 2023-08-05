@@ -4,9 +4,13 @@ CREATE TABLE users (
   password VARCHAR(100) NOT NULL
 );
 
+-- -- Restart command:
+-- DROP TABLE species_connectivity, species_estate, species_stereo;
+
 CREATE TABLE species_connectivity (
   conn_id BIGSERIAL PRIMARY KEY,
   formula TEXT,
+  svg_string TEXT,
   conn_smiles TEXT,
   conn_inchi TEXT,
   conn_inchi_hash CHAR(14) UNIQUE,

@@ -13,19 +13,16 @@ def species_connectivity_row(smi: str) -> dict:
         "conn_amchi", "conn_amchi_key"
     :rtype: dict
     """
-    fml_str = automol.smiles.formula_string(smi)
-    smi = automol.smiles.recalculate_without_stereo(smi)
     ich = automol.smiles.inchi(smi, stereo=False)
-    ich_hash = automol.inchi_key.first_hash(automol.inchi.inchi_key(ich))
     ach = automol.smiles.amchi(smi, stereo=False)
-    ach_hash = automol.inchi_key.first_hash(automol.amchi.amchi_key(ach))
     return {
-        "formula": fml_str,
-        "conn_smiles": smi,
+        "formula": automol.smiles.formula_string(smi),
+        "svg_string": automol.smiles.svg_string(smi, stereo=False),
+        "conn_smiles": automol.smiles.recalculate_without_stereo(smi),
         "conn_inchi": ich,
-        "conn_inchi_hash": ich_hash,
+        "conn_inchi_hash": automol.inchi_key.first_hash(automol.inchi.inchi_key(ich)),
         "conn_amchi": ach,
-        "conn_amchi_hash": ach_hash,
+        "conn_amchi_hash": automol.inchi_key.first_hash(automol.amchi.amchi_key(ach)),
     }
 
 
@@ -38,8 +35,7 @@ def species_estate_row(smi: str) -> dict:
     :rtype: dict
     """
     ich = automol.smiles.inchi(smi, stereo=False)
-    spin_mult = automol.inchi.low_spin_multiplicity(ich)
-    return {"spin_mult": spin_mult}
+    return {"spin_mult": automol.inchi.low_spin_multiplicity(ich)}
 
 
 def species_stereo_rows(smi: str) -> List[dict]:

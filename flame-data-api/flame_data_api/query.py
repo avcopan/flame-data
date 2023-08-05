@@ -172,9 +172,11 @@ def add_species_by_smiles(cursor, smi: str):
     # INSERT INTO species_connectivity
     query_string1 = """
         INSERT INTO species_connectivity
-        (formula, conn_smiles, conn_inchi, conn_inchi_hash, conn_amchi, conn_amchi_hash)
+        (formula, svg_string, conn_smiles, conn_inchi, conn_inchi_hash, conn_amchi,
+        conn_amchi_hash)
         VALUES
-        (%(formula)s, %(conn_smiles)s, %(conn_inchi)s, %(conn_inchi_hash)s, %(conn_amchi)s,
+        (%(formula)s, %(svg_string)s, %(conn_smiles)s, %(conn_inchi)s,
+        %(conn_inchi_hash)s, %(conn_amchi)s,
         %(conn_amchi_hash)s)
         RETURNING conn_id;
     """

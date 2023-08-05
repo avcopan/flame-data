@@ -35,7 +35,7 @@ export default function DrawSpecies2DFromSmiles({ smiles, className }) {
   return (
     <ViewSpecies2D
       svgString={svgString}
-      stringList={[formulaString]}
+      descriptors={[formulaString]}
       className={className}
     />
   );
