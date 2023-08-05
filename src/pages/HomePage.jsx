@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import actions from "../state/actions";
-import ViewSpecies2D from "../components/ViewSpecies2D";
 import BinarySelector from "../components/BinarySelector";
+import SpeciesList from "../components/SpeciesList";
 
 export default function HomePage() {
   const dispatch = useDispatch();
-  const speciesList = useSelector((store) => store.species);
   const [searchFormula, setSearchFormula] = useState("");
   const [searchPartial, setSearchPartial] = useState(false);
 
@@ -43,16 +42,7 @@ export default function HomePage() {
           setTopSelected={setSearchPartial}
         />
       </div>
-      <div className="flex flex-wrap gap-8 justify-start items-start">
-        {speciesList.map((species) => (
-          <ViewSpecies2D
-            key={species.conn_id}
-            svgString={species.svg_string}
-            descriptors={[species.formula]}
-            className="m-4 w-48"
-          />
-        ))}
-      </div>
+      <SpeciesList />
     </div>
   );
 }
