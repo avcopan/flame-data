@@ -53,7 +53,7 @@ def species_stereo_rows(smi: str) -> List[dict]:
     for gra in gras:
         ach = automol.graph.amchi(gra)
         row = {
-            "geometry": automol.geom.string(automol.graph.geometry(gra)),
+            "geometry": automol.geom.xyz_string(automol.graph.geometry(gra)),
             "smiles": automol.graph.smiles(gra),
             "inchi": automol.graph.inchi(gra),
             "amchi": ach,
