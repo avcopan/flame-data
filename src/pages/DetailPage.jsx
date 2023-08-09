@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import actions from "../state/actions";
 import SpeciesDetailItem from "../components/SpeciesDetailItem";
+import FormattedFormula from "../components/FormattedFormula";
 
 export default function DetailPage() {
   const { connId } = useParams();
@@ -19,8 +20,26 @@ export default function DetailPage() {
   return (
     isomerList && (
       <div>
-        <h1>Detail page</h1>
-        <div>{connId}</div>
+        <div className="stats shadow">
+          <div className="stat">
+            <div className="stat-title">Formula</div>
+            <div className="stat-value">
+              <FormattedFormula formula={isomerList[0].formula} />
+            </div>
+          </div>
+          <div className="stat">
+            <div className="stat-title">SMILES</div>
+            <div className="stat-value">
+              {isomerList[0].conn_smiles}
+            </div>
+          </div>
+          <div className="stat">
+            <div className="stat-title">Multiplicity</div>
+            <div className="stat-value">
+              {isomerList[0].spin_mult}
+            </div>
+          </div>
+        </div>
         {isomerList.map((isomer) => (
           <SpeciesDetailItem key={isomer.id} isomer={isomer} />
         ))}
