@@ -84,6 +84,33 @@ export const addNewSpecies = newSpeciesSlice.actions.addNewSpecies;
 export const clearNewSpecies = newSpeciesSlice.actions.clearNewSpecies;
 const newSpeciesReducer = newSpeciesSlice.reducer;
 
+// 5. species details slice/reducer (serves as a cache of details requested)
+// Format:
+// {
+//   16: [
+//     {...stereoisomer 1},
+//     {...stereoisomer 2},
+//     ...
+//   ],
+//   32: [
+//     {...stereoisomer 1},
+//     {...stereoisomer 2},
+//     ...
+//   ],
+// }
+const speciesDetailsSlice = createSlice({
+  name: "speciesDetails",
+  initialState: {},
+  reducers: {
+    updateSpeciesDetails: (state, action) => {
+      return { ...state, ...action.payload };
+    },
+  },
+});
+
+const updateSpeciesDetails = speciesDetailsSlice.actions.updateSpeciesDetails;
+const speciesDetailsReducer = speciesDetailsSlice.reducer;
+
 // WIRING: create saga middleware
 const sagaMiddleware = createSagaMiddleware();
 
@@ -94,6 +121,7 @@ const store = configureStore({
     error: errorReducer,
     species: speciesReducer,
     newSpecies: newSpeciesReducer,
+    speciesDetails: speciesDetailsReducer,
   },
   middleware: (defaultMiddleware) => defaultMiddleware().concat(sagaMiddleware),
 });
@@ -219,6 +247,24 @@ export const postNewSpecies = () => {
   return { type: POST_NEW_SPECIES };
 };
 
+// 4. species details saga
+const GET_SPECIES_DETAILS = "GET_SPECIES_DETAILS";
+
+function* getSpeciesDetailsSaga(action) {
+  try {
+    const connId = action.payload;
+    const res = yield axios.get(`/api/conn_species/${connId}`);
+    const data = yield res.data;
+    yield put(updateSpeciesDetails({ [connId]: data.species }));
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const getSpeciesDetails = (payload) => {
+  return { type: GET_SPECIES_DETAILS, payload };
+};
+
 // WIRING: create watcher saga
 function* watcherSaga() {
   yield takeLatest(GET_USER, getUserSaga);
@@ -227,6 +273,7 @@ function* watcherSaga() {
   yield takeLatest(REGISTER_USER, registerUserSaga);
   yield takeLatest(GET_SPECIES, getSpeciesSaga);
   yield takeEvery(POST_NEW_SPECIES, postNewSpeciesSaga);
+  yield takeEvery(GET_SPECIES_DETAILS, getSpeciesDetailsSaga);
 }
 
 // WIRING: run watcher saga

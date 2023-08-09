@@ -8,6 +8,7 @@ import {
   addNewSpecies,
   clearNewSpecies,
   postNewSpecies,
+  getSpeciesDetails,
 } from "./store";
 
 const actions = {
@@ -20,6 +21,7 @@ const actions = {
   addNewSpecies,
   clearNewSpecies,
   postNewSpecies,
+  getSpeciesDetails,
 };
 
 export default actions;
