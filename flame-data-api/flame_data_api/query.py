@@ -1,4 +1,3 @@
-import itertools
 from typing import List
 
 import automol
@@ -219,13 +218,11 @@ def add_species_by_smiles(cursor, smi: str):
 
 @with_pool_cursor
 def get_connectivity_species_details(cursor, conn_id: int) -> List[dict]:
-    """Get details for
+    """Get details for one connectivity species
 
-    :param cursor: _description_
-    :type cursor: _type_
-    :param conn_id: _description_
+    :param conn_id: The ID of the connectivity species
     :type conn_id: int
-    :return: _description_
+    :return: Details for each isomer, as a list of dictionaries
     :rtype: List[dict]
     """
     query_string = """
@@ -238,6 +235,23 @@ def get_connectivity_species_details(cursor, conn_id: int) -> List[dict]:
     cursor.execute(query_string, query_params)
     conn_species_details = cursor.fetchall()
     return conn_species_details
+
+
+@with_pool_cursor
+def delete_connectivity_species(cursor, conn_id: int) -> bool:
+    """Delete one connectivity species
+
+    :param conn_id: The ID of the connectivity species
+    :type conn_id: int
+    :returns: Whether or not the deletion succeeded
+    :rtype: bool
+    """
+    query_string = """
+        DELETE FROM species_connectivity WHERE conn_id = %s;
+    """
+    query_params = [conn_id]
+    cursor.execute(query_string, query_params)
+    return bool(cursor.rowcount)
 
 
 if __name__ == "__main__":

@@ -206,6 +206,7 @@ export const registerUser = (payload) => {
 };
 
 // 2. species saga
+//  a. GET
 const GET_SPECIES = "GET_SPECIES";
 
 function* getSpeciesSaga(action) {
@@ -227,6 +228,23 @@ function* getSpeciesSaga(action) {
 
 export const getSpecies = (payload) => {
   return { type: GET_SPECIES, payload };
+};
+
+//  b. DELETE
+const DELETE_SPECIES = "DELETE_SPECIES";
+
+function* deleteSpeciesSaga(action) {
+  try {
+    const connId = action.payload;
+    yield axios.delete(`/api/conn_species/${connId}`);
+    yield put(getSpecies());
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const deleteSpecies = (payload) => {
+  return { type: DELETE_SPECIES, payload };
 };
 
 // 3. new species saga
@@ -272,6 +290,7 @@ function* watcherSaga() {
   yield takeLatest(LOGOUT_USER, logoutUserSaga);
   yield takeLatest(REGISTER_USER, registerUserSaga);
   yield takeLatest(GET_SPECIES, getSpeciesSaga);
+  yield takeEvery(DELETE_SPECIES, deleteSpeciesSaga);
   yield takeEvery(POST_NEW_SPECIES, postNewSpeciesSaga);
   yield takeEvery(GET_SPECIES_DETAILS, getSpeciesDetailsSaga);
 }

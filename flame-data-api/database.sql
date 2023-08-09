@@ -21,7 +21,9 @@ CREATE TABLE species_connectivity (
 CREATE TABLE species_estate (
   estate_id BIGSERIAL PRIMARY KEY,
   spin_mult SMALLINT,
-  conn_id BIGINT REFERENCES species_connectivity(conn_id)
+  conn_id BIGINT
+    REFERENCES species_connectivity(conn_id)
+    ON DELETE CASCADE
 );
 
 CREATE TABLE species_stereo (
@@ -31,5 +33,7 @@ CREATE TABLE species_stereo (
   inchi TEXT,
   amchi TEXT,
   amchi_key CHAR(27) UNIQUE,
-  estate_id BIGINT REFERENCES species_estate(estate_id)
+  estate_id BIGINT
+    REFERENCES species_estate(estate_id)
+    ON DELETE CASCADE
 );
