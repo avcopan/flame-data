@@ -84,7 +84,7 @@ export const addNewSpecies = newSpeciesSlice.actions.addNewSpecies;
 export const clearNewSpecies = newSpeciesSlice.actions.clearNewSpecies;
 const newSpeciesReducer = newSpeciesSlice.reducer;
 
-// 5. species details slice/reducer (serves as a cache of details requested)
+// 5. species details cache slice/reducer (serves as a cache of details requested)
 // Format:
 // {
 //   16: [

@@ -35,7 +35,7 @@ export default function FormPage() {
             Add
           </button>
         </div>
-        <ViewSpeciesFromSmiles className="m-4 w-96" smiles={smiles} />
+        <ViewSpeciesFromSmiles className="m-4 w-96 h-96" smiles={smiles} />
       </div>
       <SideCart
         speciesHeader="New Species"
