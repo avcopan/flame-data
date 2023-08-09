@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import DrawSpecies2DFromSmiles from "../components/DrawSpecies2DFromSmiles";
+import ViewSpeciesFromSmiles from "../components/ViewSpeciesFromSmiles";
 import SideCart from "../components/SideCart";
 import actions from "../state/actions";
 
@@ -35,7 +35,7 @@ export default function FormPage() {
             Add
           </button>
         </div>
-        <DrawSpecies2DFromSmiles className="m-4 w-96" smiles={smiles} />
+        <ViewSpeciesFromSmiles className="m-4 w-96" smiles={smiles} />
       </div>
       <SideCart
         speciesHeader="New Species"

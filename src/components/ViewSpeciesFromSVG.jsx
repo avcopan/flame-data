@@ -1,13 +1,13 @@
-export default function ViewSpecies2D({
+import ViewFrame from "./ViewFrame";
+
+export default function ViewSpeciesFromSVG({
   svgString,
   descriptors = [],
   className,
   hoverText = "",
 }) {
   return (
-    <div
-      className={`bg-white aspect-square flex flex-col justify-center items-center rounded-3xl ${className}`}
-    >
+    <ViewFrame className={className}>
       {svgString && (
         <>
           <img
@@ -22,6 +22,6 @@ export default function ViewSpecies2D({
           ))}
         </>
       )}
-    </div>
+    </ViewFrame>
   );
 }
