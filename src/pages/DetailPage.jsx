@@ -25,7 +25,7 @@ export default function DetailPage() {
 
   return (
     isomerList && (
-      <div className="max-w-screen-xl">
+      <div className="max-w-screen-xl flex flex-col">
         <div className="mb-8 stats shadow">
           <div className="stat">
             <div className="stat-title">Formula</div>
@@ -49,10 +49,10 @@ export default function DetailPage() {
         </div>
         {/* Open the modal using ID.showModal() method */}
         <button
-          className="btn btn-error btn-outline btn-square"
+          className="btn btn-error btn-outline btn-square self-end"
           onClick={() => window.deletion_dialog.showModal()}
         >
-          <TrashIcon className="p-1" />
+          <TrashIcon className="p-2" />
         </button>
         <dialog id="deletion_dialog" className="modal">
           <form method="dialog" className="modal-box">
