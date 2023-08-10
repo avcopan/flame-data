@@ -1,0 +1,4 @@
+[ ] In editMode for geometries, implement the following behavior:
+    [ ] Clicking "Done" updates the `isomerGeometry` state (no onChange dynamic updating)
+    [ ] If `isomerGeometry != isomer.geometry`, bring up "View" and "Submit" buttons
+    [ ] Have `viewIsomerGeometry` as another separate piece of state that gets updated when "View" is clicked
