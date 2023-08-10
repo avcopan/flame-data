@@ -2,15 +2,15 @@ import ViewSpeciesFromXYZ from "./ViewSpeciesFromXYZ";
 
 export default function SpeciesDetailItem({ isomer }) {
   return (
-    <div className="card flex flex-row flex-wrap justify-center items-center bg-base-100 shadow-xl">
-      <figure className="px-10 pt-10">
+    <div className="mb-6 card flex flex-row flex-wrap gap-2 justify-center items-start bg-base-100 shadow-xl">
+      <figure className="">
         <ViewSpeciesFromXYZ
           id={`I${isomer.id}`}
           className="m-4 w-96"
           xyzString={isomer.geometry}
         />
       </figure>
-      <div className="card-body items-center text-center">
+      <div className="items-center text-center">
         <div className="stats stats-vertical shadow">
           <div className="stat">
             <div className="stat-title">SMILES</div>
@@ -28,7 +28,7 @@ export default function SpeciesDetailItem({ isomer }) {
           </div>
         </div>
       </div>
-      <div className="card-body items-center text-center">
+      <div className="items-center text-center">
         <div className="stats stats-vertical shadow">
           <div className="stat">
             <div className="stat-title">Coordinates</div>

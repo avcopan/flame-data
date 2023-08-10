@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import actions from "../state/actions";
 import SpeciesDetailItem from "../components/SpeciesDetailItem";
 import FormattedFormula from "../components/FormattedFormula";
+import { TrashIcon } from "@heroicons/react/24/outline";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
 export default function DetailPage() {
@@ -25,7 +26,7 @@ export default function DetailPage() {
   return (
     isomerList && (
       <div className="max-w-screen-xl">
-        <div className="stats shadow">
+        <div className="mb-8 stats shadow">
           <div className="stat">
             <div className="stat-title">Formula</div>
             <div className="stat-value">
@@ -48,10 +49,10 @@ export default function DetailPage() {
         </div>
         {/* Open the modal using ID.showModal() method */}
         <button
-          className="btn btn-error btn-outline"
+          className="btn btn-error btn-outline btn-square"
           onClick={() => window.deletion_dialog.showModal()}
         >
-          Delete
+          <TrashIcon className="p-1" />
         </button>
         <dialog id="deletion_dialog" className="modal">
           <form method="dialog" className="modal-box">

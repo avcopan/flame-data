@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import actions from "../state/actions";
 import fireIcon from "/fire-icon.svg";
+import { Bars3BottomRightIcon } from "@heroicons/react/24/outline";
 
 export default function Header() {
   const dispatch = useDispatch();
@@ -17,20 +18,7 @@ export default function Header() {
         <div>{user && user.email}</div>
         <div className="dropdown dropdown-end dropdown-hover">
           <label tabIndex={0} className="btn btn-ghost m-1">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 6h16M4 12h16M4 18h7"
-              />
-            </svg>
+            <Bars3BottomRightIcon className="h-6 w-6" />
           </label>
           <ul
             tabIndex={0}
