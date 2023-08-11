@@ -238,20 +238,73 @@ def get_connectivity_species_details(cursor, conn_id: int) -> List[dict]:
 
 
 @with_pool_cursor
-def delete_connectivity_species(cursor, conn_id: int) -> bool:
+def get_species(cursor, id: int) -> dict:
+    """Get one species by ID
+
+    :param id: The ID of the connectivity species
+    :type id: int
+    :return: The table row for this species, as a dictionary
+    :rtype: dict
+    """
+    query_string = """
+        SELECT * FROM species_stereo WHERE id = %s;
+    """
+    query_params = [id]
+    cursor.execute(query_string, query_params)
+    species_row = cursor.fetchone()
+    return species_row
+
+
+@with_pool_cursor
+def delete_connectivity_species(cursor, conn_id: int) -> (int, str):
     """Delete one connectivity species
 
     :param conn_id: The ID of the connectivity species
     :type conn_id: int
-    :returns: Whether or not the deletion succeeded
-    :rtype: bool
+    :returns: A status code and an error message, if it failed
+    :rtype: str
     """
     query_string = """
         DELETE FROM species_connectivity WHERE conn_id = %s;
     """
     query_params = [conn_id]
     cursor.execute(query_string, query_params)
-    return bool(cursor.rowcount)
+
+    if not bool(cursor.rowcount):
+        return 404, f"No resource with ID {conn_id} was found."
+
+    return 0, ""
+
+
+@with_pool_cursor
+def update_species_geometry(cursor, id: int, xyz_str: str) -> bool:
+    """Delete one connectivity species
+
+    :param id: The ID of the species
+    :type id: int
+    :param xyz_str: The new xyz string for the geometry
+    :type xyz_str: str
+    :returns: Whether or not the update succeeded
+    :rtype: bool
+    """
+    species_row = get_species(id)
+    if not species_row:
+        return 404, f"No resource with ID {id} was found."
+
+    ach = species_row["amchi"]
+    ret = chem.validate_species_geometry(ach, xyz_str)
+    if ret is None:
+        return 415, f"Invalid xyz string for species {ach}:\n{xyz_str}"
+
+    xyz_str = ret
+
+    query_string = """
+        UPDATE species_stereo SET geometry = %s WHERE id = %s;
+    """
+    query_params = [xyz_str, id]
+    cursor.execute(query_string, query_params)
+
+    return 0, ""
 
 
 if __name__ == "__main__":

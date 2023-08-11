@@ -7,11 +7,15 @@ export default function SpeciesDetailItem({ isomer }) {
   const editRef = useRef();
 
   useEffect(() => {
-    setGeometry(editRef.current.innerText.replace(/\n\n\n/, "\n\n"));
+    setGeometry(editRef.current.innerText.replace("\n\n\n", "\n\n"));
   }, [editMode]);
 
   const toggleEditMode = () => {
     setEditMode(!editMode);
+  };
+
+  const restoreGeometry = () => {
+    setGeometry(isomer.geometry);
   };
 
   return (
@@ -49,7 +53,10 @@ export default function SpeciesDetailItem({ isomer }) {
               <div className="flex gap-2">
                 {isomer.geometry != geometry && (
                   <>
-                    <button className="btn btn-outline btn-sm btn-primary">
+                    <button
+                      className="btn btn-outline btn-sm btn-primary"
+                      onClick={restoreGeometry}
+                    >
                       Restore
                     </button>
                     <button className="btn btn-outline btn-sm btn-warning">

@@ -14,11 +14,11 @@ def get_current_user():
 
     @apiSuccess {Object} The user's information; keys `id`, `email`, `admin`
     """
-    id = flask.session.get("user_id", None)
-    if id is None:
+    user_id = flask.session.get("user_id", None)
+    if user_id is None:
         return flame_data_api.response(401, error="Unauthorized")
 
-    user = flame_data_api.query.get_user(id)
+    user = flame_data_api.query.get_user(user_id)
     return flame_data_api.response(200, **user)
 
 
@@ -103,6 +103,10 @@ def add_connectivity_species_batch():
 
     @apiBody {String[]} smilesList A list of SMILES strings for the species to be added
     """
+    user_id = flask.session.get("user_id", None)
+    if user_id is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
     smis = flask.request.json.get("smilesList")
     new_smis = flame_data_api.query.identify_missing_species_by_smiles(smis)
     print(
@@ -145,9 +149,32 @@ def delete_connectivity_species(conn_id):
         `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
         `conn_amchi`, `conn_amchi_hash`
     """
-    success = flame_data_api.query.delete_connectivity_species(conn_id)
-    if not success:
-        return flame_data_api.response(
-            404, error=f"No resource with ID {conn_id} was found."
-        )
+    user_id = flask.session.get("user_id", None)
+    if user_id is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    status, error = flame_data_api.query.delete_connectivity_species(conn_id)
+    if status >= 400:
+        return flame_data_api.response(status, error=error)
+
+    return flame_data_api.response(204)
+
+
+@app.route("/api/species/<id>", methods=["PUT"])
+def update_species_geometry(id):
+    """@api {put} /api/species/:id Edit the geometry of one species
+
+    @apiparam {Number} id The ID of the species
+    @apiBody {String} geometry The new geometry for this species
+    """
+    user_id = flask.session.get("user_id", None)
+    if user_id is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    xyz_str = flask.request.json.get("geometry")
+
+    status, error = flame_data_api.query.update_species_geometry(id, xyz_str)
+    if status >= 400:
+        return flame_data_api.response(status, error=error)
+
     return flame_data_api.response(204)

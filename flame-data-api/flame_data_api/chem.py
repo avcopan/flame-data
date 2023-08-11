@@ -64,6 +64,21 @@ def species_stereo_rows(smi: str) -> List[dict]:
     return rows
 
 
+def validate_species_geometry(ach: str, xyz_str: str) -> str:
+    """Validate that a geometry matches a species
+
+    :param ach: An AMChI chemical identifier string
+    :type ach: str
+    :param xyz_str: The species geometry, in xyz format
+    :type xyz_str: str
+    :return: A normalized xyz string, if valid; otherwise `None`
+    :rtype: str or NoneType
+    """
+    geo = automol.geom.from_xyz_string(xyz_str)
+    ach_ = automol.geom.amchi(geo)
+    return automol.geom.xyz_string(geo) if ach == ach_ else None
+
+
 # HELPERS
 def connectivity_inchi_hash_from_smiles(smi: str) -> str:
     """Get an InChI connectivity hash from a SMILES string
