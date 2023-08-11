@@ -1,9 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ViewSpeciesFromXYZ from "./ViewSpeciesFromXYZ";
 
 export default function SpeciesDetailItem({ isomer }) {
   const [editMode, setEditMode] = useState(false);
-  const [isomerGeometry, setIsomerGeometry] = useState(isomer.geometry);
+  const [geometry, setGeometry] = useState(isomer.geometry);
+  const editRef = useRef();
+
+  useEffect(() => {
+    setGeometry(editRef.current.innerText.replace(/\n\n\n/, "\n\n"));
+  }, [editMode]);
+
+  const toggleEditMode = () => {
+    setEditMode(!editMode);
+  };
 
   return (
     <div className="mb-6 card flex flex-row flex-wrap gap-4 justify-center items-start bg-base-100 shadow-xl">
@@ -11,7 +20,7 @@ export default function SpeciesDetailItem({ isomer }) {
         <ViewSpeciesFromXYZ
           id={`I${isomer.id}`}
           className="m-4 w-96"
-          xyzString={isomerGeometry}
+          xyzString={geometry}
         />
       </figure>
       <div className="items-center">
@@ -38,10 +47,10 @@ export default function SpeciesDetailItem({ isomer }) {
             <div className="flex flex-row justify-between">
               <div className="stat-title">Coordinates</div>
               <div className="flex gap-2">
-                {isomer.geometry != isomerGeometry && (
+                {isomer.geometry != geometry && (
                   <>
                     <button className="btn btn-outline btn-sm btn-primary">
-                      View
+                      Restore
                     </button>
                     <button className="btn btn-outline btn-sm btn-warning">
                       Submit
@@ -50,21 +59,23 @@ export default function SpeciesDetailItem({ isomer }) {
                 )}
                 <button
                   className="btn btn-outline btn-sm btn-secondary"
-                  onClick={() => setEditMode(!editMode)}
+                  onClick={toggleEditMode}
                 >
                   {editMode ? "Done" : "Edit"}
                 </button>
               </div>
             </div>
             <div
+              ref={editRef}
               className={`w-96 max-h-72 m-2 rounded-lg overflow-auto text-base whitespace-pre-wrap font-mono ${
                 editMode
                   ? "outline outline-1 outline-secondary focus:outline-4"
                   : ""
               }`}
               contentEditable={editMode}
+              suppressContentEditableWarning
             >
-              {isomerGeometry}
+              {geometry}
             </div>
           </div>
         </div>
