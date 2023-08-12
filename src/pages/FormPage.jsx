@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import ViewSpeciesFromSmiles from "../components/ViewSpeciesFromSmiles";
 import SideCart from "../components/SideCart";
 import actions from "../state/actions";
 
 export default function FormPage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const newSpecies = useSelector((store) => store.newSpecies);
   const [smiles, setSmiles] = useState("");
 
@@ -16,6 +18,7 @@ export default function FormPage() {
   const postNewSpecies = () => {
     dispatch(actions.postNewSpecies());
     setSmiles("");
+    navigate("/");
   };
 
   return (

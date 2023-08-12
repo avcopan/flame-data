@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useSelector } from "react-redux";
+import { useState, useEffect, useRef } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import ViewSpeciesFromXYZ from "./ViewSpeciesFromXYZ";
+import actions from "../state/actions";
 
 export default function SpeciesDetailItem({ isomer }) {
+  const dispatch = useDispatch();
   const [editMode, setEditMode] = useState(false);
   const [geometry, setGeometry] = useState(isomer.geometry);
   const editRef = useRef();
@@ -18,6 +20,13 @@ export default function SpeciesDetailItem({ isomer }) {
 
   const restoreGeometry = () => {
     setGeometry(isomer.geometry);
+  };
+
+  const submitUpdatedGeometry = () => {
+    const id = isomer.id;
+    const connId = isomer.conn_id;
+    dispatch(actions.updateSpeciesGeometry({ id, connId, geometry }));
+    window.location.reload();
   };
 
   return (
@@ -61,7 +70,10 @@ export default function SpeciesDetailItem({ isomer }) {
                     >
                       Restore
                     </button>
-                    <button className="btn btn-outline btn-sm btn-warning">
+                    <button
+                      className="btn btn-outline btn-sm btn-warning"
+                      onClick={submitUpdatedGeometry}
+                    >
                       Submit
                     </button>
                   </>

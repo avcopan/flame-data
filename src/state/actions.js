@@ -5,11 +5,12 @@ import {
   logoutUser,
   registerUser,
   getSpecies,
-  deleteSpecies,
+  getSpeciesDetails,
   addNewSpecies,
   clearNewSpecies,
   postNewSpecies,
-  getSpeciesDetails,
+  deleteSpecies,
+  updateSpeciesGeometry,
 } from "./store";
 
 const actions = {
@@ -19,11 +20,12 @@ const actions = {
   logoutUser,
   registerUser,
   getSpecies,
-  deleteSpecies,
+  getSpeciesDetails,
   addNewSpecies,
   clearNewSpecies,
   postNewSpecies,
-  getSpeciesDetails,
+  deleteSpecies,
+  updateSpeciesGeometry,
 };
 
 export default actions;

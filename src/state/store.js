@@ -71,13 +71,13 @@ const speciesDetailsSlice = createSlice({
   name: "speciesDetails",
   initialState: {},
   reducers: {
-    updateSpeciesDetails: (state, action) => {
+    addSpeciesDetails: (state, action) => {
       return { ...state, ...action.payload };
     },
   },
 });
 
-const updateSpeciesDetails = speciesDetailsSlice.actions.updateSpeciesDetails;
+const addSpeciesDetails = speciesDetailsSlice.actions.addSpeciesDetails;
 const speciesDetailsReducer = speciesDetailsSlice.reducer;
 
 // 5. new species slice/reducer
@@ -225,7 +225,7 @@ function* getSpeciesDetailsSaga(action) {
     const connId = action.payload;
     const res = yield axios.get(`/api/conn_species/${connId}`);
     const data = yield res.data;
-    yield put(updateSpeciesDetails({ [connId]: data.species }));
+    yield put(addSpeciesDetails({ [connId]: data.species }));
   } catch (error) {
     console.error(error);
   }
@@ -277,6 +277,25 @@ export const deleteSpecies = (payload) => {
   return { type: DELETE_SPECIES, payload };
 };
 
+//  e. update one species geometry
+const UPDATE_SPECIES_GEOMETRY = "UPDATE_SPECIES_GEOMETRY";
+
+function* updateSpeciesGeometrySaga(action) {
+  try {
+    const connId = action.payload.connId;
+    const id = action.payload.id;
+    yield axios.put(`/api/species/${id}`, action.payload);
+    console.log("submitting put request for species", connId);
+    yield put(getSpeciesDetails(connId));
+  } catch (error) {
+    handleErrorForProtectedEndpoint(error);
+  }
+}
+
+export const updateSpeciesGeometry = (payload) => {
+  return { type: UPDATE_SPECIES_GEOMETRY, payload };
+};
+
 // WIRING: create watcher saga
 function* watcherSaga() {
   yield takeLatest(GET_USER, getUserSaga);
@@ -284,9 +303,10 @@ function* watcherSaga() {
   yield takeLatest(LOGOUT_USER, logoutUserSaga);
   yield takeLatest(REGISTER_USER, registerUserSaga);
   yield takeLatest(GET_SPECIES, getSpeciesSaga);
+  yield takeEvery(GET_SPECIES_DETAILS, getSpeciesDetailsSaga);
   yield takeEvery(DELETE_SPECIES, deleteSpeciesSaga);
   yield takeEvery(POST_NEW_SPECIES, postNewSpeciesSaga);
-  yield takeEvery(GET_SPECIES_DETAILS, getSpeciesDetailsSaga);
+  yield takeEvery(UPDATE_SPECIES_GEOMETRY, updateSpeciesGeometrySaga);
 }
 
 // WIRING: run watcher saga
