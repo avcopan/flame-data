@@ -11,6 +11,7 @@ export default function DetailPage() {
   const { connId } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const user = useSelector((store) => store.user);
   const speciesDetails = useSelector((store) => store.speciesDetails);
   const isomerList = speciesDetails[connId];
 
@@ -48,27 +49,32 @@ export default function DetailPage() {
           ))}
         </div>
         {/* Open the modal using ID.showModal() method */}
-        <button
-          className="btn btn-error btn-outline btn-square self-end"
-          onClick={() => window.deletion_dialog.showModal()}
-        >
-          <TrashIcon className="p-2" />
-        </button>
-        <dialog id="deletion_dialog" className="modal">
-          <form method="dialog" className="modal-box">
-            <ExclamationCircleIcon className="mb-4 h-8 w-8 text-error" />
-            <h3 className="text-lg">
-              Are you sure? This will delete all records for species {connId}.
-            </h3>
-            <div className="modal-action">
-              {/* if there is a button in form, it will close the modal */}
-              <button className="btn">No</button>
-              <button className="btn btn-error" onClick={deleteThisSpecies}>
-                Yes
-              </button>
-            </div>
-          </form>
-        </dialog>
+        {user && (
+          <>
+            <button
+              className="btn btn-error btn-outline btn-square self-end"
+              onClick={() => window.deletion_dialog.showModal()}
+            >
+              <TrashIcon className="p-2" />
+            </button>
+            <dialog id="deletion_dialog" className="modal">
+              <form method="dialog" className="modal-box">
+                <ExclamationCircleIcon className="mb-4 h-8 w-8 text-error" />
+                <h3 className="text-lg">
+                  Are you sure? This will delete all records for species{" "}
+                  {connId}.
+                </h3>
+                <div className="modal-action">
+                  {/* if there is a button in form, it will close the modal */}
+                  <button className="btn">No</button>
+                  <button className="btn btn-error" onClick={deleteThisSpecies}>
+                    Yes
+                  </button>
+                </div>
+              </form>
+            </dialog>
+          </>
+        )}
       </div>
     )
   );

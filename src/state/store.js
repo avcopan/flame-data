@@ -52,7 +52,7 @@ const setCodelessError = errorSlice.actions.setCodelessError;
 const setClearError = errorSlice.actions.clearError;
 const errorReducer = errorSlice.reducer;
 
-// 3. species slice/reducer
+// 3. species slice/reducer(s)
 const speciesSlice = createSlice({
   name: "species",
   initialState: [],
@@ -66,7 +66,21 @@ const speciesSlice = createSlice({
 const setSpecies = speciesSlice.actions.setSpecies;
 const speciesReducer = speciesSlice.reducer;
 
-// 4. new species slice/reducer
+// 4. species details cache slice/reducer
+const speciesDetailsSlice = createSlice({
+  name: "speciesDetails",
+  initialState: {},
+  reducers: {
+    updateSpeciesDetails: (state, action) => {
+      return { ...state, ...action.payload };
+    },
+  },
+});
+
+const updateSpeciesDetails = speciesDetailsSlice.actions.updateSpeciesDetails;
+const speciesDetailsReducer = speciesDetailsSlice.reducer;
+
+// 5. new species slice/reducer
 const newSpeciesSlice = createSlice({
   name: "newSpecies",
   initialState: [],
@@ -84,33 +98,6 @@ export const addNewSpecies = newSpeciesSlice.actions.addNewSpecies;
 export const clearNewSpecies = newSpeciesSlice.actions.clearNewSpecies;
 const newSpeciesReducer = newSpeciesSlice.reducer;
 
-// 5. species details cache slice/reducer (serves as a cache of details requested)
-// Format:
-// {
-//   16: [
-//     {...stereoisomer 1},
-//     {...stereoisomer 2},
-//     ...
-//   ],
-//   32: [
-//     {...stereoisomer 1},
-//     {...stereoisomer 2},
-//     ...
-//   ],
-// }
-const speciesDetailsSlice = createSlice({
-  name: "speciesDetails",
-  initialState: {},
-  reducers: {
-    updateSpeciesDetails: (state, action) => {
-      return { ...state, ...action.payload };
-    },
-  },
-});
-
-const updateSpeciesDetails = speciesDetailsSlice.actions.updateSpeciesDetails;
-const speciesDetailsReducer = speciesDetailsSlice.reducer;
-
 // WIRING: create saga middleware
 const sagaMiddleware = createSagaMiddleware();
 
@@ -120,8 +107,8 @@ const store = configureStore({
     user: userReducer,
     error: errorReducer,
     species: speciesReducer,
-    newSpecies: newSpeciesReducer,
     speciesDetails: speciesDetailsReducer,
+    newSpecies: newSpeciesReducer,
   },
   middleware: (defaultMiddleware) => defaultMiddleware().concat(sagaMiddleware),
 });
@@ -205,8 +192,8 @@ export const registerUser = (payload) => {
   return { type: REGISTER_USER, payload };
 };
 
-// 2. species saga
-//  a. GET
+// 2. species sagas
+//  a. get all species
 const GET_SPECIES = "GET_SPECIES";
 
 function* getSpeciesSaga(action) {
@@ -230,42 +217,7 @@ export const getSpecies = (payload) => {
   return { type: GET_SPECIES, payload };
 };
 
-//  b. DELETE
-const DELETE_SPECIES = "DELETE_SPECIES";
-
-function* deleteSpeciesSaga(action) {
-  try {
-    const connId = action.payload;
-    yield axios.delete(`/api/conn_species/${connId}`);
-    yield put(getSpecies());
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-export const deleteSpecies = (payload) => {
-  return { type: DELETE_SPECIES, payload };
-};
-
-// 3. new species saga
-const POST_NEW_SPECIES = "POST_NEW_SPECIES";
-
-function* postNewSpeciesSaga() {
-  try {
-    const smilesList = yield select((store) => store.newSpecies);
-    yield put(clearNewSpecies());
-    const requestBody = { smilesList };
-    const res = yield axios.post("/api/conn_species", requestBody);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-export const postNewSpecies = () => {
-  return { type: POST_NEW_SPECIES };
-};
-
-// 4. species details saga
+//  b. get details for one species
 const GET_SPECIES_DETAILS = "GET_SPECIES_DETAILS";
 
 function* getSpeciesDetailsSaga(action) {
@@ -281,6 +233,48 @@ function* getSpeciesDetailsSaga(action) {
 
 export const getSpeciesDetails = (payload) => {
   return { type: GET_SPECIES_DETAILS, payload };
+};
+
+//  c. post new species in batch
+function handleErrorForProtectedEndpoint(error) {
+  if (error.response.status === 401) {
+    alert("You are not authorized to make this request. Are you logged in?");
+  }
+  console.error(error);
+}
+
+const POST_NEW_SPECIES = "POST_NEW_SPECIES";
+
+function* postNewSpeciesSaga() {
+  try {
+    const smilesList = yield select((store) => store.newSpecies);
+    yield put(clearNewSpecies());
+    const requestBody = { smilesList };
+    const res = yield axios.post("/api/conn_species", requestBody);
+  } catch (error) {
+    handleErrorForProtectedEndpoint(error);
+  }
+}
+
+export const postNewSpecies = () => {
+  return { type: POST_NEW_SPECIES };
+};
+
+//  d. delete one species
+const DELETE_SPECIES = "DELETE_SPECIES";
+
+function* deleteSpeciesSaga(action) {
+  try {
+    const connId = action.payload;
+    yield axios.delete(`/api/conn_species/${connId}`);
+    yield put(getSpecies());
+  } catch (error) {
+    handleErrorForProtectedEndpoint(error);
+  }
+}
+
+export const deleteSpecies = (payload) => {
+  return { type: DELETE_SPECIES, payload };
 };
 
 // WIRING: create watcher saga

@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useSelector } from "react-redux";
 import ViewSpeciesFromXYZ from "./ViewSpeciesFromXYZ";
 
 export default function SpeciesDetailItem({ isomer }) {
   const [editMode, setEditMode] = useState(false);
   const [geometry, setGeometry] = useState(isomer.geometry);
   const editRef = useRef();
+  const user = useSelector((store) => store.user);
 
   useEffect(() => {
     setGeometry(editRef.current.innerText.replace("\n\n\n", "\n\n"));
@@ -64,17 +66,19 @@ export default function SpeciesDetailItem({ isomer }) {
                     </button>
                   </>
                 )}
-                <button
-                  className="btn btn-outline btn-sm btn-secondary"
-                  onClick={toggleEditMode}
-                >
-                  {editMode ? "Done" : "Edit"}
-                </button>
+                {user && (
+                  <button
+                    className="btn btn-outline btn-sm btn-secondary"
+                    onClick={toggleEditMode}
+                  >
+                    {editMode ? "Done" : "Edit"}
+                  </button>
+                )}
               </div>
             </div>
             <div
               ref={editRef}
-              className={`w-96 max-h-72 m-2 rounded-lg overflow-auto text-base whitespace-pre-wrap font-mono ${
+              className={`w-96 max-h-96 m-2 rounded-lg overflow-auto text-base whitespace-pre-wrap font-mono ${
                 editMode
                   ? "outline outline-1 outline-secondary focus:outline-4"
                   : ""
