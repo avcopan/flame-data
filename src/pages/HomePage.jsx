@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import actions from "../state/actions";
 import BinarySelector from "../components/BinarySelector";
 import SpeciesList from "../components/SpeciesList";
-import SideCart from "../components/SideCart";
+import SpeciesItem from "../components/SpeciesItem";
 
 export default function HomePage() {
   const dispatch = useDispatch();
+  const user = useSelector((store) => store.user);
+  const collections = useSelector((store) => store.collections);
   const [searchFormula, setSearchFormula] = useState("");
   const [searchPartial, setSearchPartial] = useState(false);
 
   useEffect(() => {
     dispatch(actions.getSpecies());
+    dispatch(actions.getCollections());
   }, []);
 
   const submitSearch = () => {
@@ -46,17 +49,30 @@ export default function HomePage() {
         </div>
         <SpeciesList />
       </div>
-      <div className="join join-vertical w-96">
-        <div className="collapse join-item border border-primary">
-          <input type="radio" name="my-accordion-2" />
-          <div className="collapse-title text-xl text-primary font-medium">
-            My Data
-          </div>
-          <div className="collapse-content">
-            <p>hello</p>
-          </div>
-        </div>
-      </div>
+      {user && (
+        <aside className="sticky top-12 join join-vertical w-1/2 h-screen-most pb-24">
+          {collections.map((collection, index) => (
+            <div
+              className="collapse join-item border border-primary"
+              key={collection.id}
+            >
+              <input
+                type="radio"
+                name="my-accordion-2"
+                defaultChecked={index === 0}
+              />
+              <div className="collapse-title text-xl text-primary font-medium">
+                {collection.name}
+              </div>
+              <div className="collapse-content h-full flex flex-wrap justify-start overflow-auto">
+                {collection.species.map((species) => (
+                  <SpeciesItem species={species} className="m-2 w-32" />
+                ))}
+              </div>
+            </div>
+          ))}
+        </aside>
+      )}
     </div>
   );
 }

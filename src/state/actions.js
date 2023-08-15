@@ -11,6 +11,7 @@ import {
   postNewSpecies,
   deleteSpecies,
   updateSpeciesGeometry,
+  getCollections,
 } from "./store";
 
 const actions = {
@@ -26,6 +27,7 @@ const actions = {
   postNewSpecies,
   deleteSpecies,
   updateSpeciesGeometry,
+  getCollections
 };
 
 export default actions;

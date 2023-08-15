@@ -6,6 +6,9 @@ export default {
       outlineWidth: {
         1: "0.5px",
       },
+      height: {
+        "screen-most": "80vh",
+      },
     },
   },
   plugins: [require("daisyui")],

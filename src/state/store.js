@@ -98,6 +98,20 @@ export const addNewSpecies = newSpeciesSlice.actions.addNewSpecies;
 export const clearNewSpecies = newSpeciesSlice.actions.clearNewSpecies;
 const newSpeciesReducer = newSpeciesSlice.reducer;
 
+// 6. collections slice/reducer
+const collectionsSlice = createSlice({
+  name: "collections",
+  initialState: [],
+  reducers: {
+    setCollections: (_, action) => {
+      return action.payload;
+    },
+  },
+});
+
+const setCollections = collectionsSlice.actions.setCollections;
+const collectionsReducer = collectionsSlice.reducer;
+
 // WIRING: create saga middleware
 const sagaMiddleware = createSagaMiddleware();
 
@@ -109,6 +123,7 @@ const store = configureStore({
     species: speciesReducer,
     speciesDetails: speciesDetailsReducer,
     newSpecies: newSpeciesReducer,
+    collections: collectionsReducer,
   },
   middleware: (defaultMiddleware) => defaultMiddleware().concat(sagaMiddleware),
 });
@@ -296,6 +311,24 @@ export const updateSpeciesGeometry = (payload) => {
   return { type: UPDATE_SPECIES_GEOMETRY, payload };
 };
 
+// 3. collections sagas
+//  a. get all species
+const GET_COLLECTIONS = "GET_COLLECTIONS";
+
+function* getCollectionsSaga(action) {
+  try {
+    const res = yield axios.get("/api/collections");
+    const data = yield res.data;
+    yield put(setCollections(data["collections"]));
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const getCollections = (payload) => {
+  return { type: GET_COLLECTIONS, payload };
+};
+
 // WIRING: create watcher saga
 function* watcherSaga() {
   yield takeLatest(GET_USER, getUserSaga);
@@ -307,6 +340,7 @@ function* watcherSaga() {
   yield takeEvery(DELETE_SPECIES, deleteSpeciesSaga);
   yield takeEvery(POST_NEW_SPECIES, postNewSpeciesSaga);
   yield takeEvery(UPDATE_SPECIES_GEOMETRY, updateSpeciesGeometrySaga);
+  yield takeLatest(GET_COLLECTIONS, getCollectionsSaga);
 }
 
 // WIRING: run watcher saga

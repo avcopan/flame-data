@@ -3,7 +3,7 @@ import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 import FormattedFormula from "./FormattedFormula";
 import ViewSpeciesFromSVG from "./ViewSpeciesFromSVG";
 
-export default function SpeciesItem({ species, firstInGroup }) {
+export default function SpeciesItem({ species, firstInGroup = false, className="m-4 w-44" }) {
   return (
     <div>
       {firstInGroup && (
@@ -18,7 +18,7 @@ export default function SpeciesItem({ species, firstInGroup }) {
         <ViewSpeciesFromSVG
           key={species.conn_id}
           svgString={species.svg_string}
-          className="m-6 w-48"
+          className={className}
           hoverText={species.conn_smiles}
         />
       </Link>

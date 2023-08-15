@@ -9,7 +9,7 @@ export default function Header() {
   const user = useSelector((store) => store.user);
 
   return (
-    <nav className="navbar mb-8">
+    <nav className="navbar mb-20">
       <div className="navbar-start gap-6">
         <img className="h-16" src={fireIcon} alt="Fire icon" />
         <div className="text-3xl">FlameData</div>
