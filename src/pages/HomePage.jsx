@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
 import actions from "../state/actions";
 import BinarySelector from "../components/BinarySelector";
 import SpeciesList from "../components/SpeciesList";
