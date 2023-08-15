@@ -90,7 +90,7 @@ def register_user():
 
 # SPECIES ROUTES
 @app.route("/api/conn_species", methods=["GET"])
-def get_connectivity_species():
+def get_species_connectivities():
     """@api {get} /api/conn_species Get all connectivity species
 
     @apiQuery formula {String} A formula to search for, e.g. 'CH4O'
@@ -100,12 +100,12 @@ def get_connectivity_species():
     """
     fml_str = flask.request.args.get("formula")
     is_partial = flask.request.args.get("partial") is not None
-    conn_species = flame_data_api.query.get_connectivity_species(fml_str, is_partial)
+    conn_species = flame_data_api.query.get_species_connectivities(fml_str, is_partial)
     return flame_data_api.response(200, species=conn_species)
 
 
 @app.route("/api/conn_species", methods=["POST"])
-def add_connectivity_species_batch():
+def add_species_connectivities_batch():
     """@api {post} /api/conn_species Add new connectivity species in batch
 
     @apiBody {String[]} smilesList A list of SMILES strings for the species to be added
@@ -115,23 +115,38 @@ def add_connectivity_species_batch():
         return flame_data_api.response(401, error="Unauthorized")
 
     smis = flask.request.json.get("smilesList")
-    new_smis = flame_data_api.query.identify_missing_species_by_smiles(smis)
-    print(
-        "Ignoring these species which are already present:", set(smis) - set(new_smis)
-    )
-    for smi in new_smis:
-        print(f"Attempting to add species {smi}")
-        try:
-            flame_data_api.query.add_species_by_smiles(smi)
-            print("It worked!")
-        except Exception as exc:
-            print("It failed with this exception:", exc)
+    smi_dct = {}
+    for smi in smis:
+        row = flame_data_api.query.get_species_connectivity_by_smiles(smi)
+        if row:
+            smi_dct[smi] = row["conn_id"]
+
+    print("These were already present:", list(smi_dct.keys()))
+
+    for smi in smis:
+        if smi not in smi_dct:
+            print(f"Adding {smi}, which was not already present")
+            try:
+                conn_id = flame_data_api.query.add_species_by_smiles(smi)
+                smi_dct[smi] = conn_id
+                print("It worked!")
+            except Exception as exc:
+                print("It failed :(", exc)
+
+    print(f"\n\n\nAfter:\n{smi_dct}\n\n\n")
+    coll_row = flame_data_api.query.get_user_collection_by_name(user_id, "My Data")
+    print("coll_row:", coll_row)
+    if coll_row:
+        coll_id = coll_row["id"]
+        for smi, conn_id in smi_dct.items():
+            print(f"Adding {smi} to collection {coll_id}")
+            flame_data_api.query.add_species_connectivity_to_collection(coll_id, conn_id)
 
     return flame_data_api.response(201)
 
 
 @app.route("/api/conn_species/<conn_id>", methods=["GET"])
-def get_connectivity_species_details(conn_id):
+def get_species_with_connectivity(conn_id):
     """@api {get} /api/conn_species/:conn_id Get details for one connectivity species
 
     @apiparam {Number} conn_id The ID of the connectivity species
@@ -140,14 +155,12 @@ def get_connectivity_species_details(conn_id):
         `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
         `conn_amchi`, `conn_amchi_hash`
     """
-    conn_species_details = flame_data_api.query.get_connectivity_species_details(
-        conn_id
-    )
+    conn_species_details = flame_data_api.query.get_species_by_connectivity_id(conn_id)
     return flame_data_api.response(200, species=conn_species_details)
 
 
 @app.route("/api/conn_species/<conn_id>", methods=["DELETE"])
-def delete_connectivity_species(conn_id):
+def delete_species_connectivity(conn_id):
     """@api {delete} /api/conn_species/:conn_id Delete one connectivity species
 
     @apiparam {Number} conn_id The ID of the connectivity species
@@ -160,7 +173,7 @@ def delete_connectivity_species(conn_id):
     if user_id is None:
         return flame_data_api.response(401, error="Unauthorized")
 
-    status, error = flame_data_api.query.delete_connectivity_species(conn_id)
+    status, error = flame_data_api.query.delete_species_connectivity(conn_id)
     if status >= 400:
         return flame_data_api.response(status, error=error)
 

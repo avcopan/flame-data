@@ -106,9 +106,49 @@ def add_user_collection(cursor, user_id: int, name: str) -> dict:
     return coll_row
 
 
+@with_pool_cursor
+def get_user_collection_by_name(cursor, user_id: int, name: str) -> dict:
+    """Get a certain user collection by name
+
+    :param user_id: The user's ID
+    :type user_id: int
+    :param name: The collection name
+    :type name: str
+    :return: The collection data; keys: "id", "name", "user_id"
+    :rtype: dict
+    """
+    query_string = """
+        SELECT * FROM collections WHERE (name, user_id) = (%s, %s);
+    """
+    query_params = [name, user_id]
+
+    cursor.execute(query_string, query_params)
+    coll_row = cursor.fetchone()
+    return coll_row
+
+
+@with_pool_cursor
+def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
+    """Add all species of a given connectivity to a certain collection
+
+    :param coll_id: The ID of the collection
+    :type coll_id: int
+    :param conn_id: The connectivity ID of the species
+    :type conn_id: int
+    """
+    species_ids = get_species_ids_by_connectivity_id(conn_id)
+
+    query_string = """
+        INSERT INTO collections_species (coll_id, species_id)
+        VALUES  (%s, %s);
+    """
+    query_params = [[coll_id, id] for id in species_ids]
+    cursor.executemany(query_string, query_params)
+
+
 # SPECIES TABLES
 @with_pool_cursor
-def get_connectivity_species(
+def get_species_connectivities(
     cursor, fml_str: str = None, is_partial: bool = False
 ) -> List[dict]:
     """Get connectivity species grouped by formula
@@ -166,39 +206,32 @@ def get_connectivity_species(
 
 
 @with_pool_cursor
-def identify_missing_species_by_smiles(cursor, smis: List[str]) -> List[str]:
-    """Identify species that are missing from the database, from a list of SMILES
-
-    :param smis: SMILES strings
-    :type smis: List[str]
-    :returns: The missing SMILES strings
-    :rtype: List[str]
-    """
-    hashes = list(map(chem.connectivity_inchi_hash_from_smiles, smis))
-
-    # Look up which of these hashes are already present
-    query_string = """
-        SELECT conn_inchi_hash FROM species_connectivity
-        WHERE conn_inchi_hash = ANY(%s);
-    """
-    query_params = [hashes]
-    cursor.execute(query_string, query_params)
-    query_results = cursor.fetchall()
-    existing_hashes = [row["conn_inchi_hash"] for row in query_results]
-
-    # Return missing species from the SMILES list
-    missing_smis = tuple(
-        s for i, s in enumerate(smis) if hashes[i] not in existing_hashes
-    )
-    return missing_smis
-
-
-@with_pool_cursor
-def add_species_by_smiles(cursor, smi: str):
-    """Add a new species using its SMILES string
+def get_species_connectivity_by_smiles(cursor, smi: str) -> dict:
+    """Add a new species using its SMILES string, returning the connectivity ID
 
     :param smi: SMILES string
     :type smi: str
+    :return: The row of the species connectivity
+    :rtype: dict
+    """
+    query_string = """
+        SELECT * FROM species_connectivity
+        WHERE conn_inchi_hash = %s;
+    """
+    query_params = [chem.connectivity_inchi_hash_from_smiles(smi)]
+    cursor.execute(query_string, query_params)
+    query_result = cursor.fetchone()
+    return query_result
+
+
+@with_pool_cursor
+def add_species_by_smiles(cursor, smi: str) -> int:
+    """Add a new species using its SMILES string, returning the connectivity ID
+
+    :param smi: SMILES string
+    :type smi: str
+    :return: The connectivity ID of the species
+    :rtype: int
     """
     conn_row = chem.species_connectivity_row(smi)
     estate_row = chem.species_estate_row(smi)
@@ -241,10 +274,12 @@ def add_species_by_smiles(cursor, smi: str):
     query_params3 = [{**query_result2, **stereo_row} for stereo_row in detail_rows]
     cursor.executemany(query_string3, query_params3)
 
+    return query_result1["conn_id"]
+
 
 @with_pool_cursor
-def get_connectivity_species_details(cursor, conn_id: int) -> List[dict]:
-    """Get details for one connectivity species
+def get_species_by_connectivity_id(cursor, conn_id: int) -> List[dict]:
+    """Get all species with a certain connectivity ID
 
     :param conn_id: The ID of the connectivity species
     :type conn_id: int
@@ -259,8 +294,22 @@ def get_connectivity_species_details(cursor, conn_id: int) -> List[dict]:
     """
     query_params = [conn_id]
     cursor.execute(query_string, query_params)
-    conn_species_details = cursor.fetchall()
-    return conn_species_details
+    species_rows = cursor.fetchall()
+    return species_rows
+
+
+@with_pool_cursor
+def get_species_ids_by_connectivity_id(cursor, conn_id: int) -> List[int]:
+    """Get all species IDs with a certain connectivity ID
+
+    :param conn_id: The ID of the connectivity species
+    :type conn_id: int
+    :return: The IDs for each species with this connectivity
+    :rtype: List[int]
+    """
+    species_rows = get_species_by_connectivity_id(conn_id)
+    ids = [row["id"] for row in species_rows]
+    return ids
 
 
 @with_pool_cursor
@@ -282,10 +331,10 @@ def get_species(cursor, id: int) -> dict:
 
 
 @with_pool_cursor
-def delete_connectivity_species(cursor, conn_id: int) -> (int, str):
-    """Delete one connectivity species
+def delete_species_connectivity(cursor, conn_id: int) -> (int, str):
+    """Delete one species connectivity
 
-    :param conn_id: The ID of the connectivity species
+    :param conn_id: The ID of the species connectivity
     :type conn_id: int
     :returns: A status code and an error message, if it failed
     :rtype: str
@@ -331,18 +380,3 @@ def update_species_geometry(cursor, id: int, xyz_str: str) -> bool:
     cursor.execute(query_string, query_params)
 
     return 0, ""
-
-
-if __name__ == "__main__":
-    smiles_list = [
-        "C",
-        "[CH3]",
-        "CO[O]",
-        "CC",
-        "C[CH2]",
-        "CCO[O]",
-        "CCCO[O]",
-        "CC(O[O])C",
-    ]
-    # add_species_by_smiles(smiles_list[2])
-    print(identify_missing_species_by_smiles(smiles_list))

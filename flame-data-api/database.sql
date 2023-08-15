@@ -46,7 +46,7 @@ CREATE TABLE species (
     ON DELETE CASCADE
 );
 
-CREATE TABLE species_collections (
+CREATE TABLE collections_species (
   id BIGSERIAL PRIMARY KEY,
   coll_id INT
     REFERENCES collections(id)
