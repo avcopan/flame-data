@@ -22,7 +22,7 @@ export default function FormPage() {
   };
 
   return (
-    <div className="flex flex-row justify-between">
+    <div className="flex flex-row justify-center gap-24">
       <div className="w-fit flex flex-col">
         <h2>Add a new species...</h2>
         <div className="flex flex-row">

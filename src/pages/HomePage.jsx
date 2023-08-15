@@ -82,7 +82,7 @@ export default function HomePage() {
                       {collection.name}
                     </div>
                     <div className="collapse-content h-full flex flex-wrap justify-start overflow-auto">
-                      {collection.species.map((species) => (
+                      {collection.species && collection.species.map((species) => (
                         <SpeciesItem
                           key={species.conn_id}
                           species={species}
