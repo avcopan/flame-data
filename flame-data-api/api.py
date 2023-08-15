@@ -19,6 +19,9 @@ def get_current_user():
         return flame_data_api.response(401, error="Unauthorized")
 
     user = flame_data_api.query.get_user(user_id)
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
     return flame_data_api.response(200, **user)
 
 
@@ -73,12 +76,16 @@ def register_user():
 
     hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
 
-    user = flame_data_api.query.add_user(email, hashed_password)
+    user_row = flame_data_api.query.add_user(email, hashed_password)
+    user_id = user_row["id"]
+
+    coll_row = flame_data_api.query.add_user_collection(user_id, "My Data")
+    print(coll_row)
 
     # Create a new session for the user
-    flask.session["user_id"] = user["id"]
+    flask.session["user_id"] = user_id
 
-    return flame_data_api.response(201, **user)
+    return flame_data_api.response(201, **user_row)
 
 
 # SPECIES ROUTES

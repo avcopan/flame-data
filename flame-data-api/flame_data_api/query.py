@@ -59,6 +59,8 @@ def get_user_by_email(cursor, email: str, return_password: bool = False) -> dict
 def add_user(cursor, email: str, password: str, return_password: bool = False) -> dict:
     """Add a new user, returning the user's data with their assigned ID
 
+    Automatically creates a new collection for the user
+
     :param email: The user's email
     :type email: str
     :param password: The user's password
@@ -75,11 +77,33 @@ def add_user(cursor, email: str, password: str, return_password: bool = False) -
     query_params = [email, password]
 
     cursor.execute(query_string, query_params)
-    user = cursor.fetchone()
-    if user and not return_password:
-        user.pop("password")
+    user_row = cursor.fetchone()
+    if user_row and not return_password:
+        user_row.pop("password")
 
-    return user
+    return user_row
+
+
+@with_pool_cursor
+def add_user_collection(cursor, user_id: int, name: str) -> dict:
+    """Add a new collection for a user with a specific name
+
+    :param user_id: The user's ID
+    :type user_id: int
+    :param name: The collection name
+    :type name: str
+    :return: The collection data; keys: "id", "name", "user_id"
+    :rtype: dict
+    """
+    query_string = """
+        INSERT INTO collections (name, user_id) VALUES (%s, %s)
+        RETURNING *;
+    """
+    query_params = [name, user_id]
+
+    cursor.execute(query_string, query_params)
+    coll_row = cursor.fetchone()
+    return coll_row
 
 
 # SPECIES TABLES
@@ -123,19 +147,21 @@ def get_connectivity_species(
     cursor.execute(query_string, query_params)
     conn_species = cursor.fetchall()
 
-    # Sort the species by formula
-    # 1. Generate sorting information
-    fmls = [automol.formula.from_string(row["formula"]) for row in conn_species]
-    symbs = automol.formula.sorted_symbols_in_sequence(fmls)
-    counts = [automol.formula.heavy_atom_count(f) for f in fmls]
-    srt_vecs = [automol.formula.sort_vector(f, symbs) for f in fmls]
-    # 2. Do the sorting
-    conn_species = [
-        row
-        for _, _, row in sorted(
-            zip(counts, srt_vecs, conn_species), key=lambda x: x[:-1]
-        )
-    ]
+    if conn_species:
+        # Sort the species by formula
+        # 1. Generate sorting information
+        fmls = [automol.formula.from_string(row["formula"]) for row in conn_species]
+        symbs = automol.formula.sorted_symbols_in_sequence(fmls)
+        counts = [automol.formula.heavy_atom_count(f) for f in fmls]
+        srt_vecs = [automol.formula.sort_vector(f, symbs) for f in fmls]
+        # 2. Do the sorting
+        conn_species = [
+            row
+            for _, _, row in sorted(
+                zip(counts, srt_vecs, conn_species), key=lambda x: x[:-1]
+            )
+        ]
+
     return conn_species
 
 
@@ -176,7 +202,7 @@ def add_species_by_smiles(cursor, smi: str):
     """
     conn_row = chem.species_connectivity_row(smi)
     estate_row = chem.species_estate_row(smi)
-    stereo_rows = chem.species_stereo_rows(smi)
+    detail_rows = chem.species_rows(smi)
 
     # INSERT INTO species_connectivity
     query_string1 = """
@@ -205,14 +231,14 @@ def add_species_by_smiles(cursor, smi: str):
     cursor.execute(query_string2, query_params2)
     query_result2 = cursor.fetchone()
 
-    # INSERT INTO species_stereo
+    # INSERT INTO species
     query_string3 = """
-        INSERT INTO species_stereo
+        INSERT INTO species
         (geometry, smiles, inchi, amchi, amchi_key, estate_id)
         VALUES
         (%(geometry)s, %(smiles)s, %(inchi)s, %(amchi)s, %(amchi_key)s, %(estate_id)s)
     """
-    query_params3 = [{**query_result2, **stereo_row} for stereo_row in stereo_rows]
+    query_params3 = [{**query_result2, **stereo_row} for stereo_row in detail_rows]
     cursor.executemany(query_string3, query_params3)
 
 
@@ -228,7 +254,7 @@ def get_connectivity_species_details(cursor, conn_id: int) -> List[dict]:
     query_string = """
         SELECT * FROM species_connectivity
         JOIN species_estate ON species_connectivity.conn_id = species_estate.conn_id
-        JOIN species_stereo ON species_estate.estate_id = species_stereo.estate_id
+        JOIN species ON species_estate.estate_id = species.estate_id
         WHERE species_connectivity.conn_id = %s;
     """
     query_params = [conn_id]
@@ -247,7 +273,7 @@ def get_species(cursor, id: int) -> dict:
     :rtype: dict
     """
     query_string = """
-        SELECT * FROM species_stereo WHERE id = %s;
+        SELECT * FROM species WHERE id = %s;
     """
     query_params = [id]
     cursor.execute(query_string, query_params)
@@ -299,7 +325,7 @@ def update_species_geometry(cursor, id: int, xyz_str: str) -> bool:
     xyz_str = ret
 
     query_string = """
-        UPDATE species_stereo SET geometry = %s WHERE id = %s;
+        UPDATE species SET geometry = %s WHERE id = %s;
     """
     query_params = [xyz_str, id]
     cursor.execute(query_string, query_params)

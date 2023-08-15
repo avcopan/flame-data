@@ -1,11 +1,19 @@
+-- -- Restart command:
+-- DROP TABLE IF EXISTS users, collections, species_connectivity, species_estate, species, species_collections;
+
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   email VARCHAR(345) UNIQUE NOT NULL,
   password VARCHAR(100) NOT NULL
 );
 
--- -- Restart command:
--- DROP TABLE species_connectivity, species_estate, species_stereo;
+CREATE TABLE collections (
+  id SERIAL PRIMARY KEY,
+  name TEXT,
+  user_id INT
+    REFERENCES users(id)
+    ON DELETE CASCADE
+);
 
 CREATE TABLE species_connectivity (
   conn_id BIGSERIAL PRIMARY KEY,
@@ -26,7 +34,7 @@ CREATE TABLE species_estate (
     ON DELETE CASCADE
 );
 
-CREATE TABLE species_stereo (
+CREATE TABLE species (
   id BIGSERIAL PRIMARY KEY,
   geometry TEXT,
   smiles TEXT,
@@ -35,5 +43,15 @@ CREATE TABLE species_stereo (
   amchi_key CHAR(27) UNIQUE,
   estate_id BIGINT
     REFERENCES species_estate(estate_id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE species_collections (
+  id BIGSERIAL PRIMARY KEY,
+  coll_id INT
+    REFERENCES collections(id)
+    ON DELETE CASCADE,
+  species_id BIGINT
+    REFERENCES species(id)
     ON DELETE CASCADE
 );

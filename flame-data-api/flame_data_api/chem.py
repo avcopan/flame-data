@@ -38,7 +38,7 @@ def species_estate_row(smi: str) -> dict:
     return {"spin_mult": automol.inchi.low_spin_multiplicity(ich)}
 
 
-def species_stereo_rows(smi: str) -> List[dict]:
+def species_rows(smi: str) -> List[dict]:
     """Generate rows for species stereo table
 
     :param smi: SMILES string
