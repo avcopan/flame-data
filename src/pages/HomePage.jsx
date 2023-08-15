@@ -25,6 +25,10 @@ export default function HomePage() {
     setSearchFormula("");
   };
 
+  const handleDragDrop = (results) => {
+    console.log("A drag event occurred!");
+  };
+
   return (
     <div className="flex flex-row gap-6 justify-between">
       <div className="w-fit flex flex-col">
@@ -50,33 +54,47 @@ export default function HomePage() {
           />
         </div>
         <div className="flex flex-row justify-between">
-          <SpeciesList speciesList={speciesList}
-           className={user ? "w-3/4" : "w-full"}
-            />
-          {user && (
-            <aside className="sticky top-12 join join-vertical w-1/4 h-screen-most pb-24">
-              {collections.map((collection, index) => (
+          <DragDropContext onDragEnd={handleDragDrop}>
+            <Droppable droppableId="main">
+              {(provided) => (
                 <div
-                  className="collapse join-item border border-primary"
-                  key={collection.id}
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className={user ? "w-3/4" : "w-full"}
                 >
-                  <input
-                    type="radio"
-                    name="my-accordion-2"
-                    defaultChecked={index === 0}
-                  />
-                  <div className="collapse-title text-xl text-primary font-medium">
-                    {collection.name}
-                  </div>
-                  <div className="collapse-content h-full flex flex-wrap justify-start overflow-auto">
-                    {collection.species.map((species) => (
-                      <SpeciesItem species={species} className="m-2 w-32" />
-                    ))}
-                  </div>
+                  <SpeciesList speciesList={speciesList} />
                 </div>
-              ))}
-            </aside>
-          )}
+              )}
+            </Droppable>
+            {user && (
+              <aside className="sticky top-12 join join-vertical w-1/4 h-screen-most pb-24">
+                {collections.map((collection, index) => (
+                  <div
+                    className="collapse join-item border border-primary"
+                    key={collection.id}
+                  >
+                    <input
+                      type="radio"
+                      name="my-accordion-2"
+                      defaultChecked={index === 0}
+                    />
+                    <div className="collapse-title text-xl text-primary font-medium">
+                      {collection.name}
+                    </div>
+                    <div className="collapse-content h-full flex flex-wrap justify-start overflow-auto">
+                      {collection.species.map((species) => (
+                        <SpeciesItem
+                          key={species.conn_id}
+                          species={species}
+                          className="m-2 w-32"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </aside>
+            )}
+          </DragDropContext>
         </div>
       </div>
     </div>
