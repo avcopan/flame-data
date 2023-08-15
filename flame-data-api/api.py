@@ -88,6 +88,26 @@ def register_user():
     return flame_data_api.response(201, **user_row)
 
 
+@app.route("/api/collections", methods=["GET"])
+def get_user_collections():
+    """@api {get} /api/collections Get all collections associated with this user"""
+    user_id = flask.session.get("user_id", None)
+    if user_id is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    user = flame_data_api.query.get_user(user_id)
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    coll_rows = flame_data_api.query.get_user_collections(user_id)
+    for coll_row in coll_rows:
+        coll_id = coll_row["id"]
+        species_rows = flame_data_api.query.get_collection_species(coll_id)
+        if species_rows:
+            coll_row["species"] = species_rows
+    return flame_data_api.response(200, collections=coll_rows)
+
+
 # SPECIES ROUTES
 @app.route("/api/conn_species", methods=["GET"])
 def get_species_connectivities():
@@ -133,14 +153,16 @@ def add_species_connectivities_batch():
             except Exception as exc:
                 print("It failed :(", exc)
 
-    print(f"\n\n\nAfter:\n{smi_dct}\n\n\n")
+    print("IDs:", smi_dct)
     coll_row = flame_data_api.query.get_user_collection_by_name(user_id, "My Data")
     print("coll_row:", coll_row)
     if coll_row:
         coll_id = coll_row["id"]
         for smi, conn_id in smi_dct.items():
             print(f"Adding {smi} to collection {coll_id}")
-            flame_data_api.query.add_species_connectivity_to_collection(coll_id, conn_id)
+            flame_data_api.query.add_species_connectivity_to_collection(
+                coll_id, conn_id
+            )
 
     return flame_data_api.response(201)
 

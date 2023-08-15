@@ -84,68 +84,6 @@ def add_user(cursor, email: str, password: str, return_password: bool = False) -
     return user_row
 
 
-@with_pool_cursor
-def add_user_collection(cursor, user_id: int, name: str) -> dict:
-    """Add a new collection for a user with a specific name
-
-    :param user_id: The user's ID
-    :type user_id: int
-    :param name: The collection name
-    :type name: str
-    :return: The collection data; keys: "id", "name", "user_id"
-    :rtype: dict
-    """
-    query_string = """
-        INSERT INTO collections (name, user_id) VALUES (%s, %s)
-        RETURNING *;
-    """
-    query_params = [name, user_id]
-
-    cursor.execute(query_string, query_params)
-    coll_row = cursor.fetchone()
-    return coll_row
-
-
-@with_pool_cursor
-def get_user_collection_by_name(cursor, user_id: int, name: str) -> dict:
-    """Get a certain user collection by name
-
-    :param user_id: The user's ID
-    :type user_id: int
-    :param name: The collection name
-    :type name: str
-    :return: The collection data; keys: "id", "name", "user_id"
-    :rtype: dict
-    """
-    query_string = """
-        SELECT * FROM collections WHERE (name, user_id) = (%s, %s);
-    """
-    query_params = [name, user_id]
-
-    cursor.execute(query_string, query_params)
-    coll_row = cursor.fetchone()
-    return coll_row
-
-
-@with_pool_cursor
-def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
-    """Add all species of a given connectivity to a certain collection
-
-    :param coll_id: The ID of the collection
-    :type coll_id: int
-    :param conn_id: The connectivity ID of the species
-    :type conn_id: int
-    """
-    species_ids = get_species_ids_by_connectivity_id(conn_id)
-
-    query_string = """
-        INSERT INTO collections_species (coll_id, species_id)
-        VALUES  (%s, %s);
-    """
-    query_params = [[coll_id, id] for id in species_ids]
-    cursor.executemany(query_string, query_params)
-
-
 # SPECIES TABLES
 @with_pool_cursor
 def get_species_connectivities(
@@ -380,3 +318,109 @@ def update_species_geometry(cursor, id: int, xyz_str: str) -> bool:
     cursor.execute(query_string, query_params)
 
     return 0, ""
+
+
+# COLLECTIONS TABLES
+@with_pool_cursor
+def get_user_collections(cursor, user_id: int) -> List[dict]:
+    """Get the collection IDs associated with a user
+
+    :param user_id: The user's ID
+    :type user_id: int
+    :return: The collections rows associated with this user
+    :rtype: List[dict]
+    """
+    query_string = """
+        SELECT * FROM collections WHERE user_id = %s;
+    """
+    query_params = [user_id]
+
+    cursor.execute(query_string, query_params)
+    coll_rows = cursor.fetchall()
+    return coll_rows
+
+
+@with_pool_cursor
+def get_collection_species(cursor, coll_id: int) -> List[dict]:
+    """Get all species in a collection
+
+    :param coll_id: The collection ID
+    :type coll_id: int
+    :return: The rows associated with this species
+    :rtype: List[dict]
+    """
+    query_string = """
+        SELECT species_connectivity.*, ARRAY_AGG(species.id) AS species_ids FROM collections_species
+        JOIN species ON species_id = species.id
+        JOIN species_estate ON species.estate_id = species_estate.estate_id
+        JOIN species_connectivity ON species_estate.conn_id = species_connectivity.conn_id
+        WHERE collections_species.coll_id = %s
+        GROUP BY species_connectivity.conn_id;
+    """
+    query_params = [coll_id]
+
+    cursor.execute(query_string, query_params)
+    species_rows = cursor.fetchall()
+    return species_rows
+
+
+@with_pool_cursor
+def add_user_collection(cursor, user_id: int, name: str) -> dict:
+    """Add a new collection for a user with a specific name
+
+    :param user_id: The user's ID
+    :type user_id: int
+    :param name: The collection name
+    :type name: str
+    :return: The collection data; keys: "id", "name", "user_id"
+    :rtype: dict
+    """
+    query_string = """
+        INSERT INTO collections (name, user_id) VALUES (%s, %s)
+        RETURNING *;
+    """
+    query_params = [name, user_id]
+
+    cursor.execute(query_string, query_params)
+    coll_row = cursor.fetchone()
+    return coll_row
+
+
+@with_pool_cursor
+def get_user_collection_by_name(cursor, user_id: int, name: str) -> dict:
+    """Get a certain user collection by name
+
+    :param user_id: The user's ID
+    :type user_id: int
+    :param name: The collection name
+    :type name: str
+    :return: The collection data; keys: "id", "name", "user_id"
+    :rtype: dict
+    """
+    query_string = """
+        SELECT * FROM collections WHERE (name, user_id) = (%s, %s);
+    """
+    query_params = [name, user_id]
+
+    cursor.execute(query_string, query_params)
+    coll_row = cursor.fetchone()
+    return coll_row
+
+
+@with_pool_cursor
+def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
+    """Add all species of a given connectivity to a certain collection
+
+    :param coll_id: The ID of the collection
+    :type coll_id: int
+    :param conn_id: The connectivity ID of the species
+    :type conn_id: int
+    """
+    species_ids = get_species_ids_by_connectivity_id(conn_id)
+
+    query_string = """
+        INSERT INTO collections_species (coll_id, species_id)
+        VALUES  (%s, %s);
+    """
+    query_params = [[coll_id, id] for id in species_ids]
+    cursor.executemany(query_string, query_params)
