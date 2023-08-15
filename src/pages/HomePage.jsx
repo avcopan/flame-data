@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import actions from "../state/actions";
 import BinarySelector from "../components/BinarySelector";
 import SpeciesList from "../components/SpeciesList";
@@ -8,6 +9,7 @@ import SpeciesItem from "../components/SpeciesItem";
 export default function HomePage() {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.user);
+  const speciesList = useSelector((store) => store.species);
   const collections = useSelector((store) => store.collections);
   const [searchFormula, setSearchFormula] = useState("");
   const [searchPartial, setSearchPartial] = useState(false);
@@ -47,32 +49,36 @@ export default function HomePage() {
             setTopSelected={setSearchPartial}
           />
         </div>
-        <SpeciesList />
+        <div className="flex flex-row justify-between">
+          <SpeciesList speciesList={speciesList}
+           className={user ? "w-3/4" : "w-full"}
+            />
+          {user && (
+            <aside className="sticky top-12 join join-vertical w-1/4 h-screen-most pb-24">
+              {collections.map((collection, index) => (
+                <div
+                  className="collapse join-item border border-primary"
+                  key={collection.id}
+                >
+                  <input
+                    type="radio"
+                    name="my-accordion-2"
+                    defaultChecked={index === 0}
+                  />
+                  <div className="collapse-title text-xl text-primary font-medium">
+                    {collection.name}
+                  </div>
+                  <div className="collapse-content h-full flex flex-wrap justify-start overflow-auto">
+                    {collection.species.map((species) => (
+                      <SpeciesItem species={species} className="m-2 w-32" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </aside>
+          )}
+        </div>
       </div>
-      {user && (
-        <aside className="sticky top-12 join join-vertical w-1/2 h-screen-most pb-24">
-          {collections.map((collection, index) => (
-            <div
-              className="collapse join-item border border-primary"
-              key={collection.id}
-            >
-              <input
-                type="radio"
-                name="my-accordion-2"
-                defaultChecked={index === 0}
-              />
-              <div className="collapse-title text-xl text-primary font-medium">
-                {collection.name}
-              </div>
-              <div className="collapse-content h-full flex flex-wrap justify-start overflow-auto">
-                {collection.species.map((species) => (
-                  <SpeciesItem species={species} className="m-2 w-32" />
-                ))}
-              </div>
-            </div>
-          ))}
-        </aside>
-      )}
     </div>
   );
 }
