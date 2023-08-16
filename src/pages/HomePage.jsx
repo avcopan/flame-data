@@ -10,6 +10,8 @@ export default function HomePage() {
   const user = useSelector((store) => store.user);
   const speciesList = useSelector((store) => store.species);
   const collections = useSelector((store) => store.collections);
+  const [selectedSpecies, setSelectedSpecies] = useState([]);
+  const [selectedCollection, setSelectedCollection] = useState(null);
   const [searchFormula, setSearchFormula] = useState("");
   const [searchPartial, setSearchPartial] = useState(false);
 
@@ -22,6 +24,12 @@ export default function HomePage() {
     const payload = { formula: searchFormula, partial: searchPartial };
     dispatch(actions.getSpecies(payload));
     setSearchFormula("");
+  };
+
+  const addSpeciesToCollection = () => {
+    console.log("Species to add", selectedSpecies);
+    console.log("Collection to add them to", selectedCollection);
+    setSelectedSpecies([]);
   };
 
   return (
@@ -51,8 +59,24 @@ export default function HomePage() {
         <SpeciesList
           speciesList={speciesList}
           className={user ? "w-2/3" : "w-full"}
+          selectedSpecies={selectedSpecies}
+          setSelectedSpecies={setSelectedSpecies}
         />
-        {user && <CollectionsMenu collections={collections} />}
+        {user && (
+          <CollectionsMenu
+            collections={collections}
+            selectedCollection={selectedCollection}
+            setSelectedCollection={setSelectedCollection}
+          />
+        )}
+        {selectedSpecies.length > 0 && (
+          <button
+            onClick={addSpeciesToCollection}
+            className="btn btn-primary m-1 fixed bottom-4 left-4"
+          >
+            Add to Collection
+          </button>
+        )}
       </div>
     </div>
   );
