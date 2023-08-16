@@ -123,6 +123,28 @@ def add_user_collection():
     return flame_data_api.response(201)
 
 
+@app.route("/api/collections/<coll_id>", methods=["POST"])
+def add_species_to_user_collection(coll_id):
+    """@api {post} /api/collections Post a new collection for this user
+
+    @apiParam {Number} coll_id The ID of the collection
+    @apiBody {Number[]} conn_ids The IDs of the species to be added
+    """
+    user = get_user()
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    conn_ids = flask.request.json.get("conn_ids")
+
+    for conn_id in conn_ids:
+        print(f"Adding species {conn_id} to collection {coll_id}")
+        flame_data_api.query.add_species_connectivity_to_collection(
+            coll_id, conn_id
+        )
+
+    return flame_data_api.response(201)
+
+
 # SPECIES ROUTES
 @app.route("/api/conn_species", methods=["GET"])
 def get_species_connectivities():
@@ -169,6 +191,7 @@ def add_species_connectivities_batch():
                 print("It failed :(", exc)
 
     print("IDs:", smi_dct)
+
     coll_row = flame_data_api.query.get_user_collection_by_name(user["id"], "My Data")
     print("coll_row:", coll_row)
     if coll_row:
