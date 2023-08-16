@@ -28,6 +28,14 @@ export default function CollectionsMenu({ collections }) {
           </div>
         </div>
       ))}
+      <div className="flex flex-row justify-center items-center w-full outline outline-primary outline-1 rounded-t-none rounded-b-lg">
+        <button className="grow btn rounded-none rounded-bl-lg">New Collection</button>
+        <input
+          type="text"
+          placeholder="Enter name..."
+          className="grow input rounded-none rounded-br-lg text-white input-bordered w-full max-w-xs"
+        />
+      </div>
     </aside>
   );
 }

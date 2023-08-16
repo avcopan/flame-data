@@ -42,7 +42,7 @@ export default function SpeciesList({ speciesList, className = "" }) {
 
   return (
     <div
-      className={`flex flex-wrap gap-8 justify-start items-end ${className}`}
+      className={`flex flex-wrap gap-8 justify-start items-end pb-24 ${className}`}
     >
       {speciesListWithGroupIndicator.map(([species, firstInGroup], index) => (
         <SpeciesItem
@@ -54,7 +54,7 @@ export default function SpeciesList({ speciesList, className = "" }) {
           checkHandler={checkHandler(species.conn_id)}
         />
       ))}
-      {selected.length &&
+      {selected.length > 0 &&
         (collections.length > 1 ? (
           <div className="dropdown dropdown-top dropdown-hover fixed bottom-4 left-4">
             <label tabIndex={0} className="btn btn-primary m-1">
