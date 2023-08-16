@@ -36,10 +36,11 @@ export default function CollectionsMenu({
             checked={collection.id == selectedCollection}
             onChange={toggleSelection(collection.id)}
           />
-          <div className="collapse-title text-xl text-primary font-medium">
+          <div className="collapse-title flex flex-row justify-between text-xl text-primary font-medium">
             {collection.name}
           </div>
-          <div className="collapse-content mb-2 h-full flex flex-wrap justify-start overflow-auto">
+          <div className="collapse-content flex flex-col gap-4 justify-center items-end">
+            <div className="flex flex-wrap justify-start overflow-auto">
             {collection.species &&
               collection.species.map((species) => (
                 <SpeciesItem
@@ -48,6 +49,8 @@ export default function CollectionsMenu({
                   className="m-2 w-32"
                 />
               ))}
+            </div>
+            <button className="btn btn-sm btn-outline btn-secondary">Download</button>
           </div>
         </div>
       ))}
