@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { DragDropContext } from "react-beautiful-dnd";
 import actions from "../state/actions";
 import BinarySelector from "../components/BinarySelector";
 import SpeciesList from "../components/SpeciesList";
@@ -23,10 +22,6 @@ export default function HomePage() {
     const payload = { formula: searchFormula, partial: searchPartial };
     dispatch(actions.getSpecies(payload));
     setSearchFormula("");
-  };
-
-  const handleDragDrop = (results) => {
-    console.log("A drag event occurred!");
   };
 
   return (
@@ -54,7 +49,6 @@ export default function HomePage() {
           />
         </div>
         <div className="flex flex-row justify-between">
-          <DragDropContext onDragEnd={handleDragDrop}>
             <SpeciesList
               speciesList={speciesList}
               className={user ? "w-2/3" : "w-full"}
@@ -62,7 +56,6 @@ export default function HomePage() {
             {user && (
               <CollectionsMenu collections={collections} />
             )}
-          </DragDropContext>
         </div>
       </div>
     </div>
