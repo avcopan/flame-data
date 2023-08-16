@@ -5,9 +5,17 @@ export default function ViewSpeciesFromSVG({
   descriptors = [],
   className,
   hoverText = "",
+  withCheckbox = false,
+  checked = false,
+  checkHandler = () => {},
 }) {
   return (
-    <ViewFrame className={className}>
+    <ViewFrame
+      className={className}
+      withCheckbox={withCheckbox}
+      checked={checked}
+      checkHandler={checkHandler}
+    >
       {svgString && (
         <>
           <img

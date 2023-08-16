@@ -3,7 +3,14 @@ import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 import FormattedFormula from "./FormattedFormula";
 import ViewSpeciesFromSVG from "./ViewSpeciesFromSVG";
 
-export default function SpeciesItem({ species, firstInGroup = false, className="m-4 w-44" }) {
+export default function SpeciesItem({
+  species,
+  firstInGroup = false,
+  className = "m-4 w-44",
+  withCheckbox = false,
+  checked = false,
+  checkHandler = () => {},
+}) {
   return (
     <div>
       {firstInGroup && (
@@ -20,6 +27,9 @@ export default function SpeciesItem({ species, firstInGroup = false, className="
           svgString={species.svg_string}
           className={className}
           hoverText={species.conn_smiles}
+          withCheckbox={withCheckbox}
+          checked={checked}
+          checkHandler={checkHandler}
         />
       </Link>
     </div>
