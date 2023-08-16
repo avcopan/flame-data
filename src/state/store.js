@@ -258,9 +258,9 @@ function handleErrorForProtectedEndpoint(error) {
   console.error(error);
 }
 
-const POST_SPECIES = "POST_SPECIES";
+const POST_NEW_SPECIES = "POST_NEW_SPECIES";
 
-function* postSpeciesSaga() {
+function* postNewSpeciesSaga() {
   try {
     const smilesList = yield select((store) => store.newSpecies);
     yield put(clearNewSpecies());
@@ -271,8 +271,8 @@ function* postSpeciesSaga() {
   }
 }
 
-export const postSpecies = () => {
-  return { type: POST_SPECIES };
+export const postNewSpecies = () => {
+  return { type: POST_NEW_SPECIES };
 };
 
 //  d. delete one species
@@ -321,7 +321,7 @@ function* getCollectionsSaga() {
     const data = yield res.data;
     yield put(setCollections(data["collections"]));
   } catch (error) {
-    console.error(error);
+    handleErrorForProtectedEndpoint(error);
   }
 }
 
@@ -330,20 +330,20 @@ export const getCollections = () => {
 };
 
 //  b. post a new collection
-const POST_COLLECTION = "POST_COLLECTION";
+const POST_NEW_COLLECTION = "POST_NEW_COLLECTION";
 
-function* postCollectionSaga(action) {
+function* postNewCollectionSaga(action) {
   try {
     console.log("HERE WITH PAYLOAD", action.payload);
     yield axios.post("/api/collections", action.payload);
     yield put(getCollections());
   } catch (error) {
-    console.error(error);
+    handleErrorForProtectedEndpoint(error);
   }
 }
 
-export const postCollection = (payload) => {
-  return { type: POST_COLLECTION, payload };
+export const postNewCollection = (payload) => {
+  return { type: POST_NEW_COLLECTION, payload };
 };
 
 // WIRING: create watcher saga
@@ -355,10 +355,10 @@ function* watcherSaga() {
   yield takeLatest(GET_SPECIES, getSpeciesSaga);
   yield takeEvery(GET_SPECIES_DETAILS, getSpeciesDetailsSaga);
   yield takeEvery(DELETE_SPECIES, deleteSpeciesSaga);
-  yield takeEvery(POST_SPECIES, postSpeciesSaga);
+  yield takeEvery(POST_NEW_SPECIES, postNewSpeciesSaga);
   yield takeEvery(UPDATE_SPECIES_GEOMETRY, updateSpeciesGeometrySaga);
   yield takeLatest(GET_COLLECTIONS, getCollectionsSaga);
-  yield takeEvery(POST_COLLECTION, postCollectionSaga);
+  yield takeEvery(POST_NEW_COLLECTION, postNewCollectionSaga);
 }
 
 // WIRING: run watcher saga

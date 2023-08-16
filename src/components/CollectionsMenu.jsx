@@ -17,9 +17,9 @@ export default function CollectionsMenu({
     };
   };
 
-  const postCollection = () => {
+  const postNewCollection = () => {
     const payload = { name: newCollectionName };
-    dispatch(actions.postCollection(payload));
+    dispatch(actions.postNewCollection(payload));
     setNewCollectionName("");
   };
 
@@ -53,7 +53,7 @@ export default function CollectionsMenu({
       ))}
       <div className="flex flex-row justify-center items-center w-full outline outline-primary outline-1 rounded-t-none rounded-b-lg">
         <button
-          onClick={postCollection}
+          onClick={postNewCollection}
           className="grow btn rounded-none rounded-bl-lg"
         >
           New Collection

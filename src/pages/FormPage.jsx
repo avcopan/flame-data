@@ -16,7 +16,7 @@ export default function FormPage() {
   };
 
   const postNewSpecies = () => {
-    dispatch(actions.postSpecies());
+    dispatch(actions.postNewSpecies());
     setSmiles("");
     navigate("/");
   };
