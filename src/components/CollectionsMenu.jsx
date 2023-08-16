@@ -2,7 +2,7 @@ import SpeciesItem from "../components/SpeciesItem";
 
 export default function CollectionsMenu({ collections }) {
   return (
-    <aside className="sticky top-12 join join-vertical w-1/3 h-screen pb-24">
+    <aside className="sticky top-12 join join-vertical max-w-lg h-screen pb-24">
       {collections.map((collection, index) => (
         <div
           className="collapse join-item border border-primary"

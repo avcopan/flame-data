@@ -25,9 +25,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex flex-row gap-6 justify-between">
-      <div className="w-fit flex flex-col">
-        <div className="flex flex-row mb-8">
+    <div className="flex flex-col gap-6 justify-center items-center">
+      <div className="flex flex-row gap-6 mb-12">
+        <div className="w-96 flex flex-col gap-6">
           <input
             type="text"
             spellCheck={false}
@@ -36,11 +36,6 @@ export default function HomePage() {
             value={searchFormula}
             onChange={(e) => setSearchFormula(e.target.value)}
           />
-          <button className="btn btn-outline" onClick={submitSearch}>
-            Search
-          </button>
-        </div>
-        <div className="flex flex-row items-start mb-8">
           <BinarySelector
             topText="Partial match"
             bottomText="Exact match"
@@ -48,13 +43,16 @@ export default function HomePage() {
             setTopSelected={setSearchPartial}
           />
         </div>
-        <div className="flex flex-row justify-between">
-            <SpeciesList
-              speciesList={speciesList}
-              className={user ? "w-2/3" : "w-full"}
-            />
-            {user && <CollectionsMenu collections={collections} />}
-        </div>
+        <button className="btn btn-outline" onClick={submitSearch}>
+          Search
+        </button>
+      </div>
+      <div className="flex flex-row justify-center gap-12 items-start">
+        <SpeciesList
+          speciesList={speciesList}
+          className={user ? "w-2/3" : "w-full"}
+        />
+        {user && <CollectionsMenu collections={collections} />}
       </div>
     </div>
   );
