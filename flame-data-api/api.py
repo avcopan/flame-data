@@ -14,11 +14,7 @@ def get_current_user():
 
     @apiSuccess {Object} The user's information; keys `id`, `email`, `admin`
     """
-    user_id = flask.session.get("user_id", None)
-    if user_id is None:
-        return flame_data_api.response(401, error="Unauthorized")
-
-    user = flame_data_api.query.get_user(user_id)
+    user = get_user()
     if user is None:
         return flame_data_api.response(401, error="Unauthorized")
 
@@ -91,21 +87,27 @@ def register_user():
 @app.route("/api/collections", methods=["GET"])
 def get_user_collections():
     """@api {get} /api/collections Get all collections associated with this user"""
-    user_id = flask.session.get("user_id", None)
-    if user_id is None:
-        return flame_data_api.response(401, error="Unauthorized")
-
-    user = flame_data_api.query.get_user(user_id)
+    user = get_user()
     if user is None:
         return flame_data_api.response(401, error="Unauthorized")
 
-    coll_rows = flame_data_api.query.get_user_collections(user_id)
+    coll_rows = flame_data_api.query.get_user_collections(user["id"])
     for coll_row in coll_rows:
         coll_id = coll_row["id"]
         species_rows = flame_data_api.query.get_collection_species(coll_id)
         if species_rows:
             coll_row["species"] = species_rows
     return flame_data_api.response(200, collections=coll_rows)
+
+
+@app.route("/api/collections", methods=["POST"])
+def add_user_collection():
+    """@api {post} /api/collections Post a new collection for this user"""
+    user = get_user()
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    return flame_data_api.response(200)
 
 
 # SPECIES ROUTES
@@ -130,8 +132,8 @@ def add_species_connectivities_batch():
 
     @apiBody {String[]} smilesList A list of SMILES strings for the species to be added
     """
-    user_id = flask.session.get("user_id", None)
-    if user_id is None:
+    user = get_user()
+    if user is None:
         return flame_data_api.response(401, error="Unauthorized")
 
     smis = flask.request.json.get("smilesList")
@@ -154,7 +156,7 @@ def add_species_connectivities_batch():
                 print("It failed :(", exc)
 
     print("IDs:", smi_dct)
-    coll_row = flame_data_api.query.get_user_collection_by_name(user_id, "My Data")
+    coll_row = flame_data_api.query.get_user_collection_by_name(user["id"], "My Data")
     print("coll_row:", coll_row)
     if coll_row:
         coll_id = coll_row["id"]
@@ -191,8 +193,7 @@ def delete_species_connectivity(conn_id):
         `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
         `conn_amchi`, `conn_amchi_hash`
     """
-    user_id = flask.session.get("user_id", None)
-    if user_id is None:
+    if get_user() is None:
         return flame_data_api.response(401, error="Unauthorized")
 
     status, error = flame_data_api.query.delete_species_connectivity(conn_id)
@@ -209,8 +210,7 @@ def update_species_geometry(id):
     @apiparam {Number} id The ID of the species
     @apiBody {String} geometry The new geometry for this species
     """
-    user_id = flask.session.get("user_id", None)
-    if user_id is None:
+    if get_user() is None:
         return flame_data_api.response(401, error="Unauthorized")
 
     xyz_str = flask.request.json.get("geometry")
@@ -220,3 +220,15 @@ def update_species_geometry(id):
         return flame_data_api.response(status, error=error)
 
     return flame_data_api.response(204)
+
+
+# Helpers
+def get_user() -> dict:
+    """Get information about the current user"""
+    user = None
+    user_id = flask.session.get("user_id", None)
+
+    if user_id is not None:
+        user = flame_data_api.query.get_user(user_id)
+
+    return user
