@@ -1,14 +1,26 @@
+import { useState } from "react";
+import { useDispatch } from "react-redux";
 import SpeciesItem from "../components/SpeciesItem";
+import actions from "../state/actions";
 
 export default function CollectionsMenu({
   collections,
   selectedCollection,
   setSelectedCollection,
 }) {
+  const dispatch = useDispatch();
+  const [newCollectionName, setNewCollectionName] = useState("");
+
   const toggleSelection = (id) => {
     return () => {
       setSelectedCollection(id);
     };
+  };
+
+  const postCollection = () => {
+    const payload = { name: newCollectionName };
+    dispatch(actions.postCollection(payload));
+    setNewCollectionName("");
   };
 
   return (
@@ -40,12 +52,17 @@ export default function CollectionsMenu({
         </div>
       ))}
       <div className="flex flex-row justify-center items-center w-full outline outline-primary outline-1 rounded-t-none rounded-b-lg">
-        <button className="grow btn rounded-none rounded-bl-lg">
+        <button
+          onClick={postCollection}
+          className="grow btn rounded-none rounded-bl-lg"
+        >
           New Collection
         </button>
         <input
           type="text"
           placeholder="Enter name..."
+          value={newCollectionName}
+          onChange={(event) => setNewCollectionName(event.target.value)}
           className="grow input rounded-none rounded-br-lg text-white input-bordered w-full max-w-xs"
         />
       </div>
