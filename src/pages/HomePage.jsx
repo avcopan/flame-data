@@ -53,9 +53,7 @@ export default function HomePage() {
               speciesList={speciesList}
               className={user ? "w-2/3" : "w-full"}
             />
-            {user && (
-              <CollectionsMenu collections={collections} />
-            )}
+            {user && <CollectionsMenu collections={collections} />}
         </div>
       </div>
     </div>
