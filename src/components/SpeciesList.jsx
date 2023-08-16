@@ -14,20 +14,34 @@ export default function SpeciesList({ speciesList, className = "" }) {
     <Droppable droppableId="main">
       {(provided) => (
         <div
+          className={className}
           {...provided.droppableProps}
           ref={provided.innerRef}
-          className={className}
         >
           <div
             className={`flex flex-wrap gap-8 justify-start items-end ${className}`}
           >
             {speciesListWithInfo.map(([species, firstInGroup], index) => (
-              <SpeciesItem
+              <Draggable
                 key={index}
-                species={species}
-                firstInGroup={firstInGroup}
-              />
+                draggableId={String(species.conn_id)}
+                index={index}
+              >
+                {(provided) => (
+                  <div
+                    {...provided.dragHandleProps}
+                    {...provided.draggableProps}
+                    ref={provided.innerRef}
+                  >
+                    <SpeciesItem
+                      species={species}
+                      firstInGroup={firstInGroup}
+                    />
+                  </div>
+                )}
+              </Draggable>
             ))}
+            {provided.placeholder}
           </div>
         </div>
       )}

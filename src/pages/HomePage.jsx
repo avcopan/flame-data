@@ -4,7 +4,7 @@ import { DragDropContext } from "react-beautiful-dnd";
 import actions from "../state/actions";
 import BinarySelector from "../components/BinarySelector";
 import SpeciesList from "../components/SpeciesList";
-import SpeciesItem from "../components/SpeciesItem";
+import CollectionsMenu from "../components/CollectionsMenu";
 
 export default function HomePage() {
   const dispatch = useDispatch();
@@ -57,36 +57,10 @@ export default function HomePage() {
           <DragDropContext onDragEnd={handleDragDrop}>
             <SpeciesList
               speciesList={speciesList}
-              className={user ? "w-3/4" : "w-full"}
+              className={user ? "w-2/3" : "w-full"}
             />
             {user && (
-              <aside className="sticky top-12 join join-vertical w-1/4 h-screen pb-24">
-                {collections.map((collection, index) => (
-                  <div
-                    className="collapse join-item border border-primary"
-                    key={collection.id}
-                  >
-                    <input
-                      type="radio"
-                      name="my-accordion-2"
-                      defaultChecked={index === 0}
-                    />
-                    <div className="collapse-title text-xl text-primary font-medium">
-                      {collection.name}
-                    </div>
-                    <div className="collapse-content h-full flex flex-wrap justify-start overflow-auto">
-                      {collection.species &&
-                        collection.species.map((species) => (
-                          <SpeciesItem
-                            key={species.conn_id}
-                            species={species}
-                            className="m-2 w-32"
-                          />
-                        ))}
-                    </div>
-                  </div>
-                ))}
-              </aside>
+              <CollectionsMenu collections={collections} />
             )}
           </DragDropContext>
         </div>
