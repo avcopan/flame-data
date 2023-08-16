@@ -67,7 +67,7 @@ export default function HomePage() {
               )}
             </Droppable>
             {user && (
-              <aside className="sticky top-12 join join-vertical w-1/4 h-screen-most pb-24">
+              <aside className="sticky top-12 join join-vertical w-1/4 h-screen pb-24">
                 {collections.map((collection, index) => (
                   <div
                     className="collapse join-item border border-primary"
