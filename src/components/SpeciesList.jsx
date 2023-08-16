@@ -1,19 +1,36 @@
-import { useSelector } from "react-redux";
-import { groupby } from "itertools";
-import SpeciesGroup from "./SpeciesGroup";
+import { Droppable, Draggable } from "react-beautiful-dnd";
+import SpeciesItem from "./SpeciesItem";
 
 export default function SpeciesList({ speciesList, className = "" }) {
-  let speciesGroups = [];
-  for (const [f, g] of groupby(speciesList, (s) => s.formula)) {
-    speciesGroups.push([...g]);
+  let speciesListWithInfo = [];
+  let last_formula = "";
+
+  for (const species of speciesList) {
+    speciesListWithInfo.push([species, species.formula !== last_formula]);
+    last_formula = species.formula;
   }
+
   return (
-    <div
-      className={`flex flex-wrap gap-8 justify-start items-end ${className}`}
-    >
-      {speciesGroups.map((speciesGroup, i) => (
-        <SpeciesGroup key={i} speciesGroup={speciesGroup} />
-      ))}
-    </div>
+    <Droppable droppableId="main">
+      {(provided) => (
+        <div
+          {...provided.droppableProps}
+          ref={provided.innerRef}
+          className={className}
+        >
+          <div
+            className={`flex flex-wrap gap-8 justify-start items-end ${className}`}
+          >
+            {speciesListWithInfo.map(([species, firstInGroup], index) => (
+              <SpeciesItem
+                key={index}
+                species={species}
+                firstInGroup={firstInGroup}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </Droppable>
   );
 }
