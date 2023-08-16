@@ -13,6 +13,7 @@ import {
   updateSpeciesGeometry,
   getCollections,
   postNewCollection,
+  postCollectionSpecies,
 } from "./store";
 
 const actions = {
@@ -30,6 +31,7 @@ const actions = {
   updateSpeciesGeometry,
   getCollections,
   postNewCollection,
+  postCollectionSpecies,
 };
 
 export default actions;

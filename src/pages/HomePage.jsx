@@ -27,8 +27,11 @@ export default function HomePage() {
   };
 
   const addSpeciesToCollection = () => {
-    console.log("Species to add", selectedSpecies);
-    console.log("Collection to add them to", selectedCollection);
+    const payload = {
+      coll_id: selectedCollection,
+      conn_ids: selectedSpecies,
+    };
+    dispatch(actions.postCollectionSpecies(payload));
     setSelectedSpecies([]);
   };
 

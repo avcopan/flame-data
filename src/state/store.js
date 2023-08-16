@@ -334,7 +334,6 @@ const POST_NEW_COLLECTION = "POST_NEW_COLLECTION";
 
 function* postNewCollectionSaga(action) {
   try {
-    console.log("HERE WITH PAYLOAD", action.payload);
     yield axios.post("/api/collections", action.payload);
     yield put(getCollections());
   } catch (error) {
@@ -344,6 +343,23 @@ function* postNewCollectionSaga(action) {
 
 export const postNewCollection = (payload) => {
   return { type: POST_NEW_COLLECTION, payload };
+};
+
+// c. post species to a collection
+const POST_COLLECTION_SPECIES = "POST_COLLECTION_SPECIES";
+
+function* postCollectionSpeciesSaga(action) {
+  try {
+    const coll_id = action.payload.coll_id;
+    yield axios.post(`/api/collections/${coll_id}`, action.payload);
+    yield put(getCollections());
+  } catch (error) {
+    handleErrorForProtectedEndpoint(error);
+  }
+}
+
+export const postCollectionSpecies = (payload) => {
+  return { type: POST_COLLECTION_SPECIES, payload };
 };
 
 // WIRING: create watcher saga
@@ -359,6 +375,7 @@ function* watcherSaga() {
   yield takeEvery(UPDATE_SPECIES_GEOMETRY, updateSpeciesGeometrySaga);
   yield takeLatest(GET_COLLECTIONS, getCollectionsSaga);
   yield takeEvery(POST_NEW_COLLECTION, postNewCollectionSaga);
+  yield takeEvery(POST_COLLECTION_SPECIES, postCollectionSpeciesSaga);
 }
 
 // WIRING: run watcher saga
