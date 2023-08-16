@@ -323,7 +323,7 @@ def update_species_geometry(cursor, id: int, xyz_str: str) -> bool:
 # COLLECTIONS TABLES
 @with_pool_cursor
 def get_user_collections(cursor, user_id: int) -> List[dict]:
-    """Get the collection IDs associated with a user
+    """Get the collections associated with a user
 
     :param user_id: The user's ID
     :type user_id: int

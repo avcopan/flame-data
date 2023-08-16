@@ -72,21 +72,24 @@ def register_user():
 
     hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
 
-    user_row = flame_data_api.query.add_user(email, hashed_password)
-    user_id = user_row["id"]
+    user = flame_data_api.query.add_user(email, hashed_password)
 
-    coll_row = flame_data_api.query.add_user_collection(user_id, "My Data")
-    print(coll_row)
+    # All users get a "My Data" collection to start with
+    flame_data_api.query.add_user_collection(user["id"], "My Data")
 
     # Create a new session for the user
-    flask.session["user_id"] = user_id
+    flask.session["user_id"] = user["id"]
 
-    return flame_data_api.response(201, **user_row)
+    return flame_data_api.response(201, **user)
 
 
+# COLLECTION ROUTES
 @app.route("/api/collections", methods=["GET"])
 def get_user_collections():
-    """@api {get} /api/collections Get all collections associated with this user"""
+    """@api {get} /api/collections Get all collections for this user
+
+    @apiSuccess {Object[]} collections An array of objects with keys `id`, `name`
+    """
     user = get_user()
     if user is None:
         return flame_data_api.response(401, error="Unauthorized")
@@ -102,12 +105,22 @@ def get_user_collections():
 
 @app.route("/api/collections", methods=["POST"])
 def add_user_collection():
-    """@api {post} /api/collections Post a new collection for this user"""
+    """@api {post} /api/collections Post a new collection for this user
+
+    @apiBody {String} name The name of the new collection
+
+    @apiSuccess {Number} id The collection ID
+    @apiSuccess {String} name The collection name
+    """
     user = get_user()
     if user is None:
         return flame_data_api.response(401, error="Unauthorized")
 
-    return flame_data_api.response(200)
+    name = flask.request.json.get("name")
+    print("The new collection name:", name)
+    flame_data_api.query.add_user_collection(user["id"], name)
+
+    return flame_data_api.response(201)
 
 
 # SPECIES ROUTES
