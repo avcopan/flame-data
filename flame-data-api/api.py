@@ -100,7 +100,7 @@ def get_species_connectivities():
 
 
 @app.route("/api/conn_species", methods=["POST"])
-def add_species_connectivities_batch():
+def add_species_connectivities():
     """@api {post} /api/conn_species Add new connectivity species in batch
 
     @apiBody {String[]} smilesList A list of SMILES strings for the species to be added
@@ -109,68 +109,67 @@ def add_species_connectivities_batch():
     if user is None:
         return flame_data_api.response(401, error="Unauthorized")
 
+    # 1. Check for already-existing species
     smis = flask.request.json.get("smilesList")
-    smi_dct = {}
+    id_dct = {}
     for smi in smis:
         row = flame_data_api.query.get_species_connectivity_by_smiles(smi)
         if row:
-            smi_dct[smi] = row["conn_id"]
+            id_dct[smi] = row["id"]
 
-    print("These were already present:", list(smi_dct.keys()))
+    print("These were already present:", list(id_dct.keys()))
+    new_smis = [smi for smi in smis if smi not in id_dct.keys()]
 
-    for smi in smis:
-        if smi not in smi_dct:
-            print(f"Adding {smi}, which was not already present")
-            try:
-                conn_id = flame_data_api.query.add_species_by_smiles(smi)
-                smi_dct[smi] = conn_id
-                print("It worked!")
-            except Exception as exc:
-                print("It failed :(", exc)
+    # 2. Add the remaining species to the database
+    for smi in new_smis:
+        print(f"Adding new connectivity {smi}")
+        try:
+            id = flame_data_api.query.add_species_by_smiles(smi)
+            id_dct[smi] = id
+            print("It worked!")
+        except Exception as exc:
+            print("It failed.", exc)
 
-    print("IDs:", smi_dct)
+    print("IDs:", id_dct)
 
+    # 3. Add these species to the user's "My Data" collection
     coll_row = flame_data_api.query.get_user_collection_by_name(user["id"], "My Data")
     print("coll_row:", coll_row)
     if coll_row:
         coll_id = coll_row["id"]
-        for smi, conn_id in smi_dct.items():
+        for smi in new_smis:
             print(f"Adding {smi} to collection {coll_id}")
             flame_data_api.query.add_species_connectivity_to_collection(
-                coll_id, conn_id
+                coll_id, id_dct[smi]
             )
 
     return flame_data_api.response(201)
 
 
-@app.route("/api/conn_species/<conn_id>", methods=["GET"])
-def get_species_with_connectivity(conn_id):
-    """@api {get} /api/conn_species/:conn_id Get details for one connectivity species
+@app.route("/api/conn_species/<id>", methods=["GET"])
+def get_species_data_for_connectivity(id):
+    """@api {get} /api/conn_species/:id Get details for one connectivity species
 
-    @apiparam {Number} conn_id The ID of the connectivity species
+    @apiparam {Number} id The ID of the connectivity species
     @apiSuccess {Object[]} species An array of objects with keys `id`, `geometry`,
         `smiles`, `inchi`, `amchi`, `amchi_key`, `estate_id`, `spin_mult`, `conn_id`,
         `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
         `conn_amchi`, `conn_amchi_hash`
     """
-    conn_species_details = flame_data_api.query.get_species_by_connectivity_id(conn_id)
+    conn_species_details = flame_data_api.query.get_species_by_connectivity_id(id)
     return flame_data_api.response(200, species=conn_species_details)
 
 
-@app.route("/api/conn_species/<conn_id>", methods=["DELETE"])
-def delete_species_connectivity(conn_id):
-    """@api {delete} /api/conn_species/:conn_id Delete one connectivity species
+@app.route("/api/conn_species/<id>", methods=["DELETE"])
+def delete_species_connectivity(id):
+    """@api {delete} /api/conn_species/:id Delete one connectivity species
 
-    @apiparam {Number} conn_id The ID of the connectivity species
-    @apiSuccess {Object[]} species An array of objects with keys `id`, `geometry`,
-        `smiles`, `inchi`, `amchi`, `amchi_key`, `estate_id`, `spin_mult`, `conn_id`,
-        `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
-        `conn_amchi`, `conn_amchi_hash`
+    @apiparam {Number} id The ID of the connectivity species
     """
     if get_user() is None:
         return flame_data_api.response(401, error="Unauthorized")
 
-    status, error = flame_data_api.query.delete_species_connectivity(conn_id)
+    status, error = flame_data_api.query.delete_species_connectivity(id)
     if status >= 400:
         return flame_data_api.response(status, error=error)
 
@@ -249,7 +248,7 @@ def add_user_collection():
 
 
 @app.route("/api/collections/<coll_id>", methods=["POST"])
-def add_species_to_user_collection(coll_id):
+def add_species_connectivities_to_user_collection(coll_id):
     """@api {post} /api/collections Post a new collection for this user
 
     @apiParam {Number} coll_id The ID of the collection
@@ -263,9 +262,7 @@ def add_species_to_user_collection(coll_id):
 
     for conn_id in conn_ids:
         print(f"Adding species {conn_id} to collection {coll_id}")
-        flame_data_api.query.add_species_connectivity_to_collection(
-            coll_id, conn_id
-        )
+        flame_data_api.query.add_species_connectivity_to_collection(coll_id, conn_id)
 
     return flame_data_api.response(201)
 

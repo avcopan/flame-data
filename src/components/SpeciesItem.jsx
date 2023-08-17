@@ -21,9 +21,9 @@ export default function SpeciesItem({
           </div>
         </>
       )}
-      <Link to={`/details/${species.conn_id}`}>
+      <Link to={`/details/${species.id}`}>
         <ViewSpeciesFromSVG
-          key={species.conn_id}
+          key={species.id}
           svgString={species.svg_string}
           className={className}
           hoverText={species.conn_smiles}

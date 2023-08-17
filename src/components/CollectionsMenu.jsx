@@ -81,10 +81,10 @@ export default function CollectionsMenu({
           <div className="collapse-content flex flex-col gap-4 justify-center items-center">
             <div className="flex flex-wrap justify-start overflow-auto">
               {collection.species &&
-                collection.species.map((species) => (
+                collection.species.map((connectivity) => (
                   <SpeciesItem
-                    key={species.conn_id}
-                    species={species}
+                    key={connectivity.id}
+                    species={connectivity}
                     className="m-2 w-32"
                   />
                 ))}

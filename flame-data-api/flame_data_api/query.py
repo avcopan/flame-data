@@ -184,7 +184,7 @@ def add_species_by_smiles(cursor, smi: str) -> int:
         (%(formula)s, %(svg_string)s, %(conn_smiles)s, %(conn_inchi)s,
         %(conn_inchi_hash)s, %(conn_amchi)s,
         %(conn_amchi_hash)s)
-        RETURNING conn_id;
+        RETURNING id;
     """
     query_params1 = conn_row
     cursor.execute(query_string1, query_params1)
@@ -195,8 +195,8 @@ def add_species_by_smiles(cursor, smi: str) -> int:
         INSERT INTO species_estate
         (spin_mult, conn_id)
         VALUES
-        (%(spin_mult)s, %(conn_id)s)
-        RETURNING estate_id;
+        (%(spin_mult)s, %(id)s)
+        RETURNING id;
     """
     query_params2 = {**query_result1, **estate_row}
     cursor.execute(query_string2, query_params2)
@@ -207,45 +207,49 @@ def add_species_by_smiles(cursor, smi: str) -> int:
         INSERT INTO species
         (geometry, smiles, inchi, amchi, amchi_key, estate_id)
         VALUES
-        (%(geometry)s, %(smiles)s, %(inchi)s, %(amchi)s, %(amchi_key)s, %(estate_id)s)
+        (%(geometry)s, %(smiles)s, %(inchi)s, %(amchi)s, %(amchi_key)s, %(id)s)
     """
     query_params3 = [{**query_result2, **stereo_row} for stereo_row in detail_rows]
     cursor.executemany(query_string3, query_params3)
 
-    return query_result1["conn_id"]
+    return query_result1["id"]
 
 
 @with_pool_cursor
-def get_species_by_connectivity_id(cursor, conn_id: int) -> List[dict]:
+def get_species_by_connectivity_id(cursor, id: int) -> List[dict]:
     """Get all species with a certain connectivity ID
 
-    :param conn_id: The ID of the connectivity species
-    :type conn_id: int
-    :return: Details for each isomer, as a list of dictionaries
+    :param id: The ID of the connectivity species
+    :type id: int
+    :return: Details for each isomer, as a list of dictionaries; keys:
+        id, conn_id, estate_id, formula, svg_string, conn_smiles, conn_inchi,
+        conn_amchi, spin_mult, smiles, inchi, amchi, geometry
     :rtype: List[dict]
     """
     query_string = """
-        SELECT * FROM species_connectivity
-        JOIN species_estate ON species_connectivity.conn_id = species_estate.conn_id
-        JOIN species ON species_estate.estate_id = species.estate_id
-        WHERE species_connectivity.conn_id = %s;
+        SELECT
+            species.id, conn_id, estate_id, formula, svg_string, conn_smiles, conn_inchi,
+            conn_amchi, spin_mult, smiles, inchi, amchi, geometry
+        FROM species_connectivity
+        JOIN species_estate ON species_connectivity.id = species_estate.conn_id
+        JOIN species ON species_estate.id = species.estate_id
+        WHERE species_connectivity.id = %s;
     """
-    query_params = [conn_id]
+    query_params = [id]
     cursor.execute(query_string, query_params)
     species_rows = cursor.fetchall()
     return species_rows
 
 
-@with_pool_cursor
-def get_species_ids_by_connectivity_id(cursor, conn_id: int) -> List[int]:
+def get_species_ids_by_connectivity_id(id: int) -> List[int]:
     """Get all species IDs with a certain connectivity ID
 
-    :param conn_id: The ID of the connectivity species
-    :type conn_id: int
+    :param id: The ID of the connectivity species
+    :type id: int
     :return: The IDs for each species with this connectivity
     :rtype: List[int]
     """
-    species_rows = get_species_by_connectivity_id(conn_id)
+    species_rows = get_species_by_connectivity_id(id)
     ids = [row["id"] for row in species_rows]
     return ids
 
@@ -269,22 +273,22 @@ def get_species(cursor, id: int) -> dict:
 
 
 @with_pool_cursor
-def delete_species_connectivity(cursor, conn_id: int) -> (int, str):
+def delete_species_connectivity(cursor, id: int) -> (int, str):
     """Delete one species connectivity
 
-    :param conn_id: The ID of the species connectivity
-    :type conn_id: int
+    :param id: The ID of the species connectivity
+    :type id: int
     :returns: A status code and an error message, if it failed
     :rtype: str
     """
     query_string = """
-        DELETE FROM species_connectivity WHERE conn_id = %s;
+        DELETE FROM species_connectivity WHERE id = %s;
     """
-    query_params = [conn_id]
+    query_params = [id]
     cursor.execute(query_string, query_params)
 
     if not bool(cursor.rowcount):
-        return 404, f"No resource with ID {conn_id} was found."
+        return 404, f"No resource with ID {id} was found."
 
     return 0, ""
 
@@ -352,10 +356,10 @@ def get_collection_species(cursor, coll_id: int) -> List[dict]:
     query_string = """
         SELECT species_connectivity.*, ARRAY_AGG(species.id) AS species_ids FROM collections_species
         JOIN species ON species_id = species.id
-        JOIN species_estate ON species.estate_id = species_estate.estate_id
-        JOIN species_connectivity ON species_estate.conn_id = species_connectivity.conn_id
+        JOIN species_estate ON species.estate_id = species_estate.id
+        JOIN species_connectivity ON species_estate.conn_id = species_connectivity.id
         WHERE collections_species.coll_id = %s
-        GROUP BY species_connectivity.conn_id;
+        GROUP BY species_connectivity.id;
     """
     query_params = [coll_id]
 
@@ -465,9 +469,8 @@ def get_collection_species_data(cursor, coll_id: int) -> List[dict]:
             amchi, geometry
         FROM collections_species
         JOIN species ON species_id = species.id
-        JOIN species_estate ON species.estate_id = species_estate.estate_id
-        JOIN species_connectivity ON species_estate.conn_id =
-        species_connectivity.conn_id
+        JOIN species_estate ON species.estate_id = species_estate.id
+        JOIN species_connectivity ON species_estate.conn_id = species_connectivity.id
         WHERE collections_species.coll_id = %s;
     """
     query_params = [coll_id]

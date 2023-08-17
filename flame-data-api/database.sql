@@ -1,5 +1,5 @@
 -- -- Restart command:
--- DROP TABLE IF EXISTS users, collections, species_connectivity, species_estate, species, species_collections;
+-- DROP TABLE IF EXISTS users, collections, species_connectivity, species_estate, species, collections_species;
 
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
@@ -16,7 +16,7 @@ CREATE TABLE collections (
 );
 
 CREATE TABLE species_connectivity (
-  conn_id BIGSERIAL PRIMARY KEY, -- Change this to `id`
+  id BIGSERIAL PRIMARY KEY, -- Change this to `id`
   formula TEXT,
   svg_string TEXT,
   conn_smiles TEXT,
@@ -27,10 +27,10 @@ CREATE TABLE species_connectivity (
 );
 
 CREATE TABLE species_estate (
-  estate_id BIGSERIAL PRIMARY KEY, -- Change this to `id`
+  id BIGSERIAL PRIMARY KEY, -- Change this to `id`
   spin_mult SMALLINT,
   conn_id BIGINT
-    REFERENCES species_connectivity(conn_id)
+    REFERENCES species_connectivity(id)
     ON DELETE CASCADE
 );
 
@@ -42,7 +42,7 @@ CREATE TABLE species (
   amchi TEXT,
   amchi_key CHAR(27) UNIQUE,
   estate_id BIGINT
-    REFERENCES species_estate(estate_id)
+    REFERENCES species_estate(id)
     ON DELETE CASCADE
 );
 

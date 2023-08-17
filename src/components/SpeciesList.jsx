@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import SpeciesItem from "./SpeciesItem";
 
 export default function SpeciesList({ speciesList, className = "", selectedSpecies, setSelectedSpecies }) {
@@ -36,8 +34,8 @@ export default function SpeciesList({ speciesList, className = "", selectedSpeci
           firstInGroup={firstInGroup}
           key={index}
           withCheckbox={true}
-          checked={selectedSpecies.includes(species.conn_id)}
-          checkHandler={checkHandler(species.conn_id)}
+          checked={selectedSpecies.includes(species.id)}
+          checkHandler={checkHandler(species.id)}
         />
       ))}
     </div>
