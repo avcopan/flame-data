@@ -23,6 +23,24 @@ export default function CollectionsMenu({
     setNewCollectionName("");
   };
 
+  const downloadCollection = (collection) => {
+    return () => {
+      const data = { a: 1, b: 2, c: 3 };
+      const blob = new Blob([JSON.stringify(data)], { type: "text/json" });
+      const a = document.createElement("a");
+      a.download = `${collection.name.replace(/ /g, "_")}.json`;
+      a.href = window.URL.createObjectURL(blob);
+      const clickEvent = new MouseEvent("click", {
+        view: window,
+        bubbles: true,
+        cancelable: true,
+      });
+      a.dispatchEvent(clickEvent);
+      a.remove();
+      console.log(`Downloading collection ${collection.id}`);
+    };
+  };
+
   return (
     <aside className="sticky top-12 join join-vertical max-w-lg h-screen pb-24">
       {collections.map((collection, index) => (
@@ -41,16 +59,23 @@ export default function CollectionsMenu({
           </div>
           <div className="collapse-content flex flex-col gap-4 justify-center items-end">
             <div className="flex flex-wrap justify-start overflow-auto">
-            {collection.species &&
-              collection.species.map((species) => (
-                <SpeciesItem
-                  key={species.conn_id}
-                  species={species}
-                  className="m-2 w-32"
-                />
-              ))}
+              {collection.species &&
+                collection.species.map((species) => (
+                  <SpeciesItem
+                    key={species.conn_id}
+                    species={species}
+                    className="m-2 w-32"
+                  />
+                ))}
             </div>
-            <button className="btn btn-sm btn-outline btn-secondary">Download</button>
+            {collection.species && collection.species.length > 0 && (
+              <button
+                onClick={downloadCollection(collection)}
+                className="btn btn-sm btn-outline btn-secondary"
+              >
+                Download
+              </button>
+            )}
           </div>
         </div>
       ))}
