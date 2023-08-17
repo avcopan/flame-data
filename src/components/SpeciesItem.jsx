@@ -10,6 +10,7 @@ export default function SpeciesItem({
   withCheckbox = false,
   checked = false,
   checkHandler = () => {},
+  checkboxClassNames = "checkbox-primary checkbox-sm",
 }) {
   return (
     <div>
@@ -30,6 +31,7 @@ export default function SpeciesItem({
           withCheckbox={withCheckbox}
           checked={checked}
           checkHandler={checkHandler}
+          checkboxClassNames={checkboxClassNames}
         />
       </Link>
     </div>

@@ -4,6 +4,7 @@ export default function ViewFrame({
   withCheckbox = false,
   checked = false,
   checkHandler = () => {},
+  checkboxClassNames = "checkbox-primary checkbox-sm",
 }) {
   return (
     <div
@@ -16,7 +17,7 @@ export default function ViewFrame({
           type="checkbox"
           checked={checked}
           onClick={checkHandler}
-          className="checkbox checkbox-primary checkbox-sm relative bottom-0 right-2 self-end"
+          className={`checkbox relative bottom-0 right-2 self-end ${checkboxClassNames}`}
         />
       )}
     </div>

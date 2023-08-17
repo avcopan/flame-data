@@ -1,9 +1,10 @@
 import axios from "axios";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
+import { checkHandler } from "../utils/utils";
+import actions from "../state/actions";
 import SpeciesItem from "./SpeciesItem";
 import DeleteButton from "./DeleteButton";
-import actions from "../state/actions";
 
 /** Download data as a JSON file
  * https://theroadtoenterprise.com/blog/how-to-download-csv-and-json-files-in-react
@@ -28,6 +29,7 @@ export default function CollectionsMenu({
   setSelectedCollection,
 }) {
   const dispatch = useDispatch();
+  const [selectedSpecies, setSelectedSpecies] = useState([]);
   const [newCollectionName, setNewCollectionName] = useState("");
 
   const toggleSelection = (id) => {
@@ -47,6 +49,16 @@ export default function CollectionsMenu({
       const payload = { coll_id: collection.id };
       dispatch(actions.deleteCollection(payload));
     };
+  };
+
+  const removeSpeciesFromCollection = () => {
+    const payload = {
+      coll_id: selectedCollection,
+      conn_ids: selectedSpecies,
+    };
+    console.log("Payload for removal from collection:", payload);
+    // dispatch(actions.postCollectionSpecies(payload));
+    setSelectedSpecies([]);
   };
 
   const downloadCollection = (collection) => {
@@ -86,6 +98,14 @@ export default function CollectionsMenu({
                     key={connectivity.id}
                     species={connectivity}
                     className="m-2 w-32"
+                    withCheckbox={true}
+                    checked={selectedSpecies.includes(connectivity.id)}
+                    checkHandler={checkHandler(
+                      connectivity.id,
+                      selectedSpecies,
+                      setSelectedSpecies
+                    )}
+                    checkboxClassNames="checkbox-warning checkbox-sm"
                   />
                 ))}
             </div>
@@ -96,6 +116,14 @@ export default function CollectionsMenu({
                   className="btn btn-outline btn-secondary"
                 >
                   Download
+                </button>
+              )}
+              {selectedSpecies.length > 0 && (
+                <button
+                  onClick={removeSpeciesFromCollection}
+                  className="btn btn-outline btn-warning"
+                >
+                  Remove
                 </button>
               )}
               <div className="ml-auto">
