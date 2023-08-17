@@ -1,7 +1,8 @@
 import axios from "axios";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import SpeciesItem from "../components/SpeciesItem";
+import SpeciesItem from "./SpeciesItem";
+import DeleteButton from "./DeleteButton";
 import actions from "../state/actions";
 
 /** Download data as a JSON file
@@ -54,9 +55,15 @@ export default function CollectionsMenu({
     };
   };
 
+  const deleteCollection = (collection) => {
+    return () => {
+      console.log("Deleting collection ", collection.id);
+    };
+  };
+
   return (
     <aside className="sticky top-12 join join-vertical max-w-lg h-screen pb-24">
-      {collections.map((collection, index) => (
+      {collections.map((collection) => (
         <div
           className="collapse join-item border border-primary"
           key={collection.id}
@@ -81,14 +88,21 @@ export default function CollectionsMenu({
                   />
                 ))}
             </div>
-            {collection.species && collection.species.length > 0 && (
-              <button
-                onClick={downloadCollection(collection)}
-                className="btn btn-sm btn-outline btn-secondary self-end"
-              >
-                Download
-              </button>
-            )}
+            <div className="w-full flex flex-row gap-4 justify-end">
+              {collection.species && collection.species.length > 0 && (
+                <button
+                  onClick={downloadCollection(collection)}
+                  className="btn btn-outline btn-secondary"
+                >
+                  Download
+                </button>
+              )}
+              <DeleteButton
+                warningMessage={`Are you sure? This will remove the collection '${collection.name}'.`}
+                handleDelete={deleteCollection(collection)}
+                id={collection.id}
+              />
+            </div>
           </div>
         </div>
       ))}

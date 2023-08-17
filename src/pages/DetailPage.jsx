@@ -4,8 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import actions from "../state/actions";
 import SpeciesDetailItem from "../components/SpeciesDetailItem";
 import FormattedFormula from "../components/FormattedFormula";
-import { TrashIcon } from "@heroicons/react/24/outline";
-import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
+import DeleteButton from "../components/DeleteButton";
 
 export default function DetailPage() {
   const { connId } = useParams();
@@ -19,7 +18,7 @@ export default function DetailPage() {
     dispatch(actions.getSpeciesDetails(connId));
   }, []);
 
-  const deleteThisSpecies = () => {
+  const deleteSpecies = () => {
     dispatch(actions.deleteSpecies(connId));
     navigate("/");
   };
@@ -50,30 +49,10 @@ export default function DetailPage() {
         </div>
         {/* Open the modal using ID.showModal() method */}
         {user && (
-          <>
-            <button
-              className="btn btn-error btn-outline btn-square self-end"
-              onClick={() => window.deletion_dialog.showModal()}
-            >
-              <TrashIcon className="p-2" />
-            </button>
-            <dialog id="deletion_dialog" className="modal">
-              <form method="dialog" className="modal-box">
-                <ExclamationCircleIcon className="mb-4 h-8 w-8 text-error" />
-                <h3 className="text-lg">
-                  Are you sure? This will delete all records for species{" "}
-                  {connId}.
-                </h3>
-                <div className="modal-action">
-                  {/* if there is a button in form, it will close the modal */}
-                  <button className="btn">No</button>
-                  <button className="btn btn-error" onClick={deleteThisSpecies}>
-                    Yes
-                  </button>
-                </div>
-              </form>
-            </dialog>
-          </>
+          <DeleteButton
+            warningMessage={`Are you sure? This will delete all records for species ${connId}`}
+            handleDelete={deleteSpecies}
+          />
         )}
       </div>
     )
