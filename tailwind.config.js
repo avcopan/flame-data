@@ -23,7 +23,7 @@ export default {
           "base-content": "#f8f8f2",
           info: "#8be9fd",
           success: "#50fa7b",
-          warning: "#f1fa8c",
+          warning: "#f28c18",
           error: "#ff5555",
         },
       },

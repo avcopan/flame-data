@@ -1,4 +1,5 @@
 import SpeciesItem from "./SpeciesItem";
+import { checkHandler } from "../utils/utils";
 
 export default function SpeciesList({ speciesList, className = "", selectedSpecies, setSelectedSpecies }) {
 
@@ -13,17 +14,6 @@ export default function SpeciesList({ speciesList, className = "", selectedSpeci
     last_formula = species.formula;
   }
 
-  const checkHandler = (connId) => {
-    return (event) => {
-      event.stopPropagation();
-      if (selectedSpecies.includes(connId)) {
-        setSelectedSpecies(selectedSpecies.filter((i) => i !== connId));
-      } else {
-        setSelectedSpecies([...selectedSpecies, connId]);
-      }
-    };
-  };
-
   return (
     <div
       className={`flex flex-wrap gap-8 justify-start items-end pb-24 ${className}`}
@@ -35,7 +25,7 @@ export default function SpeciesList({ speciesList, className = "", selectedSpeci
           key={index}
           withCheckbox={true}
           checked={selectedSpecies.includes(species.id)}
-          checkHandler={checkHandler(species.id)}
+          checkHandler={checkHandler(species.id, selectedSpecies, setSelectedSpecies)}
         />
       ))}
     </div>

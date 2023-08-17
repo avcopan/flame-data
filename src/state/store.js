@@ -317,7 +317,7 @@ const GET_COLLECTIONS = "GET_COLLECTIONS";
 
 function* getCollectionsSaga() {
   try {
-    const res = yield axios.get("/api/collections");
+    const res = yield axios.get("/api/collection");
     const data = yield res.data;
     yield put(setCollections(data.contents));
   } catch (error) {
@@ -334,7 +334,7 @@ const POST_NEW_COLLECTION = "POST_NEW_COLLECTION";
 
 function* postNewCollectionSaga(action) {
   try {
-    yield axios.post("/api/collections", action.payload);
+    yield axios.post("/api/collection", action.payload);
     yield put(getCollections());
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
@@ -351,7 +351,7 @@ const POST_COLLECTION_SPECIES = "POST_COLLECTION_SPECIES";
 function* postCollectionSpeciesSaga(action) {
   try {
     const coll_id = action.payload.coll_id;
-    yield axios.post(`/api/collections/${coll_id}`, action.payload);
+    yield axios.post(`/api/collection/species/${coll_id}`, action.payload);
     yield put(getCollections());
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
@@ -362,13 +362,33 @@ export const postCollectionSpecies = (payload) => {
   return { type: POST_COLLECTION_SPECIES, payload };
 };
 
-//  b. post a new collection
+// d. delet species from a collection
+const DELETE_COLLECTION_SPECIES = "DELETE_COLLECTION_SPECIES";
+
+function* deleteCollectionSpeciesSaga(action) {
+  try {
+    const coll_id = action.payload.coll_id;
+    console.log("deleteCollectionSpecies payload:", action.payload);
+    yield axios.delete(`/api/collection/species/${coll_id}`, {
+      data: action.payload,
+    });
+    yield put(getCollections());
+  } catch (error) {
+    handleErrorForProtectedEndpoint(error);
+  }
+}
+
+export const deleteCollectionSpecies = (payload) => {
+  return { type: DELETE_COLLECTION_SPECIES, payload };
+};
+
+//  e. delete a collection
 const DELETE_COLLECTION = "DELETE_COLLECTION";
 
 function* deleteCollectionSaga(action) {
   try {
     const coll_id = action.payload.coll_id;
-    yield axios.delete(`/api/collections/${coll_id}`);
+    yield axios.delete(`/api/collection/${coll_id}`);
     yield put(getCollections());
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
@@ -393,6 +413,7 @@ function* watcherSaga() {
   yield takeLatest(GET_COLLECTIONS, getCollectionsSaga);
   yield takeEvery(POST_NEW_COLLECTION, postNewCollectionSaga);
   yield takeEvery(POST_COLLECTION_SPECIES, postCollectionSpeciesSaga);
+  yield takeEvery(DELETE_COLLECTION_SPECIES, deleteCollectionSpeciesSaga);
   yield takeEvery(DELETE_COLLECTION, deleteCollectionSaga);
 }
 

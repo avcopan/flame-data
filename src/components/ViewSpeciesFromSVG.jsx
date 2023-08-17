@@ -8,6 +8,7 @@ export default function ViewSpeciesFromSVG({
   withCheckbox = false,
   checked = false,
   checkHandler = () => {},
+  checkboxClassNames = "checkbox-primary checkbox-sm",
 }) {
   return (
     <ViewFrame
@@ -15,6 +16,7 @@ export default function ViewSpeciesFromSVG({
       withCheckbox={withCheckbox}
       checked={checked}
       checkHandler={checkHandler}
+      checkboxClassNames={checkboxClassNames}
     >
       {svgString && (
         <>
