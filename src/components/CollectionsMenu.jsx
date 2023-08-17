@@ -70,7 +70,7 @@ export default function CollectionsMenu({
           <div className="collapse-title flex flex-row justify-between text-xl text-primary font-medium">
             {collection.name}
           </div>
-          <div className="collapse-content flex flex-col gap-4 justify-center items-end">
+          <div className="collapse-content flex flex-col gap-4 justify-center items-center">
             <div className="flex flex-wrap justify-start overflow-auto">
               {collection.species &&
                 collection.species.map((species) => (
@@ -84,7 +84,7 @@ export default function CollectionsMenu({
             {collection.species && collection.species.length > 0 && (
               <button
                 onClick={downloadCollection(collection)}
-                className="btn btn-sm btn-outline btn-secondary"
+                className="btn btn-sm btn-outline btn-secondary self-end"
               >
                 Download
               </button>
