@@ -242,12 +242,12 @@ def add_user_collection():
     return flame_data_api.response(201)
 
 
-@app.route("/api/collections/<coll_id>", methods=["POST"])
-def add_species_connectivities_to_user_collection(coll_id):
+@app.route("/api/collections/<id>", methods=["POST"])
+def add_species_connectivities_to_user_collection(id):
     """@api {post} /api/collections Post a new collection for this user
 
-    @apiParam {Number} coll_id The ID of the collection
-    @apiBody {Number[]} conn_ids The IDs of the species to be added
+    @apiParam {Number} id The ID of the collection
+    @apiBody {Number[]} conn_ids The IDs of the connectivities to be added
     """
     user = get_user()
     if user is None:
@@ -256,17 +256,17 @@ def add_species_connectivities_to_user_collection(coll_id):
     conn_ids = flask.request.json.get("conn_ids")
 
     for conn_id in conn_ids:
-        print(f"Adding species {conn_id} to collection {coll_id}")
-        flame_data_api.query.add_species_connectivity_to_collection(coll_id, conn_id)
+        print(f"Adding connectivity {conn_id} to collection {id}")
+        flame_data_api.query.add_species_connectivity_to_collection(id, conn_id)
 
     return flame_data_api.response(201)
 
 
-@app.route("/api/collections/<coll_id>", methods=["GET"])
-def get_user_collection_data(coll_id):
+@app.route("/api/collections/<id>", methods=["GET"])
+def get_user_collection_data(id):
     """@api {get} /api/collections Get the data from a collection
 
-    @apiParam {Number} coll_id The ID of the collection
+    @apiParam {Number} id The ID of the collection
 
     @apiSuccess {Object} collection The data in the collection
     """
@@ -274,18 +274,18 @@ def get_user_collection_data(coll_id):
     if user is None:
         return flame_data_api.response(401, error="Unauthorized")
 
-    name = flame_data_api.query.get_collection_name(coll_id)
-    species_data = flame_data_api.query.get_collection_species_data(coll_id)
+    name = flame_data_api.query.get_collection_name(id)
+    species_data = flame_data_api.query.get_collection_species_data(id)
 
     coll_data = {"name": name, "species": species_data}
     return flame_data_api.response(200, contents=coll_data)
 
 
-@app.route("/api/collections/<coll_id>", methods=["DELETE"])
-def delete_user_collection(coll_id):
+@app.route("/api/collections/<id>", methods=["DELETE"])
+def delete_user_collection(id):
     """@api {get} /api/collections Get the data from a collection
 
-    @apiParam {Number} coll_id The ID of the collection
+    @apiParam {Number} id The ID of the collection
 
     @apiSuccess {Object} collection The data in the collection
     """
@@ -293,7 +293,7 @@ def delete_user_collection(coll_id):
     if user is None:
         return flame_data_api.response(401, error="Unauthorized")
 
-    status, error = flame_data_api.query.delete_collection(coll_id)
+    status, error = flame_data_api.query.delete_collection(id)
     if status >= 400:
         return flame_data_api.response(status, error=error)
 
