@@ -1,7 +1,25 @@
+import axios from "axios";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import SpeciesItem from "../components/SpeciesItem";
 import actions from "../state/actions";
+
+/** Download data as a JSON file
+ * https://theroadtoenterprise.com/blog/how-to-download-csv-and-json-files-in-react
+ */
+const downloadData = (data, name = "data") => {
+  const blob = new Blob([JSON.stringify(data)], { type: "text/json" });
+  const a = document.createElement("a");
+  a.download = `${name.replace(/ /g, "_")}.json`;
+  a.href = window.URL.createObjectURL(blob);
+  const clickEvent = new MouseEvent("click", {
+    view: window,
+    bubbles: true,
+    cancelable: true,
+  });
+  a.dispatchEvent(clickEvent);
+  a.remove();
+};
 
 export default function CollectionsMenu({
   collections,
@@ -23,6 +41,19 @@ export default function CollectionsMenu({
     setNewCollectionName("");
   };
 
+  const downloadCollection = (collection) => {
+    return async () => {
+      try {
+        const res = await axios.get(`/api/collections/${collection.id}`);
+        const data = await res.data;
+        downloadData(data, collection.name);
+      } catch (error) {
+        alert("Something went wrong with the download...");
+        console.error(error);
+      }
+    };
+  };
+
   return (
     <aside className="sticky top-12 join join-vertical max-w-lg h-screen pb-24">
       {collections.map((collection, index) => (
@@ -36,18 +67,28 @@ export default function CollectionsMenu({
             checked={collection.id == selectedCollection}
             onChange={toggleSelection(collection.id)}
           />
-          <div className="collapse-title text-xl text-primary font-medium">
+          <div className="collapse-title flex flex-row justify-between text-xl text-primary font-medium">
             {collection.name}
           </div>
-          <div className="collapse-content mb-2 h-full flex flex-wrap justify-start overflow-auto">
-            {collection.species &&
-              collection.species.map((species) => (
-                <SpeciesItem
-                  key={species.conn_id}
-                  species={species}
-                  className="m-2 w-32"
-                />
-              ))}
+          <div className="collapse-content flex flex-col gap-4 justify-center items-center">
+            <div className="flex flex-wrap justify-start overflow-auto">
+              {collection.species &&
+                collection.species.map((species) => (
+                  <SpeciesItem
+                    key={species.conn_id}
+                    species={species}
+                    className="m-2 w-32"
+                  />
+                ))}
+            </div>
+            {collection.species && collection.species.length > 0 && (
+              <button
+                onClick={downloadCollection(collection)}
+                className="btn btn-sm btn-outline btn-secondary self-end"
+              >
+                Download
+              </button>
+            )}
           </div>
         </div>
       ))}

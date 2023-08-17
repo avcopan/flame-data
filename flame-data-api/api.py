@@ -83,68 +83,6 @@ def register_user():
     return flame_data_api.response(201, **user)
 
 
-# COLLECTION ROUTES
-@app.route("/api/collections", methods=["GET"])
-def get_user_collections():
-    """@api {get} /api/collections Get all collections for this user
-
-    @apiSuccess {Object[]} collections An array of objects with keys `id`, `name`
-    """
-    user = get_user()
-    if user is None:
-        return flame_data_api.response(401, error="Unauthorized")
-
-    coll_rows = flame_data_api.query.get_user_collections(user["id"])
-    for coll_row in coll_rows:
-        coll_id = coll_row["id"]
-        species_rows = flame_data_api.query.get_collection_species(coll_id)
-        if species_rows:
-            coll_row["species"] = species_rows
-    return flame_data_api.response(200, collections=coll_rows)
-
-
-@app.route("/api/collections", methods=["POST"])
-def add_user_collection():
-    """@api {post} /api/collections Post a new collection for this user
-
-    @apiBody {String} name The name of the new collection
-
-    @apiSuccess {Number} id The collection ID
-    @apiSuccess {String} name The collection name
-    """
-    user = get_user()
-    if user is None:
-        return flame_data_api.response(401, error="Unauthorized")
-
-    name = flask.request.json.get("name")
-    print("The new collection name:", name)
-    flame_data_api.query.add_user_collection(user["id"], name)
-
-    return flame_data_api.response(201)
-
-
-@app.route("/api/collections/<coll_id>", methods=["POST"])
-def add_species_to_user_collection(coll_id):
-    """@api {post} /api/collections Post a new collection for this user
-
-    @apiParam {Number} coll_id The ID of the collection
-    @apiBody {Number[]} conn_ids The IDs of the species to be added
-    """
-    user = get_user()
-    if user is None:
-        return flame_data_api.response(401, error="Unauthorized")
-
-    conn_ids = flask.request.json.get("conn_ids")
-
-    for conn_id in conn_ids:
-        print(f"Adding species {conn_id} to collection {coll_id}")
-        flame_data_api.query.add_species_connectivity_to_collection(
-            coll_id, conn_id
-        )
-
-    return flame_data_api.response(201)
-
-
 # SPECIES ROUTES
 @app.route("/api/conn_species", methods=["GET"])
 def get_species_connectivities():
@@ -268,3 +206,84 @@ def get_user() -> dict:
         user = flame_data_api.query.get_user(user_id)
 
     return user
+
+
+# COLLECTION ROUTES
+@app.route("/api/collections", methods=["GET"])
+def get_user_collections():
+    """@api {get} /api/collections Get all collections for this user
+
+    @apiSuccess {Object[]} collections An array of objects with keys `id`, `name`
+    """
+    user = get_user()
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    coll_rows = flame_data_api.query.get_user_collections(user["id"])
+    for coll_row in coll_rows:
+        coll_id = coll_row["id"]
+        species_rows = flame_data_api.query.get_collection_species(coll_id)
+        if species_rows:
+            coll_row["species"] = species_rows
+    return flame_data_api.response(200, collections=coll_rows)
+
+
+@app.route("/api/collections", methods=["POST"])
+def add_user_collection():
+    """@api {post} /api/collections Post a new collection for this user
+
+    @apiBody {String} name The name of the new collection
+
+    @apiSuccess {Number} id The collection ID
+    @apiSuccess {String} name The collection name
+    """
+    user = get_user()
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    name = flask.request.json.get("name")
+    print("The new collection name:", name)
+    flame_data_api.query.add_user_collection(user["id"], name)
+
+    return flame_data_api.response(201)
+
+
+@app.route("/api/collections/<coll_id>", methods=["POST"])
+def add_species_to_user_collection(coll_id):
+    """@api {post} /api/collections Post a new collection for this user
+
+    @apiParam {Number} coll_id The ID of the collection
+    @apiBody {Number[]} conn_ids The IDs of the species to be added
+    """
+    user = get_user()
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    conn_ids = flask.request.json.get("conn_ids")
+
+    for conn_id in conn_ids:
+        print(f"Adding species {conn_id} to collection {coll_id}")
+        flame_data_api.query.add_species_connectivity_to_collection(
+            coll_id, conn_id
+        )
+
+    return flame_data_api.response(201)
+
+
+@app.route("/api/collections/<coll_id>", methods=["GET"])
+def get_user_collection_data(coll_id):
+    """@api {get} /api/collections Get the data from a collection
+
+    @apiParam {Number} coll_id The ID of the collection
+
+    @apiSuccess {Object} collection The data in the collection
+    """
+    user = get_user()
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    name = flame_data_api.query.get_collection_name(coll_id)
+    species_data = flame_data_api.query.get_collection_species_data(coll_id)
+
+    data = {"name": name, "species": species_data}
+    return flame_data_api.response(200, data=data)

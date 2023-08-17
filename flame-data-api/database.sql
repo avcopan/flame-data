@@ -16,7 +16,7 @@ CREATE TABLE collections (
 );
 
 CREATE TABLE species_connectivity (
-  conn_id BIGSERIAL PRIMARY KEY,
+  conn_id BIGSERIAL PRIMARY KEY, -- Change this to `id`
   formula TEXT,
   svg_string TEXT,
   conn_smiles TEXT,
@@ -27,7 +27,7 @@ CREATE TABLE species_connectivity (
 );
 
 CREATE TABLE species_estate (
-  estate_id BIGSERIAL PRIMARY KEY,
+  estate_id BIGSERIAL PRIMARY KEY, -- Change this to `id`
   spin_mult SMALLINT,
   conn_id BIGINT
     REFERENCES species_connectivity(conn_id)
