@@ -42,6 +42,13 @@ export default function CollectionsMenu({
     setNewCollectionName("");
   };
 
+  const deleteCollection = (collection) => {
+    return () => {
+      const payload = { coll_id: collection.id };
+      dispatch(actions.deleteCollection(payload));
+    };
+  };
+
   const downloadCollection = (collection) => {
     return async () => {
       try {
@@ -52,12 +59,6 @@ export default function CollectionsMenu({
         alert("Something went wrong with the download...");
         console.error(error);
       }
-    };
-  };
-
-  const deleteCollection = (collection) => {
-    return () => {
-      console.log("Deleting collection ", collection.id);
     };
   };
 
@@ -98,7 +99,7 @@ export default function CollectionsMenu({
                 </button>
               )}
               <DeleteButton
-                warningMessage={`Are you sure? This will remove the collection '${collection.name}'.`}
+                warningMessage={`Are you sure? This will remove '${collection.name}' from your collections.`}
                 handleDelete={deleteCollection(collection)}
                 id={collection.id}
               />

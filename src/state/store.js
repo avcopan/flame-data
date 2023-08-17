@@ -362,6 +362,23 @@ export const postCollectionSpecies = (payload) => {
   return { type: POST_COLLECTION_SPECIES, payload };
 };
 
+//  b. post a new collection
+const DELETE_COLLECTION = "DELETE_COLLECTION";
+
+function* deleteCollectionSaga(action) {
+  try {
+    const coll_id = action.payload.coll_id;
+    yield axios.delete(`/api/collections/${coll_id}`);
+    yield put(getCollections());
+  } catch (error) {
+    handleErrorForProtectedEndpoint(error);
+  }
+}
+
+export const deleteCollection = (payload) => {
+  return { type: DELETE_COLLECTION, payload };
+};
+
 // WIRING: create watcher saga
 function* watcherSaga() {
   yield takeLatest(GET_USER, getUserSaga);
@@ -376,6 +393,7 @@ function* watcherSaga() {
   yield takeLatest(GET_COLLECTIONS, getCollectionsSaga);
   yield takeEvery(POST_NEW_COLLECTION, postNewCollectionSaga);
   yield takeEvery(POST_COLLECTION_SPECIES, postCollectionSpeciesSaga);
+  yield takeEvery(DELETE_COLLECTION, deleteCollectionSaga);
 }
 
 // WIRING: run watcher saga

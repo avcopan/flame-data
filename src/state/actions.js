@@ -14,6 +14,7 @@ import {
   getCollections,
   postNewCollection,
   postCollectionSpecies,
+  deleteCollection,
 } from "./store";
 
 const actions = {
@@ -32,6 +33,7 @@ const actions = {
   getCollections,
   postNewCollection,
   postCollectionSpecies,
+  deleteCollection,
 };
 
 export default actions;
