@@ -89,7 +89,7 @@ export default function CollectionsMenu({
                   />
                 ))}
             </div>
-            <div className="w-full flex flex-row justify-between">
+            <div className="w-full flex flex-row justify-start gap-4">
               {collection.species && collection.species.length > 0 && (
                 <button
                   onClick={downloadCollection(collection)}
@@ -98,11 +98,15 @@ export default function CollectionsMenu({
                   Download
                 </button>
               )}
-              <DeleteButton
-                warningMessage={`Are you sure? This will remove '${collection.name}' from your collections.`}
-                handleDelete={deleteCollection(collection)}
-                id={collection.id}
-              />
+              <div className="ml-auto">
+                {collection.name !== "My Data" && (
+                  <DeleteButton
+                    warningMessage={`Are you sure? This will remove '${collection.name}' from your collections.`}
+                    handleDelete={deleteCollection(collection)}
+                    id={collection.id}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
