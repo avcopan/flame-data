@@ -213,7 +213,7 @@ const GET_SPECIES = "GET_SPECIES";
 
 function* getSpeciesSaga(action) {
   try {
-    let requestUrl = "/api/conn_species";
+    let requestUrl = "/api/species/connectivity";
     if (action.payload && action.payload.formula) {
       const formula = action.payload.formula;
       const partial = action.payload.partial ? "partial" : "";
@@ -238,7 +238,7 @@ const GET_SPECIES_DETAILS = "GET_SPECIES_DETAILS";
 function* getSpeciesDetailsSaga(action) {
   try {
     const connId = action.payload;
-    const res = yield axios.get(`/api/conn_species/${connId}`);
+    const res = yield axios.get(`/api/species/connectivity/${connId}`);
     const data = yield res.data;
     yield put(addSpeciesDetails({ [connId]: data.contents }));
   } catch (error) {
@@ -265,7 +265,7 @@ function* postNewSpeciesSaga() {
     const smilesList = yield select((store) => store.newSpecies);
     yield put(clearNewSpecies());
     const requestBody = { smilesList };
-    const res = yield axios.post("/api/conn_species", requestBody);
+    const res = yield axios.post("/api/species/connectivity", requestBody);
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
   }
@@ -281,7 +281,7 @@ const DELETE_SPECIES = "DELETE_SPECIES";
 function* deleteSpeciesSaga(action) {
   try {
     const connId = action.payload;
-    yield axios.delete(`/api/conn_species/${connId}`);
+    yield axios.delete(`/api/species/connectivity/${connId}`);
     yield put(getSpecies());
   } catch (error) {
     handleErrorForProtectedEndpoint(error);

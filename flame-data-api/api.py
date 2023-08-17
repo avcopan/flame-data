@@ -84,9 +84,9 @@ def register_user():
 
 
 # SPECIES ROUTES
-@app.route("/api/conn_species", methods=["GET"])
+@app.route("/api/species/connectivity", methods=["GET"])
 def get_species_connectivities():
-    """@api {get} /api/conn_species Get all connectivity species
+    """@api {get} /api/species/connectivity Get all connectivity species
 
     @apiQuery formula {String} A formula to search for, e.g. 'CH4O'
     @apiQuery partial If present, allows for partial formula matches
@@ -99,9 +99,9 @@ def get_species_connectivities():
     return flame_data_api.response(200, contents=species_conns)
 
 
-@app.route("/api/conn_species", methods=["POST"])
+@app.route("/api/species/connectivity", methods=["POST"])
 def add_species_connectivities():
-    """@api {post} /api/conn_species Add new connectivity species in batch
+    """@api {post} /api/species/connectivity Add new connectivity species in batch
 
     @apiBody {String[]} smilesList A list of SMILES strings for the species to be added
     """
@@ -140,9 +140,9 @@ def add_species_connectivities():
     return flame_data_api.response(201)
 
 
-@app.route("/api/conn_species/<id>", methods=["GET"])
+@app.route("/api/species/connectivity/<id>", methods=["GET"])
 def get_species_data_for_connectivity(id):
-    """@api {get} /api/conn_species/:id Get details for one connectivity species
+    """@api {get} /api/species/connectivity/:id Get details for one connectivity species
 
     @apiparam {Number} id The ID of the connectivity species
     @apiSuccess {Object[]} species An array of objects with keys `id`, `geometry`,
@@ -154,9 +154,9 @@ def get_species_data_for_connectivity(id):
     return flame_data_api.response(200, contents=species_data)
 
 
-@app.route("/api/conn_species/<id>", methods=["DELETE"])
+@app.route("/api/species/connectivity/<id>", methods=["DELETE"])
 def delete_species_connectivity(id):
-    """@api {delete} /api/conn_species/:id Delete one connectivity species
+    """@api {delete} /api/species/connectivity/:id Delete one connectivity species
 
     @apiparam {Number} id The ID of the connectivity species
     """

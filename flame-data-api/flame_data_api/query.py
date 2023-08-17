@@ -123,24 +123,24 @@ def get_species_connectivities(
     query_string += ";"
 
     cursor.execute(query_string, query_params)
-    conn_species = cursor.fetchall()
+    species_conns = cursor.fetchall()
 
-    if conn_species:
+    if species_conns:
         # Sort the species by formula
         # 1. Generate sorting information
-        fmls = [automol.formula.from_string(row["formula"]) for row in conn_species]
+        fmls = [automol.formula.from_string(row["formula"]) for row in species_conns]
         symbs = automol.formula.sorted_symbols_in_sequence(fmls)
         counts = [automol.formula.heavy_atom_count(f) for f in fmls]
         srt_vecs = [automol.formula.sort_vector(f, symbs) for f in fmls]
         # 2. Do the sorting
-        conn_species = [
+        species_conns = [
             row
             for _, _, row in sorted(
-                zip(counts, srt_vecs, conn_species), key=lambda x: x[:-1]
+                zip(counts, srt_vecs, species_conns), key=lambda x: x[:-1]
             )
         ]
 
-    return conn_species
+    return species_conns
 
 
 @with_pool_cursor
