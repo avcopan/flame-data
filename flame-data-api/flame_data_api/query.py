@@ -424,3 +424,58 @@ def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
     """
     query_params = [[coll_id, id] for id in species_ids]
     cursor.executemany(query_string, query_params)
+
+
+@with_pool_cursor
+def get_collection_name(cursor, coll_id: int) -> str:
+    """Get the collections associated with a user
+
+    :param coll_id: The collection ID
+    :type coll_id: int
+
+    :return: The collections rows associated with this user
+    :rtype: List[dict]
+    """
+    query_string = """
+        SELECT name FROM collections WHERE id = %s;
+    """
+    query_params = [coll_id]
+
+    cursor.execute(query_string, query_params)
+    coll_row = cursor.fetchone()
+
+    if not coll_row or "name" not in coll_row:
+        return None
+
+    return coll_row["name"]
+
+
+@with_pool_cursor
+def get_collection_species_data(cursor, coll_id: int) -> List[dict]:
+    """Get data for all species in a collection (no IDs included)
+
+    :param coll_id: The collection ID
+    :type coll_id: int
+    :return: The rows associated with this species
+    :rtype: List[dict]
+    """
+    query_string = """
+        SELECT
+            formula, conn_smiles, conn_inchi, conn_amchi, spin_mult, smiles, inchi,
+            amchi, geometry
+        FROM collections_species
+        JOIN species ON species_id = species.id
+        JOIN species_estate ON species.estate_id = species_estate.estate_id
+        JOIN species_connectivity ON species_estate.conn_id =
+        species_connectivity.conn_id
+        WHERE collections_species.coll_id = %s;
+    """
+    query_params = [coll_id]
+
+    cursor.execute(query_string, query_params)
+    species_rows = cursor.fetchall()
+    return species_rows
+
+
+if __name__ == "__main__":
+    print(get_collection_name(7))
