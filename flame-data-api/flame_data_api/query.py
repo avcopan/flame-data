@@ -424,7 +424,7 @@ def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
 
     query_string = """
         INSERT INTO collections_species (coll_id, species_id)
-        VALUES  (%s, %s);
+        VALUES  (%s, %s) ON CONFLICT (coll_id, species_id) DO NOTHING;
     """
     query_params = [[coll_id, id] for id in species_ids]
     cursor.executemany(query_string, query_params)

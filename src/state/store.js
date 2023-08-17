@@ -136,8 +136,8 @@ const GET_USER = "GET_USER";
 function* getUserSaga() {
   try {
     const res = yield axios.get("/api/@me");
-    const user = yield res.data;
-    yield put(setUser(user));
+    const data = yield res.data;
+    yield put(setUser(data.contents));
   } catch (error) {
     console.error(error);
   }
@@ -222,7 +222,7 @@ function* getSpeciesSaga(action) {
     }
     const res = yield axios.get(requestUrl);
     const data = yield res.data;
-    yield put(setSpecies(data["species"]));
+    yield put(setSpecies(data.contents));
   } catch (error) {
     console.error(error);
   }
@@ -240,7 +240,7 @@ function* getSpeciesDetailsSaga(action) {
     const connId = action.payload;
     const res = yield axios.get(`/api/conn_species/${connId}`);
     const data = yield res.data;
-    yield put(addSpeciesDetails({ [connId]: data.species }));
+    yield put(addSpeciesDetails({ [connId]: data.contents }));
   } catch (error) {
     console.error(error);
   }
@@ -319,7 +319,7 @@ function* getCollectionsSaga() {
   try {
     const res = yield axios.get("/api/collections");
     const data = yield res.data;
-    yield put(setCollections(data["collections"]));
+    yield put(setCollections(data.contents));
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
   }

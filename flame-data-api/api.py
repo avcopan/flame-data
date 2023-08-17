@@ -18,7 +18,7 @@ def get_current_user():
     if user is None:
         return flame_data_api.response(401, error="Unauthorized")
 
-    return flame_data_api.response(200, **user)
+    return flame_data_api.response(200, contents=user)
 
 
 @app.route("/api/login", methods=["POST"])
@@ -43,7 +43,7 @@ def login_user():
     # Create a new session for the user
     flask.session["user_id"] = user["id"]
 
-    return flame_data_api.response(200, **user)
+    return flame_data_api.response(200, contents=user)
 
 
 @app.route("/api/logout", methods=["POST"])
@@ -80,7 +80,7 @@ def register_user():
     # Create a new session for the user
     flask.session["user_id"] = user["id"]
 
-    return flame_data_api.response(201, **user)
+    return flame_data_api.response(201, contents=user)
 
 
 # SPECIES ROUTES
@@ -95,8 +95,8 @@ def get_species_connectivities():
     """
     fml_str = flask.request.args.get("formula")
     is_partial = flask.request.args.get("partial") is not None
-    conn_species = flame_data_api.query.get_species_connectivities(fml_str, is_partial)
-    return flame_data_api.response(200, species=conn_species)
+    species_conns = flame_data_api.query.get_species_connectivities(fml_str, is_partial)
+    return flame_data_api.response(200, contents=species_conns)
 
 
 @app.route("/api/conn_species", methods=["POST"])
@@ -113,22 +113,18 @@ def add_species_connectivities():
     smis = flask.request.json.get("smilesList")
     id_dct = {}
     for smi in smis:
+        print(f"Adding connectivity {smi}")
         row = flame_data_api.query.get_species_connectivity_by_smiles(smi)
         if row:
+            print("This species already exists!")
             id_dct[smi] = row["id"]
-
-    print("These were already present:", list(id_dct.keys()))
-    new_smis = [smi for smi in smis if smi not in id_dct.keys()]
-
-    # 2. Add the remaining species to the database
-    for smi in new_smis:
-        print(f"Adding new connectivity {smi}")
-        try:
-            id = flame_data_api.query.add_species_by_smiles(smi)
-            id_dct[smi] = id
-            print("It worked!")
-        except Exception as exc:
-            print("It failed.", exc)
+        else:
+            try:
+                id = flame_data_api.query.add_species_by_smiles(smi)
+                id_dct[smi] = id
+                print("It worked!")
+            except Exception as exc:
+                print("It failed.", exc)
 
     print("IDs:", id_dct)
 
@@ -137,11 +133,9 @@ def add_species_connectivities():
     print("coll_row:", coll_row)
     if coll_row:
         coll_id = coll_row["id"]
-        for smi in new_smis:
+        for smi, id in id_dct.items():
             print(f"Adding {smi} to collection {coll_id}")
-            flame_data_api.query.add_species_connectivity_to_collection(
-                coll_id, id_dct[smi]
-            )
+            flame_data_api.query.add_species_connectivity_to_collection(coll_id, id)
 
     return flame_data_api.response(201)
 
@@ -156,8 +150,8 @@ def get_species_data_for_connectivity(id):
         `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
         `conn_amchi`, `conn_amchi_hash`
     """
-    conn_species_details = flame_data_api.query.get_species_by_connectivity_id(id)
-    return flame_data_api.response(200, species=conn_species_details)
+    species_data = flame_data_api.query.get_species_by_connectivity_id(id)
+    return flame_data_api.response(200, contents=species_data)
 
 
 @app.route("/api/conn_species/<id>", methods=["DELETE"])
@@ -224,7 +218,8 @@ def get_user_collections():
         species_rows = flame_data_api.query.get_collection_species(coll_id)
         if species_rows:
             coll_row["species"] = species_rows
-    return flame_data_api.response(200, collections=coll_rows)
+
+    return flame_data_api.response(200, contents=coll_rows)
 
 
 @app.route("/api/collections", methods=["POST"])
@@ -282,8 +277,8 @@ def get_user_collection_data(coll_id):
     name = flame_data_api.query.get_collection_name(coll_id)
     species_data = flame_data_api.query.get_collection_species_data(coll_id)
 
-    data = {"name": name, "species": species_data}
-    return flame_data_api.response(200, data=data)
+    coll_data = {"name": name, "species": species_data}
+    return flame_data_api.response(200, contents=coll_data)
 
 
 @app.route("/api/collections/<coll_id>", methods=["DELETE"])

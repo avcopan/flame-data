@@ -47,11 +47,11 @@ CREATE TABLE species (
 );
 
 CREATE TABLE collections_species (
-  id BIGSERIAL PRIMARY KEY,
   coll_id INT
     REFERENCES collections(id)
     ON DELETE CASCADE,
   species_id BIGINT
     REFERENCES species(id)
-    ON DELETE CASCADE
+    ON DELETE CASCADE,
+  PRIMARY KEY(coll_id, species_id)
 );
