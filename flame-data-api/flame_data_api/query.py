@@ -413,7 +413,7 @@ def get_user_collection_by_name(cursor, user_id: int, name: str) -> dict:
 
 @with_pool_cursor
 def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
-    """Add all species of a given connectivity to a certain collection
+    """Add all species of a given connectivity to a collection
 
     :param coll_id: The ID of the collection
     :type coll_id: int
@@ -425,6 +425,25 @@ def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
     query_string = """
         INSERT INTO collections_species (coll_id, species_id)
         VALUES  (%s, %s) ON CONFLICT (coll_id, species_id) DO NOTHING;
+    """
+    query_params = [[coll_id, id] for id in species_ids]
+    cursor.executemany(query_string, query_params)
+
+
+@with_pool_cursor
+def remove_species_connectivity_from_collection(cursor, coll_id: int, conn_id: int):
+    """Remove all species of a given connectivity from a collection
+
+    :param coll_id: The ID of the collection
+    :type coll_id: int
+    :param conn_id: The connectivity ID of the species
+    :type conn_id: int
+    """
+    species_ids = get_species_ids_by_connectivity_id(conn_id)
+
+    query_string = """
+        DELETE FROM collections_species
+        WHERE (coll_id, species_id) = (%s, %s);
     """
     query_params = [[coll_id, id] for id in species_ids]
     cursor.executemany(query_string, query_params)

@@ -202,9 +202,9 @@ def get_user() -> dict:
 
 
 # COLLECTION ROUTES
-@app.route("/api/collections", methods=["GET"])
+@app.route("/api/collection", methods=["GET"])
 def get_user_collections():
-    """@api {get} /api/collections Get all collections for this user
+    """@api {get} /api/collection Get all collections for this user
 
     @apiSuccess {Object[]} collections An array of objects with keys `id`, `name`
     """
@@ -222,9 +222,9 @@ def get_user_collections():
     return flame_data_api.response(200, contents=coll_rows)
 
 
-@app.route("/api/collections", methods=["POST"])
+@app.route("/api/collection", methods=["POST"])
 def add_user_collection():
-    """@api {post} /api/collections Post a new collection for this user
+    """@api {post} /api/collection Post a new collection for this user
 
     @apiBody {String} name The name of the new collection
 
@@ -242,9 +242,9 @@ def add_user_collection():
     return flame_data_api.response(201)
 
 
-@app.route("/api/collections/<id>", methods=["POST"])
+@app.route("/api/collection/species/<id>", methods=["POST"])
 def add_species_connectivities_to_user_collection(id):
-    """@api {post} /api/collections Post a new collection for this user
+    """@api {post} /api/collection/species/:id Add species to a collection
 
     @apiParam {Number} id The ID of the collection
     @apiBody {Number[]} conn_ids The IDs of the connectivities to be added
@@ -262,9 +262,31 @@ def add_species_connectivities_to_user_collection(id):
     return flame_data_api.response(201)
 
 
-@app.route("/api/collections/<id>", methods=["GET"])
+@app.route("/api/collection/species/<id>", methods=["DELETE"])
+def remove_species_connectivities_from_user_collection(id):
+    """@api {delete} /api/collection/species/:id Remove species from a collection
+
+    @apiParam {Number} id The ID of the collection
+    @apiBody {Number[]} conn_ids The IDs of the connectivities to be removed
+    """
+    user = get_user()
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    print("HERE")
+    conn_ids = flask.request.json.get("conn_ids")
+    print(flask.request.json)
+
+    for conn_id in conn_ids:
+        print(f"Adding connectivity {conn_id} to collection {id}")
+        flame_data_api.query.remove_species_connectivity_from_collection(id, conn_id)
+
+    return flame_data_api.response(204)
+
+
+@app.route("/api/collection/<id>", methods=["GET"])
 def get_user_collection_data(id):
-    """@api {get} /api/collections Get the data from a collection
+    """@api {get} /api/collection Get the data from a collection
 
     @apiParam {Number} id The ID of the collection
 
@@ -281,9 +303,9 @@ def get_user_collection_data(id):
     return flame_data_api.response(200, contents=coll_data)
 
 
-@app.route("/api/collections/<id>", methods=["DELETE"])
+@app.route("/api/collection/<id>", methods=["DELETE"])
 def delete_user_collection(id):
-    """@api {get} /api/collections Get the data from a collection
+    """@api {get} /api/collection Get the data from a collection
 
     @apiParam {Number} id The ID of the collection
 

@@ -56,15 +56,14 @@ export default function CollectionsMenu({
       coll_id: selectedCollection,
       conn_ids: selectedSpecies,
     };
-    console.log("Payload for removal from collection:", payload);
-    // dispatch(actions.postCollectionSpecies(payload));
+    dispatch(actions.deleteCollectionSpecies(payload));
     setSelectedSpecies([]);
   };
 
   const downloadCollection = (collection) => {
     return async () => {
       try {
-        const res = await axios.get(`/api/collections/${collection.id}`);
+        const res = await axios.get(`/api/collection/${collection.id}`);
         const data = await res.data;
         downloadData(data, collection.name);
       } catch (error) {
