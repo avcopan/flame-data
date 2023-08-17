@@ -477,5 +477,26 @@ def get_collection_species_data(cursor, coll_id: int) -> List[dict]:
     return species_rows
 
 
+@with_pool_cursor
+def delete_collection(cursor, coll_id: int) -> (int, str):
+    """Delete one species connectivity
+
+    :param coll_id: The ID of the species connectivity
+    :type coll_id: int
+    :returns: A status code and an error message, if it failed
+    :rtype: str
+    """
+    query_string = """
+        DELETE FROM collections WHERE id = %s;
+    """
+    query_params = [coll_id]
+    cursor.execute(query_string, query_params)
+
+    if not bool(cursor.rowcount):
+        return 404, f"No resource with ID {coll_id} was found."
+
+    return 0, ""
+
+
 if __name__ == "__main__":
     print(get_collection_name(7))

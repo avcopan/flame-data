@@ -88,7 +88,7 @@ export default function CollectionsMenu({
                   />
                 ))}
             </div>
-            <div className="w-full flex flex-row gap-4 justify-end">
+            <div className="w-full flex flex-row justify-between">
               {collection.species && collection.species.length > 0 && (
                 <button
                   onClick={downloadCollection(collection)}

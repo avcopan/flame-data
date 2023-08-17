@@ -287,3 +287,22 @@ def get_user_collection_data(coll_id):
 
     data = {"name": name, "species": species_data}
     return flame_data_api.response(200, data=data)
+
+
+@app.route("/api/collections/<coll_id>", methods=["DELETE"])
+def delete_user_collection(coll_id):
+    """@api {get} /api/collections Get the data from a collection
+
+    @apiParam {Number} coll_id The ID of the collection
+
+    @apiSuccess {Object} collection The data in the collection
+    """
+    user = get_user()
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    status, error = flame_data_api.query.delete_collection(coll_id)
+    if status >= 400:
+        return flame_data_api.response(status, error=error)
+
+    return flame_data_api.response(204)
