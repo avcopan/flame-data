@@ -1,7 +1,25 @@
+import axios from "axios";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import SpeciesItem from "../components/SpeciesItem";
 import actions from "../state/actions";
+
+/** Download data as a JSON file
+ * https://theroadtoenterprise.com/blog/how-to-download-csv-and-json-files-in-react
+ */
+const downloadData = (data, name = "data") => {
+  const blob = new Blob([JSON.stringify(data)], { type: "text/json" });
+  const a = document.createElement("a");
+  a.download = `${name.replace(/ /g, "_")}.json`;
+  a.href = window.URL.createObjectURL(blob);
+  const clickEvent = new MouseEvent("click", {
+    view: window,
+    bubbles: true,
+    cancelable: true,
+  });
+  a.dispatchEvent(clickEvent);
+  a.remove();
+};
 
 export default function CollectionsMenu({
   collections,
@@ -24,20 +42,15 @@ export default function CollectionsMenu({
   };
 
   const downloadCollection = (collection) => {
-    return () => {
-      const data = { a: 1, b: 2, c: 3 };
-      const blob = new Blob([JSON.stringify(data)], { type: "text/json" });
-      const a = document.createElement("a");
-      a.download = `${collection.name.replace(/ /g, "_")}.json`;
-      a.href = window.URL.createObjectURL(blob);
-      const clickEvent = new MouseEvent("click", {
-        view: window,
-        bubbles: true,
-        cancelable: true,
-      });
-      a.dispatchEvent(clickEvent);
-      a.remove();
-      console.log(`Downloading collection ${collection.id}`);
+    return async () => {
+      try {
+        const res = await axios.get(`/api/collections/${collection.id}`);
+        const data = await res.data;
+        downloadData(data, collection.name);
+      } catch (error) {
+        alert("Something went wrong with the download...");
+        console.error(error);
+      }
     };
   };
 
