@@ -4,6 +4,7 @@ import actions from "../state/actions";
 import BinarySelector from "../components/BinarySelector";
 import SpeciesList from "../components/SpeciesList";
 import CollectionsMenu from "../components/CollectionsMenu";
+import PopupButton from "../components/PopupButton";
 
 export default function HomePage() {
   const dispatch = useDispatch();
@@ -48,10 +49,10 @@ export default function HomePage() {
             onChange={(e) => setSearchFormula(e.target.value)}
           />
           <BinarySelector
-            topText="Partial match"
-            bottomText="Exact match"
-            topSelected={searchPartial}
-            setTopSelected={setSearchPartial}
+            text1="Partial match"
+            text2="Exact match"
+            selection={searchPartial}
+            setSelection={setSearchPartial}
           />
         </div>
         <button className="btn btn-outline" onClick={submitSearch}>
@@ -72,14 +73,11 @@ export default function HomePage() {
             setSelectedCollection={setSelectedCollection}
           />
         )}
-        {selectedSpecies.length > 0 && (
-          <button
-            onClick={addSpeciesToCollection}
-            className="btn btn-primary m-1 fixed bottom-4 left-4"
-          >
-            Add to Collection
-          </button>
-        )}
+        <PopupButton
+          condition={selectedSpecies.length > 0}
+          text="Add to Collection"
+          onClick={addSpeciesToCollection}
+        />
       </div>
     </div>
   );

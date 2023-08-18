@@ -1,28 +1,39 @@
 export default function BinarySelector({
-  topText,
-  bottomText,
-  topSelected,
-  setTopSelected,
+  text1,
+  text2,
+  selection,
+  setSelection,
+  vertical = true,
+  selectionFor = 1,
+  className = "",
 }) {
+  const getSelection = () => {
+    return selectionFor === 1 ? selection : !selection;
+  };
+
+  className = `${
+    vertical ? "flex flex-col gap-2" : "flex flex-row gap-12"
+  } ${className}`;
+
   return (
-    <div className="flex flex-col gap-2">
+    <div className={className}>
       <div className="flex flex-row gap-4">
         <input
           type="radio"
           className="radio"
-          checked={topSelected}
-          onChange={() => setTopSelected(!topSelected)}
+          checked={getSelection()}
+          onChange={() => setSelection(!selection)}
         />
-        <div className={topSelected ? "" : "text-neutral"}>{topText}</div>
+        <div className={getSelection() ? "" : "text-neutral"}>{text1}</div>
       </div>
       <div className="flex flex-row gap-4">
         <input
           type="radio"
           className="radio"
-          checked={!topSelected}
-          onChange={() => setTopSelected(!topSelected)}
+          checked={!getSelection()}
+          onChange={() => setSelection(!selection)}
         />
-        <div className={topSelected ? "text-neutral" : ""}>{bottomText}</div>
+        <div className={getSelection() ? "text-neutral" : ""}>{text2}</div>
       </div>
     </div>
   );

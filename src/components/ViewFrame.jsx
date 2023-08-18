@@ -1,15 +1,19 @@
 export default function ViewFrame({
-  className,
   children,
   withCheckbox = false,
   checked = false,
   checkHandler = () => {},
+  className = "h-96 aspect-square",
   checkboxClassNames = "checkbox-primary checkbox-sm",
 }) {
+  className = `bg-white flex flex-col justify-center items-center rounded-3xl ${className}`;
+
+  if (!className.includes("aspect")) {
+    className += " aspect-square";
+  }
+
   return (
-    <div
-      className={`bg-white aspect-square flex flex-col justify-center items-center rounded-3xl ${className}`}
-    >
+    <div className={className}>
       {children}
       {withCheckbox && (
         <input
