@@ -5,6 +5,7 @@ import { textToggler } from "../utils/utils";
 import BinarySelector from "../components/BinarySelector";
 import PopupButton from "../components/PopupButton";
 import SmilesEntryForm from "../components/SmilesEntryForm";
+import StatusTable from "../components/StatusTable";
 import SideCart from "../components/SideCart";
 import actions from "../state/actions";
 
@@ -40,7 +41,7 @@ export default function FormPage() {
         className="mb-12"
       />
       <h2 className="mb-12">
-        Use SMILES to describe the {toggleText()} you want to add...
+        Enter the {toggleText()} you want to add below...
       </h2>
       <div className="flex flex-row justify-center gap-24">
         <div className="flex flex-row gap-6">
@@ -52,6 +53,7 @@ export default function FormPage() {
             setSmiles2={setSmiles2}
           />
         </div>
+        <StatusTable />
         <SideCart
           speciesHeader={`New ${toggleText("Reactions", "Species")}`}
           speciesList={newSpecies}
@@ -59,7 +61,11 @@ export default function FormPage() {
           buttonOnClick={postNewSpecies}
         />
       </div>
-      <PopupButton condition={smiles1 && (smiles2 || !reactionMode)} text="Add to Cart" onClick={addToCart} />
+      <PopupButton
+        condition={smiles1 && (smiles2 || !reactionMode)}
+        text="Submit"
+        onClick={addToCart}
+      />
     </div>
   );
 }

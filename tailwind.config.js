@@ -20,6 +20,8 @@ export default {
           accent: "#ffb86c",
           neutral: "#708090",
           "base-100": "#272935",
+          "base-200": "#191e24",
+          "base-300": "#15191e",
           "base-content": "#f8f8f2",
           info: "#8be9fd",
           success: "#50fa7b",
