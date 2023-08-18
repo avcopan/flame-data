@@ -4,6 +4,7 @@ import automol
 
 from flame_data_api import chem
 from flame_data_api.db import with_pool_cursor
+from flame_data_api.utils import row_with_array_literals
 
 
 # USER TABLE
@@ -32,7 +33,7 @@ def get_user(cursor, id: int, return_password: bool = False) -> dict:
 
 
 @with_pool_cursor
-def get_user_by_email(cursor, email: str, return_password: bool = False) -> dict:
+def lookup_user(cursor, email: str, return_password: bool = False) -> dict:
     """Look up a user by email
 
     :param email: The user's email
@@ -86,7 +87,7 @@ def add_user(cursor, email: str, password: str, return_password: bool = False) -
 
 # SPECIES TABLES
 @with_pool_cursor
-def get_species_connectivities(
+def search_species_connectivities(
     cursor, fml_str: str = None, is_partial: bool = False
 ) -> List[dict]:
     """Get connectivity species grouped by formula
@@ -144,22 +145,66 @@ def get_species_connectivities(
 
 
 @with_pool_cursor
-def get_species_connectivity_by_smiles(cursor, smi: str) -> dict:
-    """Add a new species using its SMILES string, returning the connectivity ID
+def lookup_species_connectivity(
+    cursor, key: str, key_type: str = "smiles", id_only: bool = False
+):
+    """Look up a species connectivity using some identifying key
 
-    :param smi: SMILES string
-    :type smi: str
+    :param key: The identifying key by which to look it up
+    :type key: str
+    :parm key_type: The type of the key; options: "smiles", "inchi", "amchi",
+        "inchi_key", "amchi_key", "inchi_hash", "amchi_hash"
+    :param id_only: Look up just the ID?, default False
+    :type id_only: bool, optional
+    :return: The row or ID of the species connectivity
+    :rtype: dict or int
+    """
+    hash, is_amchi = chem.connectivity_inchi_hash(key, key_type=key_type)
+
+    query_string = f"""
+        SELECT * FROM species_connectivity
+        WHERE {'conn_amchi_hash' if is_amchi else 'conn_inchi_hash'} = %s;
+    """
+    query_params = [hash]
+    cursor.execute(query_string, query_params)
+    query_result = cursor.fetchone()
+    return query_result["id"] if query_result and id_only else query_result
+
+
+@with_pool_cursor
+def lookup_species_connectivities(
+    cursor, keys: str, key_type: str = "smiles", id_only: bool = False
+) -> dict:
+    """Look up a species connectivity using some identifying key
+
+    :param keys: The identifying keys by which to look them up
+    :type keys: str
+    :parm key_type: The type of the key; options: "smiles", "inchi", "amchi",
+        "inchi_key", "amchi_key", "inchi_hash", "amchi_hash"
+    :param id_only: Look up just the ID?, default False
+    :type id_only: bool, optional
     :return: The row of the species connectivity
     :rtype: dict
     """
-    query_string = """
+    hashes, (is_amchi, *_) = zip(
+        *(chem.connectivity_inchi_hash(k, key_type) for k in keys)
+    )
+
+    query_string = f"""
         SELECT * FROM species_connectivity
-        WHERE conn_inchi_hash = %s;
+        WHERE {'conn_amchi_hash' if is_amchi else 'conn_inchi_hash'} = %s;
     """
-    query_params = [chem.connectivity_inchi_hash_from_smiles(smi)]
-    cursor.execute(query_string, query_params)
-    query_result = cursor.fetchone()
-    return query_result
+    query_params = [[h] for h in hashes]
+    cursor.executemany(query_string, query_params, returning=True)
+    query_results = []
+    while True:
+        query_result = cursor.fetchone()
+        query_result = query_result["id"] if query_result and id_only else query_result
+        query_results.append(query_result)
+        if not cursor.nextset():
+            break
+
+    return query_results
 
 
 @with_pool_cursor
@@ -213,6 +258,65 @@ def add_species_by_smiles(cursor, smi: str) -> int:
     cursor.executemany(query_string3, query_params3)
 
     return query_result1["id"]
+
+
+@with_pool_cursor
+def add_reaction_by_smiles(cursor, smi: str) -> int:
+    """Add a new reaction using its SMILES string, returning the connectivity ID
+
+    :param smi: SMILES string
+    :type smi: str
+    :return: The connectivity ID of the reaction
+    :rtype: int
+    """
+    conn_row = chem.reaction_connectivity_row(smi)
+    estate_row = chem.reaction_estate_row(smi)
+    rxn_rows, ts_rows = chem.reaction_and_ts_rows(smi)
+
+    # Determine the connectivity IDs of the reactants and products
+    rhashes = conn_row["r_conn_inchi_hashes"]
+    phashes = conn_row["p_conn_inchi_hashes"]
+    r_conn_ids = lookup_species_connectivities(rhashes, "inchi_hash", id_only=True)
+    p_conn_ids = lookup_species_connectivities(phashes, "inchi_hash", id_only=True)
+    print(r_conn_ids)
+    print(p_conn_ids)
+    assert all(
+        r_conn_ids
+    ), "Add all reactants to database before calling this function!"
+    assert all(p_conn_ids), "Add all products to database before calling this function!"
+
+    # Add these connectivity IDs to the connectivity row
+    conn_row["r_conn_ids"] = r_conn_ids
+    conn_row["p_conn_ids"] = p_conn_ids
+
+    # INSERT INTO reaction_connectivity
+    query_string1 = """
+        INSERT INTO reaction_connectivity
+        (
+          formula, svg_string, conn_smiles, r_formulas, r_conn_inchis,
+          r_conn_inchi_hashes, r_conn_inchi, r_conn_inchi_hash, r_conn_amchis,
+          r_conn_amchi_hashes, r_conn_amchi, r_conn_amchi_hash, r_conn_ids, p_formulas,
+          p_conn_inchis, p_conn_inchi_hashes, p_conn_inchi, p_conn_inchi_hash,
+          p_conn_amchis, p_conn_amchi_hashes, p_conn_amchi, p_conn_amchi_hash,
+          p_conn_ids
+        )
+        VALUES
+        (
+          %(formula)s, %(svg_string)s, %(conn_smiles)s, %(r_formulas)s,
+          %(r_conn_inchis)s, %(r_conn_inchi_hashes)s, %(r_conn_inchi)s,
+          %(r_conn_inchi_hash)s, %(r_conn_amchis)s, %(r_conn_amchi_hashes)s,
+          %(r_conn_amchi)s, %(r_conn_amchi_hash)s, %(r_conn_ids)s, %(p_formulas)s,
+          %(p_conn_inchis)s, %(p_conn_inchi_hashes)s, %(p_conn_inchi)s,
+          %(p_conn_inchi_hash)s, %(p_conn_amchis)s, %(p_conn_amchi_hashes)s,
+          %(p_conn_amchi)s, %(p_conn_amchi_hash)s, %(p_conn_ids)s
+        )
+        RETURNING id;
+    """
+    query_params1 = row_with_array_literals(conn_row)
+    for key, value in query_params1.items():
+        print(f"{key}: {value}")
+    cursor.execute(query_string1, query_params1)
+    query_result1 = cursor.fetchone()
 
 
 @with_pool_cursor
@@ -521,4 +625,4 @@ def delete_collection(cursor, coll_id: int) -> (int, str):
 
 
 if __name__ == "__main__":
-    print(get_collection_name(7))
+    add_reaction_by_smiles("CCC.[O][O]>>CC[CH2].O[O]")

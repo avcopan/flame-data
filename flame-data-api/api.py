@@ -32,7 +32,7 @@ def login_user():
     email = flask.request.json.get("email")
     password = flask.request.json.get("password")
 
-    user = flame_data_api.query.get_user_by_email(email, return_password=True)
+    user = flame_data_api.query.lookup_user(email, return_password=True)
     # If the user doesn't exist or password doesn't match, return a 401
     if user is None or not bcrypt.check_password_hash(user["password"], password):
         return flame_data_api.response(401, error="Unauthorized")
@@ -65,7 +65,7 @@ def register_user():
     email = flask.request.json.get("email")
     password = flask.request.json.get("password")
 
-    if flame_data_api.query.get_user_by_email(email) is not None:
+    if flame_data_api.query.lookup_user(email) is not None:
         return flame_data_api.response(
             409, error="A user with this email already exists"
         )
@@ -83,7 +83,7 @@ def register_user():
     return flame_data_api.response(201, contents=user)
 
 
-# SPECIES ROUTES
+# SPECIES/REACTION ROUTES
 @app.route("/api/species/connectivity", methods=["GET"])
 def get_species_connectivities():
     """@api {get} /api/species/connectivity Get all connectivity species
@@ -95,11 +95,86 @@ def get_species_connectivities():
     """
     fml_str = flask.request.args.get("formula")
     is_partial = flask.request.args.get("partial") is not None
-    species_conns = flame_data_api.query.get_species_connectivities(fml_str, is_partial)
+    species_conns = flame_data_api.query.search_species_connectivities(fml_str, is_partial)
     return flame_data_api.response(200, contents=species_conns)
 
 
 @app.route("/api/species/connectivity", methods=["POST"])
+def add_species_connectivity():
+    """@api {post} /api/species/connectivity Add a new species connectivity
+
+    @apiBody {String[]} smiles A SMILES string for the species to be added
+    """
+    user = get_user()
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    # 1. Check for already-existing species
+    smi = flask.request.json.get("smiles")
+    print(f"Adding connectivity {smi}")
+    row = flame_data_api.query.lookup_species_connectivity(smi)
+    if row:
+        id = row["id"]
+        print("This species already exists!")
+    else:
+        try:
+            id = flame_data_api.query.add_species_by_smiles(smi)
+            print("It worked!")
+        except Exception as exc:
+            error = f"Adding {smi} to database failed with this exception:\n{exc}"
+            return flame_data_api.response(201, error=error)
+
+    print("The ID for this connectivity is", id)
+
+    # 3. Add these species to the user's "My Data" collection
+    coll_row = flame_data_api.query.get_user_collection_by_name(user["id"], "My Data")
+    if coll_row:
+        coll_id = coll_row["id"]
+        print(f"Adding the species to collection {coll_id}")
+        flame_data_api.query.add_species_connectivity_to_collection(coll_id, id)
+
+    return flame_data_api.response(201)
+
+
+@app.route("/api/reaction/connectivity", methods=["POST"])
+def add_reaction_connectivity():
+    """@api {post} /api/reaction/connectivity Add a new reaction connectivity
+
+    @apiBody {String[]} smiles A SMILES string for the reaction to be added, using
+        the standard reaction SMILES format, e.g. 'CC.[OH]>>C[CH2].O'
+    """
+    user = get_user()
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    # 1. Check for already-existing reaction
+    smi = flask.request.json.get("smiles")
+    print(f"Adding connectivity {smi}")
+    row = flame_data_api.query.get_reaction_connectivity_by_smiles(smi)
+    if row:
+        id = row["id"]
+        print("This reaction already exists!")
+    else:
+        try:
+            id = flame_data_api.query.add_reaction_by_smiles(smi)
+            print("It worked!")
+        except Exception as exc:
+            error = f"Adding {smi} to database failed with this exception:\n{exc}"
+            return flame_data_api.response(201, error=error)
+
+    print("The ID for this connectivity is", id)
+
+    # 3. Add these reaction to the user's "My Data" collection
+    coll_row = flame_data_api.query.get_user_collection_by_name(user["id"], "My Data")
+    if coll_row:
+        coll_id = coll_row["id"]
+        print(f"Adding the reaction to collection {coll_id}")
+        flame_data_api.query.add_reaction_connectivity_to_collection(coll_id, id)
+
+    return flame_data_api.response(201)
+
+
+@app.route("/api/species/connectivity/batch", methods=["POST"])
 def add_species_connectivities():
     """@api {post} /api/species/connectivity Add new connectivity species in batch
 
@@ -114,7 +189,7 @@ def add_species_connectivities():
     id_dct = {}
     for smi in smis:
         print(f"Adding connectivity {smi}")
-        row = flame_data_api.query.get_species_connectivity_by_smiles(smi)
+        row = flame_data_api.query.lookup_species_connectivity(smi)
         if row:
             print("This species already exists!")
             id_dct[smi] = row["id"]
