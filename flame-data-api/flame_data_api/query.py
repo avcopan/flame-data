@@ -529,7 +529,6 @@ def _add_reaction_by_smiles_connectivity(cursor, smi: str) -> int:
         for ts_row in ts_rows
     ]
     cursor.executemany(query_string4, query_params4, returning=True)
-    query_results4 = results_from_executemany(cursor)
 
     # INSERT INTO reaction_reactants
     r_species_ids_lst = [
@@ -567,7 +566,9 @@ def _add_reaction_by_smiles_connectivity(cursor, smi: str) -> int:
 
 
 @with_pool_cursor
-def get_species_by_connectivity(cursor, id: int, id_only: bool=False) -> Union[List[dict], List[int]]:
+def get_species_by_connectivity(
+    cursor, id: int, id_only: bool = False
+) -> Union[List[dict], List[int]]:
     """Get all species with a certain connectivity ID
 
     :param id: The ID of the connectivity species
@@ -577,7 +578,7 @@ def get_species_by_connectivity(cursor, id: int, id_only: bool=False) -> Union[L
     :return: Details for each isomer, as a list of dictionaries; keys:
         id, conn_id, estate_id, formula, svg_string, conn_smiles, conn_inchi,
         conn_amchi, spin_mult, smiles, inchi, amchi, geometry
-    :rtype: List[dict]
+    :rtype: Union[List[dict], List[int]]
     """
     query_string = """
         SELECT
@@ -597,17 +598,71 @@ def get_species_by_connectivity(cursor, id: int, id_only: bool=False) -> Union[L
     return query_results
 
 
-def get_species_ids_by_connectivity_id(id: int) -> List[int]:
-    """Get all species IDs with a certain connectivity ID
+@with_pool_cursor
+def get_reactions_by_connectivity(
+    cursor, id: int, id_only: bool = False
+) -> Union[List[dict], List[int]]:
+    """Get all reactions with a certain connectivity ID
 
-    :param id: The ID of the connectivity species
+    :param id: The ID of the connectivity reaction
     :type id: int
-    :return: The IDs for each species with this connectivity
-    :rtype: List[int]
+    :param id_only: Look up just the ID?, default False
+    :type id_only: bool, optional
+    :return: Details for each isomer, as a list of dictionaries; keys:
+        id, conn_id, estate_id, formula, svg_string, conn_smiles, conn_inchi,
+        conn_amchi, spin_mult, smiles, inchi, amchi, geometry
+    :rtype: List[dict]
     """
-    species_rows = get_species_by_connectivity(id)
-    ids = [row["id"] for row in species_rows]
-    return ids
+    query_string = """
+        SELECT
+            reaction.id,
+            formula,
+            conn_smiles,
+            r_formulas,
+            r_svg_strings,
+            r_conn_inchis,
+            r_conn_inchi_hashes,
+            r_conn_inchi,
+            r_conn_inchi_hash,
+            r_conn_amchis,
+            r_conn_amchi_hashes,
+            r_conn_amchi,
+            r_conn_amchi_hash,
+            r_conn_ids,
+            p_formulas,
+            p_svg_strings,
+            p_conn_inchis,
+            p_conn_inchi_hashes,
+            p_conn_inchi,
+            p_conn_inchi_hash,
+            p_conn_amchis,
+            p_conn_amchi_hashes,
+            p_conn_amchi,
+            p_conn_amchi_hash,
+            p_conn_ids,
+            smiles,
+            r_inchis,
+            r_amchis,
+            r_amchi_keys,
+            r_amchi,
+            r_amchi_key,
+            p_inchis,
+            p_amchis,
+            p_amchi_keys,
+            p_amchi,
+            p_amchi_key,
+            conn_id
+        FROM reaction_connectivity
+        JOIN reaction ON reaction.conn_id = reaction_connectivity.id
+        WHERE reaction_connectivity.id = %s;
+    """
+    query_params = [id]
+    cursor.execute(query_string, query_params)
+    query_results = cursor.fetchall()
+    if id_only:
+        query_results = [r["id"] for r in query_results]
+
+    return query_results
 
 
 @with_pool_cursor
@@ -790,23 +845,23 @@ def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
     cursor.executemany(query_string, query_params)
 
 
-# @with_pool_cursor
-# def add_reaction_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
-#     """Add all reaction of a given connectivity to a collection
+@with_pool_cursor
+def add_reaction_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
+    """Add all reaction of a given connectivity to a collection
 
-#     :param coll_id: The ID of the collection
-#     :type coll_id: int
-#     :param conn_id: The connectivity ID of the reaction
-#     :type conn_id: int
-#     """
-#     reaction_ids = get_reaction_ids_by_connectivity_id(conn_id)
+    :param coll_id: The ID of the collection
+    :type coll_id: int
+    :param conn_id: The connectivity ID of the reaction
+    :type conn_id: int
+    """
+    reaction_ids = get_reactions_by_connectivity(conn_id, id_only=True)
 
-#     query_string = """
-#         INSERT INTO collections_reactions (coll_id, reaction_id)
-#         VALUES  (%s, %s) ON CONFLICT (coll_id, reaction_id) DO NOTHING;
-#     """
-#     query_params = [[coll_id, id] for id in reaction_ids]
-#     cursor.executemany(query_string, query_params)
+    query_string = """
+        INSERT INTO collections_reactions (coll_id, reaction_id)
+        VALUES  (%s, %s) ON CONFLICT (coll_id, reaction_id) DO NOTHING;
+    """
+    query_params = [[coll_id, id] for id in reaction_ids]
+    cursor.executemany(query_string, query_params)
 
 
 @with_pool_cursor
@@ -917,4 +972,5 @@ if __name__ == "__main__":
     # print(lookup_species(["CCC", "[O][O]"], id_only=True))
     # add_reaction_by_smiles_connectivity("CCCC.[O][O]>>CCC[CH2].O[O]")
     # print(lookup_reaction_connectivity("CCCC.[O][O]>>CCC[CH2].O[O]", id_only=True))
-    print(add_reaction_by_smiles_connectivity("N.[OH]>>[NH2].O"))
+    # print(add_reaction_by_smiles_connectivity("N.[OH]>>[NH2].O"))
+    print(get_reactions_by_connectivity(1, id_only=True))
