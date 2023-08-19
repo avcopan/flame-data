@@ -1,7 +1,9 @@
 import itertools
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import automol
+
+from flame_data_api.utils import is_nonstring_sequence
 
 
 # PREPARE DATA FOR DATABASE
@@ -263,10 +265,12 @@ def species_amchi_key(key: str, key_type: str = "smiles") -> str:
     return key
 
 
-def connectivity_chi_hash(key: str, key_type: str = "smiles") -> Tuple[str, bool]:
-    """Get an ChI connectivity hash from an identifier
+def species_connectivity_chi_hash(
+    key: str, key_type: str = "smiles"
+) -> Tuple[str, bool]:
+    """Get a species connectivity ChI hash from an identifier
 
-    :param key: The identifying key by which to look it up
+    :param key: The identifying key
     :parm key_type: The type of the key; options: "smiles", "inchi", "amchi",
         "inchi_key", "amchi_key", "inchi_hash", "amchi_hash"
     :return: The hash, and a flag indicating whether or not it is an AMChI hash
@@ -306,5 +310,41 @@ def connectivity_chi_hash(key: str, key_type: str = "smiles") -> Tuple[str, bool
     return key, is_amchi
 
 
+def reaction_connectivity_chi_hashes(
+    key: Union[str, Tuple[str, str]], key_type: str = "smiles"
+) -> Tuple[Tuple[str, str], bool]:
+    """Get a reaction connectivity ChI hash from an identifier
+
+    :param key: The identifying key; If not a SMILES reaction string, this must be a
+        pair of string identifiers, one for reactants and one for products
+    :type key: Union[str, Tuple[str, str]]
+    :parm key_type: The type of the key; options: "smiles", "inchi", "amchi",
+        "inchi_key", "amchi_key", "inchi_hash", "amchi_hash"
+    :type key_type: str
+    :return: A pair of reactant and product hashes, and a flag indicating whether or not
+        it is an AMChI hash
+    :rtype: Tuple[Tuple[str, str], bool]
+    """
+    key_type = key_type.lower()
+
+    print('key', key)
+    if isinstance(key, str) and key_type == "smiles":
+        key = automol.smiles.reaction_reagents(key)
+
+    assert is_nonstring_sequence(key) and len(key) == 2, (
+        f"Key of type {key_type} requires a pair of strings identifying\n"
+        f"reactants and products, but received {key}."
+    )
+
+    rkey, pkey = key
+    print('rkey', rkey)
+    print('pkey', pkey)
+    rhash, is_amchi = species_connectivity_chi_hash(rkey, key_type=key_type)
+    phash, is_amchi = species_connectivity_chi_hash(pkey, key_type=key_type)
+    return (rhash, phash), is_amchi
+
+
 if __name__ == "__main__":
-    print(reaction_and_ts_rows("CCOC(O[O])C>>C[CH]OC(OO)C"))
+    # print(reaction_and_ts_rows("CCOC(O[O])C>>C[CH]OC(OO)C"))
+    # print(reaction_connectivity_chi_hashes("CCOC(O[O])C>>C[CH]OC(OO)C"))
+    print(reaction_connectivity_chi_hashes("N.[OH]>>[NH2].O"))

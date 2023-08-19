@@ -158,3 +158,13 @@ CREATE TABLE collections_species (
     ON DELETE CASCADE,
   PRIMARY KEY(coll_id, species_id)
 );
+
+CREATE TABLE collections_reactions (
+  coll_id INT
+    REFERENCES collections(id)
+    ON DELETE CASCADE,
+  reaction_id BIGINT
+    REFERENCES reaction(id)
+    ON DELETE CASCADE,
+  PRIMARY KEY(coll_id, reaction_id)
+);

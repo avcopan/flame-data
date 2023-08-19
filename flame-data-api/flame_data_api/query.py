@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple, Union
 
 import automol
 
@@ -144,10 +144,9 @@ def search_species_connectivities(
     return species_conns
 
 
-@with_pool_cursor
 def lookup_species_connectivity(
-    cursor, key: str, key_type: str = "smiles", id_only: bool = False
-):
+    key: str, key_type: str = "smiles", id_only: bool = False
+) -> Union[dict, int]:
     """Look up a species connectivity using some identifying key
 
     :param key: The identifying key by which to look it up
@@ -156,38 +155,30 @@ def lookup_species_connectivity(
         "inchi_key", "amchi_key", "inchi_hash", "amchi_hash"
     :param id_only: Look up just the ID?, default False
     :type id_only: bool, optional
-    :return: The row or ID of the species connectivity
-    :rtype: dict or int
+    :return: The row or ID
+    :rtype: Union[dict, int]
     """
-    hash, is_amchi = chem.connectivity_chi_hash(key, key_type=key_type)
-
-    query_string = f"""
-        SELECT * FROM species_connectivity
-        WHERE {'conn_amchi_hash' if is_amchi else 'conn_inchi_hash'} = %s;
-    """
-    query_params = [hash]
-    cursor.execute(query_string, query_params)
-    query_result = cursor.fetchone()
-    return query_result["id"] if query_result and id_only else query_result
+    (ret,) = lookup_species_connectivities((key,), key_type=key_type, id_only=id_only)
+    return ret
 
 
 @with_pool_cursor
 def lookup_species_connectivities(
-    cursor, keys: str, key_type: str = "smiles", id_only: bool = False
-) -> dict:
+    cursor, keys: List[str], key_type: str = "smiles", id_only: bool = False
+) -> Union[List[dict], List[int]]:
     """Look up a species connectivity using some identifying key
 
     :param keys: The identifying keys by which to look them up
-    :type keys: str
+    :type keys: List[str]
     :parm key_type: The type of the key; options: "smiles", "inchi", "amchi",
         "inchi_key", "amchi_key", "inchi_hash", "amchi_hash"
     :param id_only: Look up just the ID?, default False
     :type id_only: bool, optional
     :return: The row of the species connectivity
-    :rtype: dict
+    :rtype: Union[List[dict], List[int]]
     """
     hashes, (is_amchi, *_) = zip(
-        *(chem.connectivity_chi_hash(k, key_type) for k in keys)
+        *(chem.species_connectivity_chi_hash(k, key_type) for k in keys)
     )
 
     query_string = f"""
@@ -195,6 +186,60 @@ def lookup_species_connectivities(
         WHERE {'conn_amchi_hash' if is_amchi else 'conn_inchi_hash'} = %s;
     """
     query_params = [[h] for h in hashes]
+    cursor.executemany(query_string, query_params, returning=True)
+    query_results = results_from_executemany(cursor, id_only=id_only)
+    return query_results
+
+
+def lookup_reaction_connectivity(
+    key: Union[str, Tuple[str, str]], key_type: str = "smiles", id_only: bool = False
+) -> Union[dict, int]:
+    """Look up a reaction connectivity using some identifying key
+
+    :param key: The identifying key; If not a SMILES reaction string, this must be a
+        pair of string identifiers, one for reactants and one for products
+    :type key: Union[str, Tuple[str, str]]
+    :parm key_type: The type of the key; options: "smiles", "inchi", "amchi",
+        "inchi_key", "amchi_key", "inchi_hash", "amchi_hash"
+    :param id_only: Look up just the ID?, default False
+    :type id_only: bool, optional
+    :return: The row of the reaction connectivity
+    :rtype: dict
+    """
+    (ret,) = lookup_reaction_connectivities((key,), key_type=key_type, id_only=id_only)
+    return ret
+
+
+@with_pool_cursor
+def lookup_reaction_connectivities(
+    cursor,
+    keys: List[Union[str, Tuple[str, str]]],
+    key_type: str = "smiles",
+    id_only: bool = False,
+) -> Union[List[dict], List[int]]:
+    """Look up a reaction connectivities using some identifying keys
+
+    :param keys: The identifying keys; If not a SMILES reaction string, this must be a
+        pair of string identifiers, one for reactants and one for products
+    :type keys: List[Union[str, Tuple[str, str]]]
+    :parm key_type: The type of the key; options: "smiles", "inchi", "amchi",
+        "inchi_key", "amchi_key", "inchi_hash", "amchi_hash"
+    :param id_only: Look up just the ID?, default False
+    :type id_only: bool, optional
+    :return: The rows of the reaction connectivity
+    :rtype: Union[List[dict], List[int]]
+    """
+    hash_pairs, (is_amchi, *_) = zip(
+        *(chem.reaction_connectivity_chi_hashes(k, key_type) for k in keys)
+    )
+
+    query_string = f"""
+        SELECT * FROM reaction_connectivity
+        WHERE
+            {'r_conn_amchi_hash' if is_amchi else 'r_conn_inchi_hash'} = %s AND
+            {'p_conn_amchi_hash' if is_amchi else 'p_conn_inchi_hash'} = %s;
+    """
+    query_params = [h for h in hash_pairs]
     cursor.executemany(query_string, query_params, returning=True)
     query_results = results_from_executemany(cursor, id_only=id_only)
     return query_results
@@ -227,9 +272,28 @@ def lookup_species(
     return query_results
 
 
-@with_pool_cursor
-def add_species_by_smiles(cursor, smi: str) -> int:
+def add_species_by_smiles_connectivity(smi: str) -> Tuple[int, str]:
     """Add a new species using its SMILES string, returning the connectivity ID
+
+    :param smi: SMILES string
+    :type smi: str
+    :returns: A status code and an error message, if it failed
+    :rtype: Tuple[int, str]
+    """
+    row = lookup_species_connectivity(smi, key_type="smiles")
+    if not row:
+        try:
+            _add_species_by_smiles_connectivity(smi)
+        except Exception as exc:
+            return 500, f"Adding {smi} to database failed with this exception:\n{exc}"
+    return 0, ""
+
+
+@with_pool_cursor
+def _add_species_by_smiles_connectivity(cursor, smi: str) -> int:
+    """Add a new species using its SMILES string, returning the connectivity ID
+
+    (Only for species that don't already exist!)
 
     :param smi: SMILES string
     :type smi: str
@@ -280,8 +344,35 @@ def add_species_by_smiles(cursor, smi: str) -> int:
     return query_result1["id"]
 
 
+def add_reaction_by_smiles_connectivity(smi: str) -> Tuple[int, str]:
+    """Add a new reaction using its SMILES string, returning the connectivity ID
+
+    :param smi: SMILES string
+    :type smi: str
+    :returns: A status code and an error message, if it failed
+    :rtype: Tuple[int, str]
+    """
+    if not automol.smiles.is_reaction(smi):
+        return 415, f"Not a reaction SMILES string: {smi}"
+
+    # 1. Add all reactant and product species in case they don't already exist
+    rsmis = automol.smiles.reaction_reactants(smi)
+    psmis = automol.smiles.reaction_products(smi)
+    for smi_ in rsmis + psmis:
+        add_species_by_smiles_connectivity(smi_)
+
+    # 2. Add the reaction
+    row = lookup_reaction_connectivity(smi, key_type="smiles")
+    if not row:
+        try:
+            _add_reaction_by_smiles_connectivity(smi)
+        except Exception as exc:
+            return 500, f"Adding {smi} to database failed with this exception:\n{exc}"
+    return 0, ""
+
+
 @with_pool_cursor
-def add_reaction_by_smiles(cursor, smi: str) -> int:
+def _add_reaction_by_smiles_connectivity(cursor, smi: str) -> int:
     """Add a new reaction using its SMILES string, returning the connectivity ID
 
     :param smi: SMILES string
@@ -476,11 +567,13 @@ def add_reaction_by_smiles(cursor, smi: str) -> int:
 
 
 @with_pool_cursor
-def get_species_by_connectivity_id(cursor, id: int) -> List[dict]:
+def get_species_by_connectivity(cursor, id: int, id_only: bool=False) -> Union[List[dict], List[int]]:
     """Get all species with a certain connectivity ID
 
     :param id: The ID of the connectivity species
     :type id: int
+    :param id_only: Look up just the ID?, default False
+    :type id_only: bool, optional
     :return: Details for each isomer, as a list of dictionaries; keys:
         id, conn_id, estate_id, formula, svg_string, conn_smiles, conn_inchi,
         conn_amchi, spin_mult, smiles, inchi, amchi, geometry
@@ -497,8 +590,11 @@ def get_species_by_connectivity_id(cursor, id: int) -> List[dict]:
     """
     query_params = [id]
     cursor.execute(query_string, query_params)
-    species_rows = cursor.fetchall()
-    return species_rows
+    query_results = cursor.fetchall()
+    if id_only:
+        query_results = [r["id"] for r in query_results]
+
+    return query_results
 
 
 def get_species_ids_by_connectivity_id(id: int) -> List[int]:
@@ -509,7 +605,7 @@ def get_species_ids_by_connectivity_id(id: int) -> List[int]:
     :return: The IDs for each species with this connectivity
     :rtype: List[int]
     """
-    species_rows = get_species_by_connectivity_id(id)
+    species_rows = get_species_by_connectivity(id)
     ids = [row["id"] for row in species_rows]
     return ids
 
@@ -651,15 +747,19 @@ def add_user_collection(cursor, user_id: int, name: str) -> dict:
 
 
 @with_pool_cursor
-def get_user_collection_by_name(cursor, user_id: int, name: str) -> dict:
+def lookup_user_collection(
+    cursor, user_id: int, name: str, id_only: bool = False
+) -> Union[dict, int]:
     """Get a certain user collection by name
 
     :param user_id: The user's ID
     :type user_id: int
     :param name: The collection name
     :type name: str
-    :return: The collection data; keys: "id", "name", "user_id"
-    :rtype: dict
+    :param id_only: Look up just the ID?, default False
+    :type id_only: bool, optional
+    :return: The row or ID
+    :rtype: Union[dict, int]
     """
     query_string = """
         SELECT * FROM collections WHERE (name, user_id) = (%s, %s);
@@ -667,8 +767,8 @@ def get_user_collection_by_name(cursor, user_id: int, name: str) -> dict:
     query_params = [name, user_id]
 
     cursor.execute(query_string, query_params)
-    coll_row = cursor.fetchone()
-    return coll_row
+    query_result = cursor.fetchone()
+    return query_result["id"] if query_result and id_only else query_result
 
 
 @with_pool_cursor
@@ -680,7 +780,7 @@ def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
     :param conn_id: The connectivity ID of the species
     :type conn_id: int
     """
-    species_ids = get_species_ids_by_connectivity_id(conn_id)
+    species_ids = get_species_by_connectivity(conn_id, id_only=True)
 
     query_string = """
         INSERT INTO collections_species (coll_id, species_id)
@@ -688,6 +788,25 @@ def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
     """
     query_params = [[coll_id, id] for id in species_ids]
     cursor.executemany(query_string, query_params)
+
+
+# @with_pool_cursor
+# def add_reaction_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
+#     """Add all reaction of a given connectivity to a collection
+
+#     :param coll_id: The ID of the collection
+#     :type coll_id: int
+#     :param conn_id: The connectivity ID of the reaction
+#     :type conn_id: int
+#     """
+#     reaction_ids = get_reaction_ids_by_connectivity_id(conn_id)
+
+#     query_string = """
+#         INSERT INTO collections_reactions (coll_id, reaction_id)
+#         VALUES  (%s, %s) ON CONFLICT (coll_id, reaction_id) DO NOTHING;
+#     """
+#     query_params = [[coll_id, id] for id in reaction_ids]
+#     cursor.executemany(query_string, query_params)
 
 
 @with_pool_cursor
@@ -699,7 +818,7 @@ def remove_species_connectivity_from_collection(cursor, coll_id: int, conn_id: i
     :param conn_id: The connectivity ID of the species
     :type conn_id: int
     """
-    species_ids = get_species_ids_by_connectivity_id(conn_id)
+    species_ids = get_species_by_connectivity(conn_id, id_only=True)
 
     query_string = """
         DELETE FROM collections_species
@@ -796,4 +915,6 @@ def results_from_executemany(cursor, id_only=False):
 if __name__ == "__main__":
     # print(lookup_species_connectivities(["CCC", "[O][O]"], id_only=True))
     # print(lookup_species(["CCC", "[O][O]"], id_only=True))
-    add_reaction_by_smiles("CCCC.[O][O]>>CCC[CH2].O[O]")
+    # add_reaction_by_smiles_connectivity("CCCC.[O][O]>>CCC[CH2].O[O]")
+    # print(lookup_reaction_connectivity("CCCC.[O][O]>>CCC[CH2].O[O]", id_only=True))
+    print(add_reaction_by_smiles_connectivity("N.[OH]>>[NH2].O"))
