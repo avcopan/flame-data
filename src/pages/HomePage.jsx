@@ -18,8 +18,13 @@ export default function HomePage() {
 
   useEffect(() => {
     dispatch(actions.getSpecies());
-    dispatch(actions.getCollections());
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      dispatch(actions.getCollections());
+    }
+  }, [user]);
 
   const submitSearch = () => {
     const payload = { formula: searchFormula, partial: searchPartial };

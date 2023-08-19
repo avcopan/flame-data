@@ -265,7 +265,7 @@ function* postNewSpeciesSaga() {
     const smilesList = yield select((store) => store.newSpecies);
     yield put(clearNewSpecies());
     const requestBody = { smilesList };
-    const res = yield axios.post("/api/species/connectivity", requestBody);
+    const res = yield axios.post("/api/species/connectivity/batch", requestBody);
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
   }
