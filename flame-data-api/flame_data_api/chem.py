@@ -1,3 +1,4 @@
+import itertools
 from typing import List, Tuple
 
 import automol
@@ -47,6 +48,8 @@ def reaction_connectivity_row(smi: str) -> dict:
     rsmi, psmi = automol.smiles.reaction_reagents(smi)
     rich, pich = map(automol.smiles.inchi, (rsmi, psmi))
     richs, pichs = map(automol.inchi.split, (rich, pich))
+    rsmis, psmis = (list(map(automol.inchi.smiles, i)) for i in (richs, pichs))
+    smi = automol.smiles.reaction(rsmis, psmis)
     rick, pick = map(automol.inchi.inchi_key, (rich, pich))
     ricks, picks = (list(map(automol.inchi.inchi_key, i)) for i in (richs, pichs))
     rach, pach = map(automol.smiles.amchi, (rsmi, psmi))
@@ -55,8 +58,9 @@ def reaction_connectivity_row(smi: str) -> dict:
     racks, packs = (list(map(automol.amchi.amchi_key, i)) for i in (rachs, pachs))
     return {
         "formula": automol.inchi.formula_string(rich),
-        "svg_string": None,
         "conn_smiles": smi,
+        "r_svg_strings": list(map(automol.smiles.svg_string, rsmis)),
+        "p_svg_strings": list(map(automol.smiles.svg_string, psmis)),
         "r_formulas": list(map(automol.inchi.formula_string, richs)),
         "p_formulas": list(map(automol.inchi.formula_string, pichs)),
         "r_conn_inchis": richs,
@@ -132,41 +136,49 @@ def species_rows(smi: str) -> List[dict]:
     return rows
 
 
-def reaction_and_ts_rows(smi: str) -> Tuple[List[dict], List[dict]]:
+def reaction_and_ts_rows(smi: str) -> Tuple[List[dict], List[List[dict]]]:
     """Generate rows for the reaction and TS tables
+
+    The TS rows will be grouped by the reaction that they correspond to
 
     :param smi: Reaction SMILES string
     :type smi: str
     :return: The reaction rows, with keys: "smiles", "r_amchi", "r_amchi_key",
-          "p_amchi", "p_amchi_key"; Also, the TS rows, with keys: "geometry", "class",
-          "amchi", "amchi_key"
-    :rtype: Tuple[List[dict], List[dict]]
+          "p_amchi", "p_amchi_key"; Also, the TS rows, which will be grouped by
+          reactants and products, with keys: "geometry", "class", "amchi", "amchi_key"
+    :rtype: Tuple[List[dict], List[List[dict]]]
     """
     smi = automol.smiles.without_stereo(smi)
     rsmi, psmi = automol.smiles.reaction_reagents(smi)
     rgra, pgra = map(automol.smiles.graph, (rsmi, psmi))
 
-    rxn_rows = []
-    ts_rows = []
+    all_rows = []
 
+    # 1. Get all row information
     for rxn in automol.reac.find(rgra, pgra, stereo=False):
         for srxn in automol.reac.expand_stereo(rxn):
             # reaction row
+            richs, pichs = automol.reac.inchi(srxn)
             rachs, pachs = automol.reac.amchi(srxn)
+            racks, packs = (
+                list(map(automol.amchi.amchi_key, cs)) for cs in (rachs, pachs)
+            )
             rach, pach = map(automol.amchi.join, (rachs, pachs))
-            rxn_row = {
-                "smiles": automol.reac.reaction_smiles(srxn),
-                "r_amchi": rach,
-                "r_amchi_key": automol.amchi.amchi_key(rach),
-                "p_amchi": pach,
-                "p_amchi_key": automol.amchi.amchi_key(pach),
-            }
-
-            # TS row
             tsg = automol.reac.ts_graph(srxn)
             ts_geo = automol.graph.geometry(tsg)
             ts_ach = automol.graph.amchi(tsg)
-            ts_row = {
+            all_row = {
+                "smiles": automol.reac.reaction_smiles(srxn),
+                "r_inchis": richs,
+                "r_amchis": rachs,
+                "r_amchi_keys": racks,
+                "r_amchi": rach,
+                "r_amchi_key": automol.amchi.amchi_key(rach),
+                "p_inchis": pichs,
+                "p_amchis": pachs,
+                "p_amchi_keys": packs,
+                "p_amchi": pach,
+                "p_amchi_key": automol.amchi.amchi_key(pach),
                 "geometry": automol.geom.xyz_string(ts_geo),
                 "class": automol.reac.class_(srxn),
                 "amchi": ts_ach,
@@ -174,10 +186,39 @@ def reaction_and_ts_rows(smi: str) -> Tuple[List[dict], List[dict]]:
             }
 
             # Append rows to list
-            rxn_rows.append(rxn_row)
-            ts_rows.append(ts_row)
+            all_rows.append(all_row)
 
-    return rxn_rows, ts_rows
+    # 2. Group them by reactants and products
+    rxn_keys = (
+        "smiles",
+        "r_inchis",
+        "r_amchis",
+        "r_amchi_keys",
+        "r_amchi",
+        "r_amchi_key",
+        "p_inchis",
+        "p_amchis",
+        "p_amchi_keys",
+        "p_amchi",
+        "p_amchi_key",
+    )
+    ts_keys = ("geometry", "class", "amchi", "amchi_key")
+    rxn_rows = []
+    ts_grouped_rows = []
+
+    def _group_id(row):
+        return row["r_amchi_key"], row["p_amchi_key"]
+
+    all_rows = sorted(all_rows, key=_group_id)
+    for _, rows in itertools.groupby(all_rows, key=_group_id):
+        rows = list(rows)
+        row, *_ = rows
+        rxn_row = {k: row[k] for k in rxn_keys}
+        ts_rows = [{k: r[k] for k in ts_keys} for r in rows]
+        rxn_rows.append(rxn_row)
+        ts_grouped_rows.append(ts_rows)
+
+    return rxn_rows, ts_grouped_rows
 
 
 def validate_species_geometry(ach: str, xyz_str: str) -> str:
@@ -196,8 +237,34 @@ def validate_species_geometry(ach: str, xyz_str: str) -> str:
 
 
 # HELPERS
-def connectivity_inchi_hash(key: str, key_type: str = "smiles") -> Tuple[str, bool]:
-    """Get an InChI connectivity hash from a SMILES string
+def species_amchi_key(key: str, key_type: str = "smiles") -> str:
+    """Get an ChI key from an identifier
+
+    :param key: The identifying key by which to look it up
+    :parm key_type: The type of the key; options: "smiles", "amchi", "amchi_key"
+    :return: The AMChI key
+    :rtype: str
+    """
+    key_type = key_type.lower()
+    assert key_type in (
+        "smiles",
+        "amchi",
+        "amchi_key",
+    ), f"Invalid key type {key_type}"
+
+    if key_type == "smiles":
+        key = automol.smiles.amchi(key)
+        key_type = "amchi"
+    if key_type == "amchi":
+        key = automol.amchi.amchi_key(key)
+        key_type = "amchi_key"
+
+    assert key_type == "amchi_key", "Sanity check"
+    return key
+
+
+def connectivity_chi_hash(key: str, key_type: str = "smiles") -> Tuple[str, bool]:
+    """Get an ChI connectivity hash from an identifier
 
     :param key: The identifying key by which to look it up
     :parm key_type: The type of the key; options: "smiles", "inchi", "amchi",
@@ -240,4 +307,4 @@ def connectivity_inchi_hash(key: str, key_type: str = "smiles") -> Tuple[str, bo
 
 
 if __name__ == "__main__":
-    print(reaction_connectivity_row("C.[OH]>>[CH3].O"))
+    print(reaction_and_ts_rows("CCOC(O[O])C>>C[CH]OC(OO)C"))

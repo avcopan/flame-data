@@ -159,7 +159,7 @@ def lookup_species_connectivity(
     :return: The row or ID of the species connectivity
     :rtype: dict or int
     """
-    hash, is_amchi = chem.connectivity_inchi_hash(key, key_type=key_type)
+    hash, is_amchi = chem.connectivity_chi_hash(key, key_type=key_type)
 
     query_string = f"""
         SELECT * FROM species_connectivity
@@ -187,7 +187,7 @@ def lookup_species_connectivities(
     :rtype: dict
     """
     hashes, (is_amchi, *_) = zip(
-        *(chem.connectivity_inchi_hash(k, key_type) for k in keys)
+        *(chem.connectivity_chi_hash(k, key_type) for k in keys)
     )
 
     query_string = f"""
@@ -196,14 +196,34 @@ def lookup_species_connectivities(
     """
     query_params = [[h] for h in hashes]
     cursor.executemany(query_string, query_params, returning=True)
-    query_results = []
-    while True:
-        query_result = cursor.fetchone()
-        query_result = query_result["id"] if query_result and id_only else query_result
-        query_results.append(query_result)
-        if not cursor.nextset():
-            break
+    query_results = results_from_executemany(cursor, id_only=id_only)
+    return query_results
 
+
+@with_pool_cursor
+def lookup_species(
+    cursor, keys: str, key_type: str = "smiles", id_only: bool = False
+) -> dict:
+    """Look up a species connectivity using some identifying key
+
+    :param keys: The identifying keys by which to look them up
+    :type keys: str
+    :parm key_type: The type of the key; options: "smiles", "inchi", "amchi",
+        "inchi_key", "amchi_key", "inchi_hash", "amchi_hash"
+    :param id_only: Look up just the ID?, default False
+    :type id_only: bool, optional
+    :return: The row of the species connectivity
+    :rtype: dict
+    """
+    chi_keys = [chem.species_amchi_key(k, key_type) for k in keys]
+
+    query_string = """
+        SELECT * FROM species
+        WHERE amchi_key = %s;
+    """
+    query_params = [[c] for c in chi_keys]
+    cursor.executemany(query_string, query_params, returning=True)
+    query_results = results_from_executemany(cursor, id_only=id_only)
     return query_results
 
 
@@ -218,7 +238,7 @@ def add_species_by_smiles(cursor, smi: str) -> int:
     """
     conn_row = chem.species_connectivity_row(smi)
     estate_row = chem.species_estate_row(smi)
-    detail_rows = chem.species_rows(smi)
+    spc_rows = chem.species_rows(smi)
 
     # INSERT INTO species_connectivity
     query_string1 = """
@@ -254,7 +274,7 @@ def add_species_by_smiles(cursor, smi: str) -> int:
         VALUES
         (%(geometry)s, %(smiles)s, %(inchi)s, %(amchi)s, %(amchi_key)s, %(id)s)
     """
-    query_params3 = [{**query_result2, **stereo_row} for stereo_row in detail_rows]
+    query_params3 = [{**query_result2, **spc_row} for spc_row in spc_rows]
     cursor.executemany(query_string3, query_params3)
 
     return query_result1["id"]
@@ -271,15 +291,13 @@ def add_reaction_by_smiles(cursor, smi: str) -> int:
     """
     conn_row = chem.reaction_connectivity_row(smi)
     estate_row = chem.reaction_estate_row(smi)
-    rxn_rows, ts_rows = chem.reaction_and_ts_rows(smi)
+    rxn_rows, ts_grouped_rows = chem.reaction_and_ts_rows(smi)
 
     # Determine the connectivity IDs of the reactants and products
     rhashes = conn_row["r_conn_inchi_hashes"]
     phashes = conn_row["p_conn_inchi_hashes"]
     r_conn_ids = lookup_species_connectivities(rhashes, "inchi_hash", id_only=True)
     p_conn_ids = lookup_species_connectivities(phashes, "inchi_hash", id_only=True)
-    print(r_conn_ids)
-    print(p_conn_ids)
     assert all(
         r_conn_ids
     ), "Add all reactants to database before calling this function!"
@@ -293,30 +311,168 @@ def add_reaction_by_smiles(cursor, smi: str) -> int:
     query_string1 = """
         INSERT INTO reaction_connectivity
         (
-          formula, svg_string, conn_smiles, r_formulas, r_conn_inchis,
-          r_conn_inchi_hashes, r_conn_inchi, r_conn_inchi_hash, r_conn_amchis,
-          r_conn_amchi_hashes, r_conn_amchi, r_conn_amchi_hash, r_conn_ids, p_formulas,
-          p_conn_inchis, p_conn_inchi_hashes, p_conn_inchi, p_conn_inchi_hash,
-          p_conn_amchis, p_conn_amchi_hashes, p_conn_amchi, p_conn_amchi_hash,
-          p_conn_ids
+            formula,
+            conn_smiles,
+            r_formulas,
+            r_svg_strings,
+            r_conn_inchis,
+            r_conn_inchi_hashes,
+            r_conn_inchi,
+            r_conn_inchi_hash,
+            r_conn_amchis,
+            r_conn_amchi_hashes,
+            r_conn_amchi,
+            r_conn_amchi_hash,
+            r_conn_ids,
+            p_formulas,
+            p_svg_strings,
+            p_conn_inchis,
+            p_conn_inchi_hashes,
+            p_conn_inchi,
+            p_conn_inchi_hash,
+            p_conn_amchis,
+            p_conn_amchi_hashes,
+            p_conn_amchi,
+            p_conn_amchi_hash,
+            p_conn_ids
         )
         VALUES
         (
-          %(formula)s, %(svg_string)s, %(conn_smiles)s, %(r_formulas)s,
-          %(r_conn_inchis)s, %(r_conn_inchi_hashes)s, %(r_conn_inchi)s,
-          %(r_conn_inchi_hash)s, %(r_conn_amchis)s, %(r_conn_amchi_hashes)s,
-          %(r_conn_amchi)s, %(r_conn_amchi_hash)s, %(r_conn_ids)s, %(p_formulas)s,
-          %(p_conn_inchis)s, %(p_conn_inchi_hashes)s, %(p_conn_inchi)s,
-          %(p_conn_inchi_hash)s, %(p_conn_amchis)s, %(p_conn_amchi_hashes)s,
-          %(p_conn_amchi)s, %(p_conn_amchi_hash)s, %(p_conn_ids)s
+            %(formula)s,
+            %(conn_smiles)s,
+            %(r_formulas)s,
+            %(r_svg_strings)s,
+            %(r_conn_inchis)s,
+            %(r_conn_inchi_hashes)s,
+            %(r_conn_inchi)s,
+            %(r_conn_inchi_hash)s,
+            %(r_conn_amchis)s,
+            %(r_conn_amchi_hashes)s,
+            %(r_conn_amchi)s,
+            %(r_conn_amchi_hash)s,
+            %(r_conn_ids)s,
+            %(p_formulas)s,
+            %(p_svg_strings)s,
+            %(p_conn_inchis)s,
+            %(p_conn_inchi_hashes)s,
+            %(p_conn_inchi)s,
+            %(p_conn_inchi_hash)s,
+            %(p_conn_amchis)s,
+            %(p_conn_amchi_hashes)s,
+            %(p_conn_amchi)s,
+            %(p_conn_amchi_hash)s,
+            %(p_conn_ids)s
         )
         RETURNING id;
     """
     query_params1 = row_with_array_literals(conn_row)
-    for key, value in query_params1.items():
-        print(f"{key}: {value}")
     cursor.execute(query_string1, query_params1)
     query_result1 = cursor.fetchone()
+
+    # INSERT INTO reaction
+    query_string2 = """
+        INSERT INTO reaction
+        (
+            smiles,
+            r_inchis,
+            r_amchis,
+            r_amchi_keys,
+            r_amchi,
+            r_amchi_key,
+            p_inchis,
+            p_amchis,
+            p_amchi_keys,
+            p_amchi,
+            p_amchi_key,
+            conn_id
+        )
+        VALUES
+        (
+            %(smiles)s,
+            %(r_inchis)s,
+            %(r_amchis)s,
+            %(r_amchi_keys)s,
+            %(r_amchi)s,
+            %(r_amchi_key)s,
+            %(p_inchis)s,
+            %(p_amchis)s,
+            %(p_amchi_keys)s,
+            %(p_amchi)s,
+            %(p_amchi_key)s,
+            %(id)s
+        )
+        RETURNING id;
+    """
+    query_results2 = []
+    query_params2 = [
+        row_with_array_literals({**query_result1, **rxn_row}) for rxn_row in rxn_rows
+    ]
+    cursor.executemany(query_string2, query_params2, returning=True)
+    query_results2 = results_from_executemany(cursor)
+
+    # INSERT INTO reaction_estate
+    query_string3 = """
+        INSERT INTO reaction_estate (spin_mult, reaction_id)
+        VALUES (%(spin_mult)s, %(id)s)
+        RETURNING id;
+    """
+    query_params3 = [
+        {**query_result2, **estate_row} for query_result2 in query_results2
+    ]
+    cursor.executemany(query_string3, query_params3, returning=True)
+    query_results3 = results_from_executemany(cursor)
+
+    # INSERT INTO reaction_ts
+    assert len(query_results3) == len(ts_grouped_rows), "Sanity check"
+
+    query_string4 = """
+        INSERT INTO reaction_ts
+        (geometry, class, amchi, amchi_key, estate_id)
+        VALUES
+        (%(geometry)s, %(class)s, %(amchi)s, %(amchi_key)s, %(id)s)
+        RETURNING id;
+    """
+    query_params4 = [
+        {**query_result3, **ts_row}
+        for query_result3, ts_rows in zip(query_results3, ts_grouped_rows)
+        for ts_row in ts_rows
+    ]
+    cursor.executemany(query_string4, query_params4, returning=True)
+    query_results4 = results_from_executemany(cursor)
+
+    # INSERT INTO reaction_reactants
+    r_species_ids_lst = [
+        lookup_species(r["r_amchi_keys"], key_type="amchi_key", id_only=True)
+        for r in rxn_rows
+    ]
+    p_species_ids_lst = [
+        lookup_species(r["p_amchi_keys"], key_type="amchi_key", id_only=True)
+        for r in rxn_rows
+    ]
+    assert len(query_results2) == len(r_species_ids_lst), "Sanity check"
+    assert len(query_results2) == len(p_species_ids_lst), "Sanity check"
+
+    query_string5 = """
+        INSERT INTO reaction_reactants (reaction_id, species_id)
+        VALUES (%(id)s, %(species_id)s);
+    """
+    query_params5 = [
+        {**query_result2, "species_id": species_id}
+        for query_result2, species_ids in zip(query_results2, r_species_ids_lst)
+        for species_id in species_ids
+    ]
+    cursor.executemany(query_string5, query_params5)
+
+    query_string6 = """
+        INSERT INTO reaction_products (reaction_id, species_id)
+        VALUES (%(id)s, %(species_id)s);
+    """
+    query_params6 = [
+        {**query_result2, "species_id": species_id}
+        for query_result2, species_ids in zip(query_results2, r_species_ids_lst)
+        for species_id in species_ids
+    ]
+    cursor.executemany(query_string6, query_params6)
 
 
 @with_pool_cursor
@@ -624,5 +780,20 @@ def delete_collection(cursor, coll_id: int) -> (int, str):
     return 0, ""
 
 
+# helpers
+def results_from_executemany(cursor, id_only=False):
+    query_results = []
+    while True:
+        query_result = cursor.fetchone()
+        query_result = query_result["id"] if query_result and id_only else query_result
+        query_results.append(query_result)
+        if not cursor.nextset():
+            break
+
+    return query_results
+
+
 if __name__ == "__main__":
-    add_reaction_by_smiles("CCC.[O][O]>>CC[CH2].O[O]")
+    # print(lookup_species_connectivities(["CCC", "[O][O]"], id_only=True))
+    # print(lookup_species(["CCC", "[O][O]"], id_only=True))
+    add_reaction_by_smiles("CCCC.[O][O]>>CCC[CH2].O[O]")

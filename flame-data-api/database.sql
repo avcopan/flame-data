@@ -52,9 +52,9 @@ CREATE TABLE species (
 CREATE TABLE reaction_connectivity (
   id BIGSERIAL PRIMARY KEY,
   formula TEXT,
-  svg_string TEXT,
   conn_smiles TEXT,
   r_formulas TEXT[],
+  r_svg_strings TEXT[],
   r_conn_inchis TEXT[],
   r_conn_inchi_hashes CHAR(14)[],
   r_conn_inchi TEXT,
@@ -65,6 +65,7 @@ CREATE TABLE reaction_connectivity (
   r_conn_amchi_hash CHAR(14),
   r_conn_ids INTEGER[],  -- Unofficially references species_connectivity(id)
   p_formulas TEXT[],
+  p_svg_strings TEXT[],
   p_conn_inchis TEXT[],
   p_conn_inchi_hashes CHAR(14)[],
   p_conn_inchi TEXT,
@@ -81,8 +82,14 @@ CREATE TABLE reaction_connectivity (
 CREATE TABLE reaction (
   id BIGSERIAL PRIMARY KEY,
   smiles TEXT,
+  r_inchis TEXT[],
+  r_amchis TEXT[],
+  r_amchi_keys CHAR(27)[],
   r_amchi TEXT,
   r_amchi_key CHAR(27),
+  p_inchis TEXT[],
+  p_amchis TEXT[],
+  p_amchi_keys CHAR(27)[],
   p_amchi TEXT,
   p_amchi_key CHAR(27),
   conn_id BIGINT
@@ -114,21 +121,21 @@ CREATE TABLE reaction_ts (
 
 CREATE TABLE reaction_reactants (
   id BIGSERIAL PRIMARY KEY,
-  species_id BIGINT
-    REFERENCES species(id)
-    ON DELETE CASCADE,
   reaction_id BIGINT
     REFERENCES reaction(id)
+    ON DELETE CASCADE,
+  species_id BIGINT
+    REFERENCES species(id)
     ON DELETE CASCADE
 );
 
 CREATE TABLE reaction_products (
   id BIGSERIAL PRIMARY KEY,
-  species_id BIGINT
-    REFERENCES species(id)
-    ON DELETE CASCADE,
   reaction_id BIGINT
     REFERENCES reaction(id)
+    ON DELETE CASCADE,
+  species_id BIGINT
+    REFERENCES species(id)
     ON DELETE CASCADE
 );
 
