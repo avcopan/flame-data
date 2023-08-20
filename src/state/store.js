@@ -80,7 +80,21 @@ const speciesDetailsSlice = createSlice({
 const addSpeciesDetails = speciesDetailsSlice.actions.addSpeciesDetails;
 const speciesDetailsReducer = speciesDetailsSlice.reducer;
 
-// 5. submission slice/reducer
+// 5. reactions slice/reducer(s)
+const reactionsSlice = createSlice({
+  name: "reactions",
+  initialState: [],
+  reducers: {
+    setReactions: (_, action) => {
+      return action.payload;
+    },
+  },
+});
+
+const setReactions = reactionsSlice.actions.setReactions;
+const reactionsReducer = reactionsSlice.reducer;
+
+// 6. submission slice/reducer
 const submissionsSlice = createSlice({
   name: "submissions",
   initialState: [],
@@ -125,6 +139,7 @@ const store = configureStore({
     error: errorReducer,
     species: speciesReducer,
     speciesDetails: speciesDetailsReducer,
+    reactions: reactionsReducer,
     submissions: submissionsReducer,
     collections: collectionsReducer,
   },
@@ -294,7 +309,31 @@ export const updateSpeciesGeometry = (payload) => {
   return { type: UPDATE_SPECIES_GEOMETRY, payload };
 };
 
-// 3. submissions sagas
+// 3. reactions sagas
+//  a. get all reactions
+const GET_REACTIONS = "GET_REACTIONS";
+
+function* getReactionsSaga(action) {
+  try {
+    let requestUrl = "/api/reaction/connectivity";
+    if (action.payload && action.payload.formula) {
+      const formula = action.payload.formula;
+      const partial = action.payload.partial ? "partial" : "";
+      requestUrl += `?formula=${formula}&${partial}`;
+    }
+    const res = yield axios.get(requestUrl);
+    const data = yield res.data;
+    yield put(setReactions(data.contents));
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const getReactions = (payload) => {
+  return { type: GET_REACTIONS, payload };
+};
+
+// 4. submissions sagas
 const POST_SUBMISSION = "POST_SUBMISSION";
 
 function* postSubmissionSaga(action) {
@@ -323,7 +362,7 @@ export const postSubmission = (payload) => {
   return { type: POST_SUBMISSION, payload };
 };
 
-// 4. collections sagas
+// 5. collections sagas
 //  a. get all collections
 const GET_COLLECTIONS = "GET_COLLECTIONS";
 
@@ -374,7 +413,7 @@ export const postCollectionSpecies = (payload) => {
   return { type: POST_COLLECTION_SPECIES, payload };
 };
 
-// d. delet species from a collection
+// d. delete species from a collection
 const DELETE_COLLECTION_SPECIES = "DELETE_COLLECTION_SPECIES";
 
 function* deleteCollectionSpeciesSaga(action) {
@@ -420,6 +459,7 @@ function* watcherSaga() {
   yield takeEvery(GET_SPECIES_DETAILS, getSpeciesDetailsSaga);
   yield takeEvery(DELETE_SPECIES, deleteSpeciesSaga);
   yield takeEvery(UPDATE_SPECIES_GEOMETRY, updateSpeciesGeometrySaga);
+  yield takeLatest(GET_REACTIONS, getReactionsSaga);
   yield takeEvery(POST_SUBMISSION, postSubmissionSaga);
   yield takeLatest(GET_COLLECTIONS, getCollectionsSaga);
   yield takeEvery(POST_NEW_COLLECTION, postNewCollectionSaga);

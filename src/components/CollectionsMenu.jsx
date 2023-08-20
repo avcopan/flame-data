@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { checkHandler } from "../utils/utils";
 import actions from "../state/actions";
-import SpeciesItem from "./SpeciesItem";
+import DisplayItem from "./DisplayItem";
 import DeleteButton from "./DeleteButton";
 
 /** Download data as a JSON file
@@ -93,9 +93,9 @@ export default function CollectionsMenu({
             <div className="flex flex-wrap justify-start overflow-auto">
               {collection.species &&
                 collection.species.map((connectivity) => (
-                  <SpeciesItem
+                  <DisplayItem
                     key={connectivity.id}
-                    species={connectivity}
+                    item={connectivity}
                     className="m-2 w-32"
                     withCheckbox={true}
                     checked={selectedSpecies.includes(connectivity.id)}

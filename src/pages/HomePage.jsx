@@ -2,23 +2,29 @@ import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import actions from "../state/actions";
 import BinarySelector from "../components/BinarySelector";
-import SpeciesList from "../components/SpeciesList";
+import DisplayList from "../components/DisplayList";
 import CollectionsMenu from "../components/CollectionsMenu";
 import PopupButton from "../components/PopupButton";
 
 export default function HomePage() {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.user);
-  const speciesList = useSelector((store) => store.species);
   const collections = useSelector((store) => store.collections);
-  const [selectedSpecies, setSelectedSpecies] = useState([]);
+  const [reactionMode, setReactionMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [searchFormula, setSearchFormula] = useState("");
   const [searchPartial, setSearchPartial] = useState(false);
 
+  const itemList = useSelector((store) =>
+    reactionMode ? store.reactions : store.species
+  );
+
   useEffect(() => {
-    dispatch(actions.getSpecies());
-  }, []);
+    reactionMode
+      ? dispatch(actions.getReactions())
+      : dispatch(actions.getSpecies());
+  }, [reactionMode]);
 
   useEffect(() => {
     if (user) {
@@ -35,14 +41,23 @@ export default function HomePage() {
   const addSpeciesToCollection = () => {
     const payload = {
       coll_id: selectedCollection,
-      conn_ids: selectedSpecies,
+      conn_ids: selectedItems,
     };
     dispatch(actions.postCollectionSpecies(payload));
-    setSelectedSpecies([]);
+    setSelectedItems([]);
   };
 
   return (
     <div className="flex flex-col gap-6 justify-center items-center">
+      <BinarySelector
+        text1="Species"
+        text2="Reaction"
+        vertical={false}
+        selection={reactionMode}
+        setSelection={setReactionMode}
+        selectionFor={2}
+        className="mb-6"
+      />
       <div className="flex flex-row gap-6 mb-12">
         <div className="w-96 flex flex-col gap-6">
           <input
@@ -65,11 +80,12 @@ export default function HomePage() {
         </button>
       </div>
       <div className="flex flex-row justify-center gap-12 items-start">
-        <SpeciesList
-          speciesList={speciesList}
+        <DisplayList
+          itemList={itemList}
+          selectedItems={selectedItems}
+          setSelectedItems={setSelectedItems}
+          reactionMode={reactionMode}
           className={user ? "w-2/3" : "w-full"}
-          selectedSpecies={selectedSpecies}
-          setSelectedSpecies={setSelectedSpecies}
         />
         {user && (
           <CollectionsMenu
@@ -79,7 +95,7 @@ export default function HomePage() {
           />
         )}
         <PopupButton
-          condition={selectedSpecies.length > 0}
+          condition={selectedItems.length > 0}
           text="Add to Collection"
           onClick={addSpeciesToCollection}
         />

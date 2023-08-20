@@ -11,18 +11,18 @@ export default function FormPage() {
   const dispatch = useDispatch();
   const [smiles1, setSmiles1] = useState("");
   const [smiles2, setSmiles2] = useState("");
-  const [isReaction, setIsReaction] = useState(false);
+  const [reactionMode, setReactionMode] = useState(false);
 
-  const toggleText = textToggler(isReaction, "reaction", "species");
+  const toggleText = textToggler(reactionMode, "reaction", "species");
 
   const submit = () => {
     let smiles;
-    if (isReaction) {
+    if (reactionMode) {
       smiles = smiles1 + " >> " + smiles2;
     } else {
       smiles = smiles1;
     }
-    dispatch(actions.postSubmission({ smiles, isReaction }));
+    dispatch(actions.postSubmission({ smiles, isReaction: reactionMode }));
     setSmiles1("");
     setSmiles2("");
   };
@@ -33,8 +33,8 @@ export default function FormPage() {
         text1="Species"
         text2="Reaction"
         vertical={false}
-        selection={isReaction}
-        setSelection={setIsReaction}
+        selection={reactionMode}
+        setSelection={setReactionMode}
         selectionFor={2}
         className="mb-12"
       />
@@ -44,7 +44,7 @@ export default function FormPage() {
       <div className="flex flex-row justify-center gap-24">
         <div className="flex flex-row gap-6">
           <SmilesEntryForm
-            reactionMode={isReaction}
+            reactionMode={reactionMode}
             smiles1={smiles1}
             setSmiles1={setSmiles1}
             smiles2={smiles2}
@@ -54,7 +54,7 @@ export default function FormPage() {
         <SubmissionStatusTable />
       </div>
       <PopupButton
-        condition={smiles1 && (smiles2 || !isReaction)}
+        condition={smiles1 && (smiles2 || !reactionMode)}
         text="Submit"
         onClick={submit}
       />
