@@ -80,6 +80,27 @@ const speciesDetailsSlice = createSlice({
 const addSpeciesDetails = speciesDetailsSlice.actions.addSpeciesDetails;
 const speciesDetailsReducer = speciesDetailsSlice.reducer;
 
+// 5. submission slice/reducer
+const submissionsSlice = createSlice({
+  name: "submissions",
+  initialState: [],
+  reducers: {
+    addSubmission: (state, action) => {
+      return [...state, action.payload];
+    },
+    updateSubmission: (state, action) => {
+      const { index, update } = action.payload;
+      return state.map((submission, i) =>
+        i === index ? { ...submission, ...update } : submission
+      );
+    },
+  },
+});
+
+const addSubmission = submissionsSlice.actions.addSubmission;
+const updateSubmission = submissionsSlice.actions.updateSubmission;
+const submissionsReducer = submissionsSlice.reducer;
+
 // 5. new species slice/reducer
 const newSpeciesSlice = createSlice({
   name: "newSpecies",
@@ -122,6 +143,7 @@ const store = configureStore({
     error: errorReducer,
     species: speciesReducer,
     speciesDetails: speciesDetailsReducer,
+    submissions: submissionsReducer,
     newSpecies: newSpeciesReducer,
     collections: collectionsReducer,
   },
@@ -218,7 +240,6 @@ function* getSpeciesSaga(action) {
       const formula = action.payload.formula;
       const partial = action.payload.partial ? "partial" : "";
       requestUrl += `?formula=${formula}&${partial}`;
-      console.log(requestUrl);
     }
     const res = yield axios.get(requestUrl);
     const data = yield res.data;
@@ -265,7 +286,10 @@ function* postNewSpeciesSaga() {
     const smilesList = yield select((store) => store.newSpecies);
     yield put(clearNewSpecies());
     const requestBody = { smilesList };
-    const res = yield axios.post("/api/species/connectivity/batch", requestBody);
+    const res = yield axios.post(
+      "/api/species/connectivity/batch",
+      requestBody
+    );
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
   }
@@ -300,7 +324,6 @@ function* updateSpeciesGeometrySaga(action) {
     const connId = action.payload.connId;
     const id = action.payload.id;
     yield axios.put(`/api/species/${id}`, action.payload);
-    console.log("submitting put request for species", connId);
     yield put(getSpeciesDetails(connId));
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
@@ -311,7 +334,36 @@ export const updateSpeciesGeometry = (payload) => {
   return { type: UPDATE_SPECIES_GEOMETRY, payload };
 };
 
-// 3. collections sagas
+// 3. submissions sagas
+const POST_SUBMISSION = "POST_SUBMISSION";
+
+function* postSubmissionSaga(action) {
+  // 1. Determine the index of the new submission
+  const submissions = yield select((store) => store.submissions);
+  const index = submissions.length;
+  // 2. Add it to the submissions store
+  let { smiles, isReaction } = action.payload;
+  let submission = { smiles, isReaction, status: "Submitted" };
+  yield put(addSubmission(submission));
+  try {
+    // 3. Submit the POST request
+    const url = `/api/${isReaction ? "reaction" : "species"}/connectivity`;
+    smiles = smiles.replace(/\s+\+\s+/g, ".").replace(/\s+/g, "");
+    const res = yield axios.post(url, { smiles });
+    submission = {...submission, status: "Complete"};
+    yield put(updateSubmission({ index, update: submission }));
+    yield put(getSpecies());
+  } catch (error) {
+    handleErrorForProtectedEndpoint(error);
+    yield put(updateSubmission({ index, update: submission }));
+  }
+}
+
+export const postSubmission = (payload) => {
+  return { type: POST_SUBMISSION, payload };
+};
+
+// 4. collections sagas
 //  a. get all collections
 const GET_COLLECTIONS = "GET_COLLECTIONS";
 
@@ -368,7 +420,6 @@ const DELETE_COLLECTION_SPECIES = "DELETE_COLLECTION_SPECIES";
 function* deleteCollectionSpeciesSaga(action) {
   try {
     const coll_id = action.payload.coll_id;
-    console.log("deleteCollectionSpecies payload:", action.payload);
     yield axios.delete(`/api/collection/species/${coll_id}`, {
       data: action.payload,
     });
@@ -410,6 +461,7 @@ function* watcherSaga() {
   yield takeEvery(DELETE_SPECIES, deleteSpeciesSaga);
   yield takeEvery(POST_NEW_SPECIES, postNewSpeciesSaga);
   yield takeEvery(UPDATE_SPECIES_GEOMETRY, updateSpeciesGeometrySaga);
+  yield takeEvery(POST_SUBMISSION, postSubmissionSaga);
   yield takeLatest(GET_COLLECTIONS, getCollectionsSaga);
   yield takeEvery(POST_NEW_COLLECTION, postNewCollectionSaga);
   yield takeEvery(POST_COLLECTION_SPECIES, postCollectionSpeciesSaga);

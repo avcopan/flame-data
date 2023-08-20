@@ -1,32 +1,30 @@
 import { useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { textToggler } from "../utils/utils";
 import BinarySelector from "../components/BinarySelector";
 import PopupButton from "../components/PopupButton";
 import SmilesEntryForm from "../components/SmilesEntryForm";
-import StatusTable from "../components/StatusTable";
-import SideCart from "../components/SideCart";
+import SubmissionStatusTable from "../components/SubmissionStatusTable";
 import actions from "../state/actions";
 
 export default function FormPage() {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const newSpecies = useSelector((store) => store.newSpecies);
   const [smiles1, setSmiles1] = useState("");
   const [smiles2, setSmiles2] = useState("");
-  const [reactionMode, setReactionMode] = useState(false);
+  const [isReaction, setIsReaction] = useState(false);
 
-  const toggleText = textToggler(reactionMode, "reaction", "species");
+  const toggleText = textToggler(isReaction, "reaction", "species");
 
-  const addToCart = () => {
-    dispatch(actions.addNewSpecies(smiles1));
-  };
-
-  const postNewSpecies = () => {
-    dispatch(actions.postNewSpecies());
+  const submit = () => {
+    let smiles;
+    if (isReaction) {
+      smiles = smiles1 + " >> " + smiles2;
+    } else {
+      smiles = smiles1;
+    }
+    dispatch(actions.postSubmission({ smiles, isReaction }));
     setSmiles1("");
-    navigate("/");
+    setSmiles2("");
   };
 
   return (
@@ -35,8 +33,8 @@ export default function FormPage() {
         text1="Species"
         text2="Reaction"
         vertical={false}
-        selection={reactionMode}
-        setSelection={setReactionMode}
+        selection={isReaction}
+        setSelection={setIsReaction}
         selectionFor={2}
         className="mb-12"
       />
@@ -46,25 +44,19 @@ export default function FormPage() {
       <div className="flex flex-row justify-center gap-24">
         <div className="flex flex-row gap-6">
           <SmilesEntryForm
-            reactionMode={reactionMode}
+            reactionMode={isReaction}
             smiles1={smiles1}
             setSmiles1={setSmiles1}
             smiles2={smiles2}
             setSmiles2={setSmiles2}
           />
         </div>
-        <StatusTable />
-        <SideCart
-          speciesHeader={`New ${toggleText("Reactions", "Species")}`}
-          speciesList={newSpecies}
-          buttonText="Post"
-          buttonOnClick={postNewSpecies}
-        />
+        <SubmissionStatusTable />
       </div>
       <PopupButton
-        condition={smiles1 && (smiles2 || !reactionMode)}
+        condition={smiles1 && (smiles2 || !isReaction)}
         text="Submit"
-        onClick={addToCart}
+        onClick={submit}
       />
     </div>
   );
