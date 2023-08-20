@@ -25,7 +25,7 @@ export default function DetailPage() {
 
   return (
     isomerList && (
-      <div className="max-w-screen-xl flex flex-col">
+      <div className="max-w-screen-2xl flex flex-col">
         <div className="mb-8 stats shadow">
           <div className="stat">
             <div className="stat-title">Formula</div>
@@ -38,7 +38,7 @@ export default function DetailPage() {
             <div className="stat-value">{isomerList[0].conn_smiles}</div>
           </div>
           <div className="stat">
-            <div className="stat-title">Multiplicity</div>
+            <div className="stat-title">Spin Multiplicity</div>
             <div className="stat-value">{isomerList[0].spin_mult}</div>
           </div>
         </div>

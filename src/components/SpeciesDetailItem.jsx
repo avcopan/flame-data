@@ -39,20 +39,20 @@ export default function SpeciesDetailItem({ isomer }) {
         />
       </figure>
       <div className="items-center">
-        <div className="stats stats-vertical shadow">
+        <div className="stats stats-vertical shadow max-w-xl">
           <div className="stat">
             <div className="stat-title">SMILES</div>
-            <div className="stat-value text-base">{isomer.smiles}</div>
+            <div className="stat-value text-base overflow-x-auto">{isomer.smiles}</div>
           </div>
 
           <div className="stat">
             <div className="stat-title">InChI</div>
-            <div className="stat-value text-base">{isomer.inchi}</div>
+            <div className="stat-value text-base overflow-x-auto">{isomer.inchi}</div>
           </div>
 
           <div className="stat">
             <div className="stat-title">AMChI</div>
-            <div className="stat-value text-base">{isomer.amchi}</div>
+            <div className="stat-value text-base overflow-x-auto">{isomer.amchi}</div>
           </div>
         </div>
       </div>
