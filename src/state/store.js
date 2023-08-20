@@ -101,24 +101,6 @@ const addSubmission = submissionsSlice.actions.addSubmission;
 const updateSubmission = submissionsSlice.actions.updateSubmission;
 const submissionsReducer = submissionsSlice.reducer;
 
-// 5. new species slice/reducer
-const newSpeciesSlice = createSlice({
-  name: "newSpecies",
-  initialState: [],
-  reducers: {
-    addNewSpecies: (state, action) => {
-      return [...state, action.payload];
-    },
-    clearNewSpecies: () => {
-      return [];
-    },
-  },
-});
-
-export const addNewSpecies = newSpeciesSlice.actions.addNewSpecies;
-export const clearNewSpecies = newSpeciesSlice.actions.clearNewSpecies;
-const newSpeciesReducer = newSpeciesSlice.reducer;
-
 // 6. collections slice/reducer
 const collectionsSlice = createSlice({
   name: "collections",
@@ -144,7 +126,6 @@ const store = configureStore({
     species: speciesReducer,
     speciesDetails: speciesDetailsReducer,
     submissions: submissionsReducer,
-    newSpecies: newSpeciesReducer,
     collections: collectionsReducer,
   },
   middleware: (defaultMiddleware) => defaultMiddleware().concat(sagaMiddleware),
@@ -271,33 +252,12 @@ export const getSpeciesDetails = (payload) => {
   return { type: GET_SPECIES_DETAILS, payload };
 };
 
-//  c. post new species in batch
 function handleErrorForProtectedEndpoint(error) {
   if (error.response.status === 401) {
     alert("You are not authorized to make this request. Are you logged in?");
   }
   console.error(error);
 }
-
-const POST_NEW_SPECIES = "POST_NEW_SPECIES";
-
-function* postNewSpeciesSaga() {
-  try {
-    const smilesList = yield select((store) => store.newSpecies);
-    yield put(clearNewSpecies());
-    const requestBody = { smilesList };
-    const res = yield axios.post(
-      "/api/species/connectivity/batch",
-      requestBody
-    );
-  } catch (error) {
-    handleErrorForProtectedEndpoint(error);
-  }
-}
-
-export const postNewSpecies = () => {
-  return { type: POST_NEW_SPECIES };
-};
 
 //  d. delete one species
 const DELETE_SPECIES = "DELETE_SPECIES";
@@ -459,7 +419,6 @@ function* watcherSaga() {
   yield takeLatest(GET_SPECIES, getSpeciesSaga);
   yield takeEvery(GET_SPECIES_DETAILS, getSpeciesDetailsSaga);
   yield takeEvery(DELETE_SPECIES, deleteSpeciesSaga);
-  yield takeEvery(POST_NEW_SPECIES, postNewSpeciesSaga);
   yield takeEvery(UPDATE_SPECIES_GEOMETRY, updateSpeciesGeometrySaga);
   yield takeEvery(POST_SUBMISSION, postSubmissionSaga);
   yield takeLatest(GET_COLLECTIONS, getCollectionsSaga);
