@@ -86,6 +86,39 @@ def add_user(cursor, email: str, password: str, return_password: bool = False) -
 
 
 # SPECIES TABLES
+def formula_matching_clauses_and_params(
+    fml_str: str = None, is_partial: bool = False
+) -> str:
+    """Generate the where clauses for matching a formula
+
+    :param fml_str: A formula string to search for, defaults to None
+    :type fml: str, optional
+    :param is_partial: Whether the formula is partial, defaults to False
+    :type is_partial: bool, optional
+    :return: The SQL where clauses
+    :rtype: str
+    """
+    clause_string = ""
+    query_params = []
+
+    # Add formula matching to query string, if requested
+    if fml_str is not None:
+        fml_str = fml_str.upper()
+
+        if not is_partial:
+            clause_string += "WHERE formula = %s"
+            query_params = [fml_str]
+        else:
+            fml = automol.formula.from_string(fml_str)
+            clause_string += "WHERE " + " AND ".join(["formula ~ %s"] * len(fml))
+            query_params = [
+                f"(?!\d){symb}{count}(?!\d)" if count > 1 else f"(?!\d){symb}(?!\d)"
+                for symb, count in fml.items()
+            ]
+
+    return clause_string, query_params
+
+
 @with_pool_cursor
 def search_species_connectivities(
     cursor, fml_str: str = None, is_partial: bool = False
@@ -101,47 +134,77 @@ def search_species_connectivities(
     :return: Connectivity species information
     :rtype: List[dict]
     """
-    query_string = """
-        SELECT * FROM species_connectivity
+    clause_string, query_params = formula_matching_clauses_and_params(
+        fml_str, is_partial=is_partial
+    )
+
+    query_string = f"""
+        SELECT * FROM species_connectivity {clause_string};
     """
-    query_params = []
-
-    # Add formula matching to query string, if requested
-    if fml_str is not None:
-        fml_str = fml_str.upper()
-
-        if not is_partial:
-            query_string += "WHERE formula = %s"
-            query_params = [fml_str]
-        else:
-            fml = automol.formula.from_string(fml_str)
-            query_string += "WHERE " + " AND ".join(["formula ~ %s"] * len(fml))
-            query_params = [
-                f"(?!\d){symb}{count}(?!\d)" if count > 1 else f"(?!\d){symb}(?!\d)"
-                for symb, count in fml.items()
-            ]
-
-    query_string += ";"
 
     cursor.execute(query_string, query_params)
-    species_conns = cursor.fetchall()
+    conn_rows = cursor.fetchall()
 
-    if species_conns:
+    if conn_rows:
         # Sort the species by formula
         # 1. Generate sorting information
-        fmls = [automol.formula.from_string(row["formula"]) for row in species_conns]
+        fmls = [automol.formula.from_string(row["formula"]) for row in conn_rows]
         symbs = automol.formula.sorted_symbols_in_sequence(fmls)
         counts = [automol.formula.heavy_atom_count(f) for f in fmls]
         srt_vecs = [automol.formula.sort_vector(f, symbs) for f in fmls]
         # 2. Do the sorting
-        species_conns = [
+        conn_rows = [
             row
             for _, _, row in sorted(
-                zip(counts, srt_vecs, species_conns), key=lambda x: x[:-1]
+                zip(counts, srt_vecs, conn_rows), key=lambda x: x[:-1]
             )
         ]
 
-    return species_conns
+    return conn_rows
+
+
+@with_pool_cursor
+def search_reaction_connectivities(
+    cursor, fml_str: str = None, is_partial: bool = False
+) -> List[dict]:
+    """Get connectivity reaction grouped by formula
+
+    Optionally, search for reaction matching a particular formula
+
+    :param fml_str: A formula string to search for, defaults to None
+    :type fml: str, optional
+    :param is_partial: Whether the formula is partial, defaults to False
+    :type is_partial: bool, optional
+    :return: Connectivity reaction information
+    :rtype: List[dict]
+    """
+    clause_string, query_params = formula_matching_clauses_and_params(
+        fml_str, is_partial=is_partial
+    )
+
+    query_string = f"""
+        SELECT * FROM reaction_connectivity {clause_string};
+    """
+
+    cursor.execute(query_string, query_params)
+    conn_rows = cursor.fetchall()
+
+    if conn_rows:
+        # Sort the reaction by formula
+        # 1. Generate sorting information
+        fmls = [automol.formula.from_string(row["formula"]) for row in conn_rows]
+        symbs = automol.formula.sorted_symbols_in_sequence(fmls)
+        counts = [automol.formula.heavy_atom_count(f) for f in fmls]
+        srt_vecs = [automol.formula.sort_vector(f, symbs) for f in fmls]
+        # 2. Do the sorting
+        conn_rows = [
+            row
+            for _, _, row in sorted(
+                zip(counts, srt_vecs, conn_rows), key=lambda x: x[:-1]
+            )
+        ]
+
+    return conn_rows
 
 
 def lookup_species_connectivity(

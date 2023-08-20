@@ -86,7 +86,7 @@ def register_user():
 # SPECIES/REACTION ROUTES
 @app.route("/api/species/connectivity", methods=["GET"])
 def get_species_connectivities():
-    """@api {get} /api/species/connectivity Get all connectivity species
+    """@api {get} /api/species/connectivity Get all species connectivities
 
     @apiQuery formula {String} A formula to search for, e.g. 'CH4O'
     @apiQuery partial If present, allows for partial formula matches
@@ -99,6 +99,23 @@ def get_species_connectivities():
         fml_str, is_partial
     )
     return flame_data_api.response(200, contents=species_conns)
+
+
+@app.route("/api/reaction/connectivity", methods=["GET"])
+def get_reaction_connectivities():
+    """@api {get} /api/reaction/connectivity Get all reaction connectivities
+
+    @apiQuery formula {String} A formula to search for, e.g. 'CH4O'
+    @apiQuery partial If present, allows for partial formula matches
+    @apiSuccess {Object[]} reaction An array of objects with keys `conn_id`, `formula`,
+        `conn_smiles`, `conn_inchi`, `conn_inchi_hash`, `conn_amchi`, `conn_amchi_hash`
+    """
+    fml_str = flask.request.args.get("formula")
+    is_partial = flask.request.args.get("partial") is not None
+    reaction_conns = flame_data_api.query.search_reaction_connectivities(
+        fml_str, is_partial
+    )
+    return flame_data_api.response(200, contents=reaction_conns)
 
 
 @app.route("/api/species/connectivity", methods=["POST"])
