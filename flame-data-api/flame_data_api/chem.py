@@ -38,12 +38,12 @@ def reaction_connectivity_row(smi: str) -> dict:
     :param smi: Reaction SMILES string
     :type smi: str
     :return: The row; keys:
-      "formula", "svg_string", "conn_smiles",
-        "r_formulas", "p_formulas",
-        "r_conn_inchis", "r_conn_inchi_hashes", "r_conn_inchi", "r_conn_inchi_hash",
-        "r_conn_amchis", "r_conn_amchi_hashes", "r_conn_amchi", "r_conn_amchi_hash",
-        "p_conn_inchis", "p_conn_inchi_hashes", "p_conn_inchi", "p_conn_inchi_hash",
-        "p_conn_amchis", "p_conn_amchi_hashes", "p_conn_amchi", "p_conn_amchi_hash",
+        "formula", "conn_smiles", "r_svg_string", "p_svg_string", "r_conn_inchi",
+        "p_conn_inchi", "r_conn_inchi_hash", "p_conn_inchi_hash", "r_conn_amchi",
+        "p_conn_amchi", "r_conn_amchi_hash", "p_conn_amchi_hash", "r_formulas",
+        "p_formulas", "r_conn_inchis", "p_conn_inchis", "r_conn_inchi_hashes",
+        "p_conn_inchi_hashes", "r_conn_amchis", "p_conn_amchis", "r_conn_amchi_hashes",
+        "p_conn_amchi_hashes",
     :rtype: dict
     """
     smi = automol.smiles.without_stereo(smi)
@@ -52,6 +52,7 @@ def reaction_connectivity_row(smi: str) -> dict:
     richs, pichs = map(automol.inchi.split, (rich, pich))
     rsmis, psmis = (list(map(automol.inchi.smiles, i)) for i in (richs, pichs))
     smi = automol.smiles.reaction(rsmis, psmis)
+    rsvg_str, psvg_str = automol.smiles.reaction_reagent_svg_strings(smi)
     rick, pick = map(automol.inchi.inchi_key, (rich, pich))
     ricks, picks = (list(map(automol.inchi.inchi_key, i)) for i in (richs, pichs))
     rach, pach = map(automol.smiles.amchi, (rsmi, psmi))
@@ -61,26 +62,26 @@ def reaction_connectivity_row(smi: str) -> dict:
     return {
         "formula": automol.inchi.formula_string(rich),
         "conn_smiles": smi,
-        "r_svg_strings": list(map(automol.smiles.svg_string, rsmis)),
-        "p_svg_strings": list(map(automol.smiles.svg_string, psmis)),
+        "r_svg_string": rsvg_str,
+        "p_svg_string": psvg_str,
+        "r_conn_inchi": rich,
+        "p_conn_inchi": pich,
+        "r_conn_inchi_hash": automol.inchi_key.first_hash(rick),
+        "p_conn_inchi_hash": automol.inchi_key.first_hash(pick),
+        "r_conn_amchi": rach,
+        "p_conn_amchi": pach,
+        "r_conn_amchi_hash": automol.inchi_key.first_hash(rack),
+        "p_conn_amchi_hash": automol.inchi_key.first_hash(pack),
         "r_formulas": list(map(automol.inchi.formula_string, richs)),
         "p_formulas": list(map(automol.inchi.formula_string, pichs)),
         "r_conn_inchis": richs,
-        "r_conn_inchi_hashes": list(map(automol.inchi_key.first_hash, ricks)),
-        "r_conn_inchi": rich,
-        "r_conn_inchi_hash": automol.inchi_key.first_hash(rick),
-        "r_conn_amchis": rachs,
-        "r_conn_amchi_hashes": list(map(automol.inchi_key.first_hash, racks)),
-        "r_conn_amchi": rach,
-        "r_conn_amchi_hash": automol.inchi_key.first_hash(rack),
         "p_conn_inchis": pichs,
+        "r_conn_inchi_hashes": list(map(automol.inchi_key.first_hash, ricks)),
         "p_conn_inchi_hashes": list(map(automol.inchi_key.first_hash, picks)),
-        "p_conn_inchi": pich,
-        "p_conn_inchi_hash": automol.inchi_key.first_hash(pick),
+        "r_conn_amchis": rachs,
         "p_conn_amchis": pachs,
+        "r_conn_amchi_hashes": list(map(automol.inchi_key.first_hash, racks)),
         "p_conn_amchi_hashes": list(map(automol.inchi_key.first_hash, packs)),
-        "p_conn_amchi": pach,
-        "p_conn_amchi_hash": automol.inchi_key.first_hash(pack),
     }
 
 
@@ -145,9 +146,11 @@ def reaction_and_ts_rows(smi: str) -> Tuple[List[dict], List[List[dict]]]:
 
     :param smi: Reaction SMILES string
     :type smi: str
-    :return: The reaction rows, with keys: "smiles", "r_amchi", "r_amchi_key",
-          "p_amchi", "p_amchi_key"; Also, the TS rows, which will be grouped by
-          reactants and products, with keys: "geometry", "class", "amchi", "amchi_key"
+    :return: The reaction rows, with the following keys:
+            "smiles", "r_amchi", "p_amchi", "r_amchi_key", "p_amchi_key", "r_inchis",
+            "p_inchis", "r_amchis", "p_amchis", "r_amchi_keys", "p_amchi_keys",
+        and the TS rows, grouped by reactants and products, with keys:
+              "geometry", "class", "amchi", "amchi_key"
     :rtype: Tuple[List[dict], List[List[dict]]]
     """
     smi = automol.smiles.without_stereo(smi)
@@ -170,17 +173,19 @@ def reaction_and_ts_rows(smi: str) -> Tuple[List[dict], List[List[dict]]]:
             ts_geo = automol.graph.geometry(tsg)
             ts_ach = automol.graph.amchi(tsg)
             all_row = {
+                # reaction columns
                 "smiles": automol.reac.reaction_smiles(srxn),
-                "r_inchis": richs,
-                "r_amchis": rachs,
-                "r_amchi_keys": racks,
                 "r_amchi": rach,
-                "r_amchi_key": automol.amchi.amchi_key(rach),
-                "p_inchis": pichs,
-                "p_amchis": pachs,
-                "p_amchi_keys": packs,
                 "p_amchi": pach,
+                "r_amchi_key": automol.amchi.amchi_key(rach),
                 "p_amchi_key": automol.amchi.amchi_key(pach),
+                "r_inchis": richs,
+                "p_inchis": pichs,
+                "r_amchis": rachs,
+                "p_amchis": pachs,
+                "r_amchi_keys": racks,
+                "p_amchi_keys": packs,
+                # TS columns
                 "geometry": automol.geom.xyz_string(ts_geo),
                 "class": automol.reac.class_(srxn),
                 "amchi": ts_ach,
@@ -193,16 +198,16 @@ def reaction_and_ts_rows(smi: str) -> Tuple[List[dict], List[List[dict]]]:
     # 2. Group them by reactants and products
     rxn_keys = (
         "smiles",
-        "r_inchis",
-        "r_amchis",
-        "r_amchi_keys",
         "r_amchi",
-        "r_amchi_key",
-        "p_inchis",
-        "p_amchis",
-        "p_amchi_keys",
         "p_amchi",
+        "r_amchi_key",
         "p_amchi_key",
+        "r_inchis",
+        "p_inchis",
+        "r_amchis",
+        "p_amchis",
+        "r_amchi_keys",
+        "p_amchi_keys",
     )
     ts_keys = ("geometry", "class", "amchi", "amchi_key")
     rxn_rows = []
@@ -327,7 +332,7 @@ def reaction_connectivity_chi_hashes(
     """
     key_type = key_type.lower()
 
-    print('key', key)
+    print("key", key)
     if isinstance(key, str) and key_type == "smiles":
         key = automol.smiles.reaction_reagents(key)
 
@@ -337,8 +342,8 @@ def reaction_connectivity_chi_hashes(
     )
 
     rkey, pkey = key
-    print('rkey', rkey)
-    print('pkey', pkey)
+    print("rkey", rkey)
+    print("pkey", pkey)
     rhash, is_amchi = species_connectivity_chi_hash(rkey, key_type=key_type)
     phash, is_amchi = species_connectivity_chi_hash(pkey, key_type=key_type)
     return (rhash, phash), is_amchi

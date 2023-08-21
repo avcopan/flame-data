@@ -53,27 +53,27 @@ CREATE TABLE reaction_connectivity (
   id BIGSERIAL PRIMARY KEY,
   formula TEXT,
   conn_smiles TEXT,
-  r_formulas TEXT[],
-  r_svg_strings TEXT[],
-  r_conn_inchis TEXT[],
-  r_conn_inchi_hashes CHAR(14)[],
+  r_svg_string TEXT,
+  p_svg_string TEXT,
   r_conn_inchi TEXT,
-  r_conn_inchi_hash CHAR(14),
-  r_conn_amchis TEXT[],
-  r_conn_amchi_hashes CHAR(14)[],
-  r_conn_amchi TEXT,
-  r_conn_amchi_hash CHAR(14),
-  r_conn_ids INTEGER[],  -- Unofficially references species_connectivity(id)
-  p_formulas TEXT[],
-  p_svg_strings TEXT[],
-  p_conn_inchis TEXT[],
-  p_conn_inchi_hashes CHAR(14)[],
   p_conn_inchi TEXT,
+  r_conn_inchi_hash CHAR(14),
   p_conn_inchi_hash CHAR(14),
-  p_conn_amchis TEXT[],
-  p_conn_amchi_hashes CHAR(14)[],
+  r_conn_amchi TEXT,
   p_conn_amchi TEXT,
+  r_conn_amchi_hash CHAR(14),
   p_conn_amchi_hash CHAR(14),
+  r_formulas TEXT[],
+  p_formulas TEXT[],
+  r_conn_inchis TEXT[],
+  p_conn_inchis TEXT[],
+  r_conn_inchi_hashes CHAR(14)[],
+  p_conn_inchi_hashes CHAR(14)[],
+  r_conn_amchis TEXT[],
+  p_conn_amchis TEXT[],
+  r_conn_amchi_hashes CHAR(14)[],
+  p_conn_amchi_hashes CHAR(14)[],
+  r_conn_ids INTEGER[],  -- Unofficially references species_connectivity(id)
   p_conn_ids INTEGER[],  -- Unofficially references species_connectivity(id)
   UNIQUE(r_conn_inchi_hash, p_conn_inchi_hash),
   UNIQUE(r_conn_amchi_hash, p_conn_amchi_hash)
@@ -82,16 +82,16 @@ CREATE TABLE reaction_connectivity (
 CREATE TABLE reaction (
   id BIGSERIAL PRIMARY KEY,
   smiles TEXT,
-  r_inchis TEXT[],
-  r_amchis TEXT[],
-  r_amchi_keys CHAR(27)[],
   r_amchi TEXT,
-  r_amchi_key CHAR(27),
-  p_inchis TEXT[],
-  p_amchis TEXT[],
-  p_amchi_keys CHAR(27)[],
   p_amchi TEXT,
+  r_amchi_key CHAR(27),
   p_amchi_key CHAR(27),
+  r_inchis TEXT[],  -- These can be obtained from a join, but it's useful to keep them sorted
+  p_inchis TEXT[],
+  r_amchis TEXT[],
+  p_amchis TEXT[],
+  r_amchi_keys CHAR(27)[],
+  p_amchi_keys CHAR(27)[],
   conn_id BIGINT
     REFERENCES reaction_connectivity(id)
     ON DELETE CASCADE,
@@ -141,6 +141,7 @@ CREATE TABLE reaction_products (
 
 -- COLLECTION TABLES
 
+-- Rename these to "collection" for consistency
 CREATE TABLE collections (
   id SERIAL PRIMARY KEY,
   name TEXT,
