@@ -1,5 +1,6 @@
-import DisplayItem from "./DisplayItem";
+import { useSelector } from "react-redux";
 import { checkHandler } from "../utils/utils";
+import DisplayItem from "./DisplayItem";
 
 export default function DisplayList({
   itemList,
@@ -8,6 +9,7 @@ export default function DisplayList({
   reactionMode,
   className = "",
 }) {
+  const user = useSelector((store) => store.user);
   let itemListWithGroupIndicator = [];
   let last_formula = "";
 
@@ -26,7 +28,7 @@ export default function DisplayList({
           firstInGroup={firstInGroup}
           reactionMode={reactionMode}
           key={index}
-          withCheckbox={true}
+          withCheckbox={user}
           checked={selectedItems.includes(item.id)}
           checkHandler={checkHandler(item.id, selectedItems, setSelectedItems)}
         />
