@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import actions from "../state/actions";
-import SpeciesDetailItem from "../components/SpeciesDetailItem";
+import { prettyReactionSmiles } from "../utils/utils";
+import DetailItem from "../components/SpeciesDetailItem";
 import FormattedFormula from "../components/FormattedFormula";
 import DeleteButton from "../components/DeleteButton";
 
@@ -12,8 +13,10 @@ export default function DetailPage({ isReaction }) {
   const navigate = useNavigate();
   const user = useSelector((store) => store.user);
   const reactionMode = useSelector((store) => store.reactionMode);
-  const speciesDetails = useSelector((store) => store.speciesDetails);
-  const isomerList = speciesDetails[id];
+  const itemDetails = useSelector((store) =>
+    reactionMode ? store.reactionDetails : store.speciesDetails
+  );
+  const detailItems = itemDetails[id];
 
   useEffect(() => {
     if (reactionMode !== isReaction) {
@@ -22,7 +25,7 @@ export default function DetailPage({ isReaction }) {
   }, []);
 
   useEffect(() => {
-    dispatch(actions.getSpeciesDetails(id));
+    dispatch(actions.getDetails(id));
   }, []);
 
   const deleteSpecies = () => {
@@ -31,28 +34,29 @@ export default function DetailPage({ isReaction }) {
   };
 
   return (
-    isomerList && (
+    detailItems && (
       <div className="max-w-screen-2xl flex flex-col">
-        <h1>{reactionMode ? "REACTION" : "SPECIES"}</h1>
         <div className="mb-8 stats shadow">
           <div className="stat">
             <div className="stat-title">Formula</div>
             <div className="stat-value">
-              <FormattedFormula formula={isomerList[0].formula} />
+              <FormattedFormula formula={detailItems[0].formula} />
             </div>
           </div>
           <div className="stat">
             <div className="stat-title">SMILES</div>
-            <div className="stat-value">{isomerList[0].conn_smiles}</div>
+            <div className="stat-value">
+              {prettyReactionSmiles(detailItems[0].conn_smiles)}
+            </div>
           </div>
           <div className="stat">
             <div className="stat-title">Spin Multiplicity</div>
-            <div className="stat-value">{isomerList[0].spin_mult}</div>
+            <div className="stat-value">{detailItems[0].spin_mult}</div>
           </div>
         </div>
         <div className="mb-8 flex flex-col">
-          {isomerList.map((isomer) => (
-            <SpeciesDetailItem key={isomer.id} isomer={isomer} />
+          {detailItems.map((detailItem) => (
+            <DetailItem key={detailItem.id} detailItem={detailItem} />
           ))}
         </div>
         {/* Open the modal using ID.showModal() method */}

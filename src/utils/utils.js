@@ -15,3 +15,7 @@ export function textToggler(mode, trueTextDefault, falseTextDefault) {
     return text;
   };
 }
+
+export function prettyReactionSmiles(smiles) {
+  return smiles.replace(/\./g, " + ").replace(">>", " >> ");
+}

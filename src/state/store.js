@@ -94,21 +94,35 @@ const reactionsSlice = createSlice({
 const setReactions = reactionsSlice.actions.setReactions;
 const reactionsReducer = reactionsSlice.reducer;
 
-// 6. reactionMode slice/reducer(s)
+// 6. reaction details cache slice/reducer
+const reactionDetailsSlice = createSlice({
+  name: "reactionDetails",
+  initialState: {},
+  reducers: {
+    addReactionDetails: (state, action) => {
+      return { ...state, ...action.payload };
+    },
+  },
+});
+
+const addReactionDetails = reactionDetailsSlice.actions.addReactionDetails;
+const reactionDetailsReducer = reactionDetailsSlice.reducer;
+
+// 7. reactionMode slice/reducer(s)
 const reactionModeSlice = createSlice({
   name: "reactionMode",
   initialState: false,
   reducers: {
     setReactionMode: (_, action) => {
       return action.payload;
-    }
-  }
-})
+    },
+  },
+});
 
 export const setReactionMode = reactionModeSlice.actions.setReactionMode;
 const reactionModeReducer = reactionModeSlice.reducer;
 
-// 7. submission slice/reducer
+// 8. submission slice/reducer
 const submissionsSlice = createSlice({
   name: "submissions",
   initialState: [],
@@ -129,7 +143,7 @@ const addSubmission = submissionsSlice.actions.addSubmission;
 const updateSubmission = submissionsSlice.actions.updateSubmission;
 const submissionsReducer = submissionsSlice.reducer;
 
-// 8. collections slice/reducer
+// 9. collections slice/reducer
 const collectionsSlice = createSlice({
   name: "collections",
   initialState: [],
@@ -154,6 +168,7 @@ const store = configureStore({
     species: speciesReducer,
     speciesDetails: speciesDetailsReducer,
     reactions: reactionsReducer,
+    reactionDetails: reactionDetailsReducer,
     reactionMode: reactionModeReducer,
     submissions: submissionsReducer,
     collections: collectionsReducer,
@@ -264,24 +279,31 @@ export const getSpecies = (payload) => {
   return { type: GET_SPECIES, payload };
 };
 
-//  b. get details for one species
-const GET_SPECIES_DETAILS = "GET_SPECIES_DETAILS";
+//  b. get details for one species or reaction
+const GET_DETAILS = "GET_DETAILS";
 
-function* getSpeciesDetailsSaga(action) {
+function* getDetailsSaga(action) {
   try {
+    const reactionMode = yield select((store) => store.reactionMode);
     const connId = action.payload;
-    const res = yield axios.get(`/api/species/connectivity/${connId}`);
+    const type = reactionMode ? "reaction" : "species";
+    const res = yield axios.get(`/api/${type}/connectivity/${connId}`);
     const data = yield res.data;
-    yield put(addSpeciesDetails({ [connId]: data.contents }));
+    if (reactionMode) {
+      yield put(addReactionDetails({ [connId]: data.contents }));
+    } else {
+      yield put(addSpeciesDetails({ [connId]: data.contents }));
+    }
   } catch (error) {
     console.error(error);
   }
 }
 
-export const getSpeciesDetails = (payload) => {
-  return { type: GET_SPECIES_DETAILS, payload };
+export const getDetails = (payload) => {
+  return { type: GET_DETAILS, payload };
 };
 
+//  c. delete one species
 function handleErrorForProtectedEndpoint(error) {
   if (error.response.status === 401) {
     alert("You are not authorized to make this request. Are you logged in?");
@@ -289,7 +311,6 @@ function handleErrorForProtectedEndpoint(error) {
   console.error(error);
 }
 
-//  d. delete one species
 const DELETE_SPECIES = "DELETE_SPECIES";
 
 function* deleteSpeciesSaga(action) {
@@ -306,7 +327,7 @@ export const deleteSpecies = (payload) => {
   return { type: DELETE_SPECIES, payload };
 };
 
-//  e. update one species geometry
+//  d. update one species geometry
 const UPDATE_SPECIES_GEOMETRY = "UPDATE_SPECIES_GEOMETRY";
 
 function* updateSpeciesGeometrySaga(action) {
@@ -314,7 +335,7 @@ function* updateSpeciesGeometrySaga(action) {
     const connId = action.payload.connId;
     const id = action.payload.id;
     yield axios.put(`/api/species/${id}`, action.payload);
-    yield put(getSpeciesDetails(connId));
+    yield put(getDetails(connId));
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
   }
@@ -478,7 +499,7 @@ function* watcherSaga() {
   yield takeLatest(LOGOUT_USER, logoutUserSaga);
   yield takeLatest(REGISTER_USER, registerUserSaga);
   yield takeLatest(GET_SPECIES, getSpeciesSaga);
-  yield takeEvery(GET_SPECIES_DETAILS, getSpeciesDetailsSaga);
+  yield takeEvery(GET_DETAILS, getDetailsSaga);
   yield takeEvery(DELETE_SPECIES, deleteSpeciesSaga);
   yield takeEvery(UPDATE_SPECIES_GEOMETRY, updateSpeciesGeometrySaga);
   yield takeLatest(GET_REACTIONS, getReactionsSaga);
