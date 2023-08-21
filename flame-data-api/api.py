@@ -210,7 +210,7 @@ def add_species_connectivities():
 
 
 @app.route("/api/species/connectivity/<id>", methods=["GET"])
-def get_species_data_for_connectivity(id):
+def get_species_details_by_connectivity(id):
     """@api {get} /api/species/connectivity/:id Get details for one connectivity species
 
     @apiparam {Number} id The ID of the connectivity species
@@ -221,6 +221,20 @@ def get_species_data_for_connectivity(id):
     """
     species_data = flame_data_api.query.get_species_by_connectivity(id)
     return flame_data_api.response(200, contents=species_data)
+
+
+@app.route("/api/reaction/connectivity/<id>", methods=["GET"])
+def get_reaction_details_by_connectivity(id):
+    """@api {get} /api/reaction/connectivity/:id Get details for one connectivity reaction
+
+    @apiparam {Number} id The ID of the connectivity reaction
+    @apiSuccess {Object[]} reaction An array of objects with keys `id`, `geometry`,
+        `smiles`, `inchi`, `amchi`, `amchi_key`, `estate_id`, `spin_mult`, `conn_id`,
+        `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
+        `conn_amchi`, `conn_amchi_hash`
+    """
+    reaction_data = flame_data_api.query.get_reaction_transition_states_by_connectivity(id)
+    return flame_data_api.response(200, contents=reaction_data)
 
 
 @app.route("/api/species/connectivity/<id>", methods=["DELETE"])

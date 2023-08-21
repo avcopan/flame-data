@@ -734,6 +734,84 @@ def get_reactions_by_connectivity(
 
 
 @with_pool_cursor
+def get_reaction_transition_states_by_connectivity(
+    cursor, id: int, id_only: bool = False
+) -> Union[List[dict], List[int]]:
+    """Get all reactions with a certain connectivity ID
+
+    :param id: The ID of the connectivity reaction
+    :type id: int
+    :param id_only: Look up just the ID?, default False
+    :type id_only: bool, optional
+    :return: Details for each isomer, as a list of dictionaries; keys:
+        id, conn_id, estate_id, formula, svg_string, conn_smiles, conn_inchi,
+        conn_amchi, spin_mult, smiles, inchi, amchi, geometry
+    :rtype: List[dict]
+    """
+    query_string = """
+        SELECT
+            reaction.id,
+            -- reaction connectivity columns
+            formula,
+            conn_smiles,
+            r_svg_string,
+            p_svg_string,
+            r_conn_inchi,
+            p_conn_inchi,
+            r_conn_inchi_hash,
+            p_conn_inchi_hash,
+            r_conn_amchi,
+            p_conn_amchi,
+            r_conn_amchi_hash,
+            p_conn_amchi_hash,
+            r_formulas,
+            p_formulas,
+            r_conn_inchis,
+            p_conn_inchis,
+            r_conn_inchi_hashes,
+            p_conn_inchi_hashes,
+            r_conn_amchis,
+            p_conn_amchis,
+            r_conn_amchi_hashes,
+            p_conn_amchi_hashes,
+            r_conn_ids,
+            p_conn_ids,
+            -- reaction  columns
+            smiles,
+            r_amchi,
+            p_amchi,
+            r_amchi_key,
+            p_amchi_key,
+            r_inchis,
+            p_inchis,
+            r_amchis,
+            p_amchis,
+            r_amchi_keys,
+            p_amchi_keys,
+            conn_id,
+            -- estate columns
+            spin_mult,
+            -- TS columns
+            geometry,
+            class,
+            amchi,
+            amchi_key
+        FROM reaction_connectivity
+        JOIN reaction ON reaction.conn_id = reaction_connectivity.id
+        JOIN reaction_estate ON reaction_estate.reaction_id = reaction.id
+        JOIN reaction_ts ON reaction_ts.estate_id = reaction_estate.id
+        WHERE reaction_connectivity.id = %s;
+    """
+    query_params = [id]
+    cursor.execute(query_string, query_params)
+    query_results = cursor.fetchall()
+    if id_only:
+        query_results = [r["id"] for r in query_results]
+
+    return query_results
+
+
+@with_pool_cursor
 def get_species(cursor, id: int) -> dict:
     """Get one species by ID
 
