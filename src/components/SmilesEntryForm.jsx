@@ -1,3 +1,4 @@
+import { useSelector } from "react-redux";
 import { ArrowLongRightIcon } from "@heroicons/react/24/outline";
 import { textToggler } from "../utils/utils";
 import SmilesEntryFormInput from "./SmilesEntryFormInput";
@@ -5,12 +6,12 @@ import ViewSpeciesFromSmiles from "./ViewSpeciesFromSmiles";
 import ViewFrame from "./ViewFrame";
 
 export default function SmilesEntryForm({
-  reactionMode,
   smiles1,
   setSmiles1,
   smiles2,
   setSmiles2,
 }) {
+  const reactionMode = useSelector((store) => store.reactionMode);
   const toggleText = textToggler(reactionMode, "reaction", "species");
 
   return (
@@ -36,7 +37,10 @@ export default function SmilesEntryForm({
         )}
       </div>
       <ViewFrame
-        className={`h-96 m-4 ${toggleText("aspect-auto w-fit", "aspect-square")}`}
+        className={`h-96 m-4 ${toggleText(
+          "aspect-auto w-fit",
+          "aspect-square"
+        )}`}
       >
         <div className="w-full flex flex-row justify-center items-center">
           <ViewSpeciesFromSmiles

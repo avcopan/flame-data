@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import actions from "../state/actions";
+import ReactionModeSelector from "../components/ReactionModeSelector";
 import BinarySelector from "../components/BinarySelector";
 import DisplayList from "../components/DisplayList";
 import CollectionsMenu from "../components/CollectionsMenu";
@@ -10,7 +11,7 @@ export default function HomePage() {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.user);
   const collections = useSelector((store) => store.collections);
-  const [reactionMode, setReactionMode] = useState(false);
+  const reactionMode = useSelector((store) => store.reactionMode);
   const [selectedItems, setSelectedItems] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [searchFormula, setSearchFormula] = useState("");
@@ -21,10 +22,9 @@ export default function HomePage() {
   );
 
   useEffect(() => {
-    reactionMode
-      ? dispatch(actions.getReactions())
-      : dispatch(actions.getSpecies());
-  }, [reactionMode]);
+    dispatch(actions.getReactions());
+    dispatch(actions.getSpecies());
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -49,15 +49,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col gap-6 justify-center items-center">
-      <BinarySelector
-        text1="Species"
-        text2="Reaction"
-        vertical={false}
-        selection={reactionMode}
-        setSelection={setReactionMode}
-        selectionFor={2}
-        className="mb-6"
-      />
+      <ReactionModeSelector />
       <div className="flex flex-row gap-6 mb-12">
         <div className="w-96 flex flex-col gap-6">
           <input
@@ -84,7 +76,6 @@ export default function HomePage() {
           itemList={itemList}
           selectedItems={selectedItems}
           setSelectedItems={setSelectedItems}
-          reactionMode={reactionMode}
           className={user ? "w-2/3" : "w-full"}
         />
         {user && (

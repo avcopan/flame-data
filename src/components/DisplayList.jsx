@@ -6,7 +6,6 @@ export default function DisplayList({
   itemList,
   selectedItems,
   setSelectedItems,
-  reactionMode,
   className = "",
 }) {
   const user = useSelector((store) => store.user);
@@ -26,7 +25,6 @@ export default function DisplayList({
         <DisplayItem
           item={item}
           firstInGroup={firstInGroup}
-          reactionMode={reactionMode}
           key={index}
           withCheckbox={user}
           checked={selectedItems.includes(item.id)}

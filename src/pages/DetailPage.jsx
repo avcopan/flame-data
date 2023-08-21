@@ -6,26 +6,34 @@ import SpeciesDetailItem from "../components/SpeciesDetailItem";
 import FormattedFormula from "../components/FormattedFormula";
 import DeleteButton from "../components/DeleteButton";
 
-export default function DetailPage() {
-  const { connId } = useParams();
+export default function DetailPage({ isReaction }) {
+  const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((store) => store.user);
+  const reactionMode = useSelector((store) => store.reactionMode);
   const speciesDetails = useSelector((store) => store.speciesDetails);
-  const isomerList = speciesDetails[connId];
+  const isomerList = speciesDetails[id];
 
   useEffect(() => {
-    dispatch(actions.getSpeciesDetails(connId));
+    if (reactionMode !== isReaction) {
+      dispatch(actions.setReactionMode(isReaction));
+    }
+  }, []);
+
+  useEffect(() => {
+    dispatch(actions.getSpeciesDetails(id));
   }, []);
 
   const deleteSpecies = () => {
-    dispatch(actions.deleteSpecies(connId));
+    dispatch(actions.deleteSpecies(id));
     navigate("/");
   };
 
   return (
     isomerList && (
       <div className="max-w-screen-2xl flex flex-col">
+        <h1>{reactionMode ? "REACTION" : "SPECIES"}</h1>
         <div className="mb-8 stats shadow">
           <div className="stat">
             <div className="stat-title">Formula</div>
@@ -50,7 +58,7 @@ export default function DetailPage() {
         {/* Open the modal using ID.showModal() method */}
         {user && (
           <DeleteButton
-            warningMessage={`Are you sure? This will delete all records for species ${connId}`}
+            warningMessage={`Are you sure? This will delete all records for species ${id}`}
             handleDelete={deleteSpecies}
           />
         )}

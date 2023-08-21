@@ -21,7 +21,16 @@ export default function App() {
     <Layout>
       <Routes>
         <Route exact path="/" element={<HomePage />} />
-        <Route exact path="/details/:connId" element={<DetailPage />} />
+        <Route
+          exact
+          path="/species/details/:id"
+          element={<DetailPage isReaction={false} />}
+        />
+        <Route
+          exact
+          path="/reaction/details/:id"
+          element={<DetailPage isReaction={true} />}
+        />
         <Route
           exact
           path="/login/:mode?"

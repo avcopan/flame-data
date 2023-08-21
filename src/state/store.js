@@ -94,7 +94,21 @@ const reactionsSlice = createSlice({
 const setReactions = reactionsSlice.actions.setReactions;
 const reactionsReducer = reactionsSlice.reducer;
 
-// 6. submission slice/reducer
+// 6. reactionMode slice/reducer(s)
+const reactionModeSlice = createSlice({
+  name: "reactionMode",
+  initialState: false,
+  reducers: {
+    setReactionMode: (_, action) => {
+      return action.payload;
+    }
+  }
+})
+
+export const setReactionMode = reactionModeSlice.actions.setReactionMode;
+const reactionModeReducer = reactionModeSlice.reducer;
+
+// 7. submission slice/reducer
 const submissionsSlice = createSlice({
   name: "submissions",
   initialState: [],
@@ -115,7 +129,7 @@ const addSubmission = submissionsSlice.actions.addSubmission;
 const updateSubmission = submissionsSlice.actions.updateSubmission;
 const submissionsReducer = submissionsSlice.reducer;
 
-// 6. collections slice/reducer
+// 8. collections slice/reducer
 const collectionsSlice = createSlice({
   name: "collections",
   initialState: [],
@@ -140,6 +154,7 @@ const store = configureStore({
     species: speciesReducer,
     speciesDetails: speciesDetailsReducer,
     reactions: reactionsReducer,
+    reactionMode: reactionModeReducer,
     submissions: submissionsReducer,
     collections: collectionsReducer,
   },
