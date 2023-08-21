@@ -45,7 +45,7 @@ CREATE TABLE species (
 -- REACTION TABLES
 
 -- Restart command:
--- DROP TABLE IF EXISTS reaction_connectivity, reaction, reaction_estate, reaction_ts, reaction_reactants, reaction_products;
+-- DROP TABLE IF EXISTS reaction_connectivity, reaction, reaction_estate, reaction_ts, reaction_reactants, reaction_products, collections_reactions;
 
 -- This table contains duplicate information that could be recreated using a JOIN It is
 -- mainly for searching purposes

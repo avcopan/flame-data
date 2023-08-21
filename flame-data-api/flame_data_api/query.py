@@ -343,12 +343,13 @@ def add_species_by_smiles_connectivity(smi: str) -> Tuple[int, str]:
     :returns: A status code and an error message, if it failed
     :rtype: Tuple[int, str]
     """
-    row = lookup_species_connectivity(smi, key_type="smiles")
-    if not row:
-        try:
+    try:
+        row = lookup_species_connectivity(smi, key_type="smiles")
+        if not row:
             _add_species_by_smiles_connectivity(smi)
-        except Exception as exc:
-            return 500, f"Adding {smi} to database failed with this exception:\n{exc}"
+    except Exception as exc:
+        return 500, f"Adding {smi} to database failed with this exception:\n{exc}"
+
     return 0, ""
 
 
@@ -415,22 +416,24 @@ def add_reaction_by_smiles_connectivity(smi: str) -> Tuple[int, str]:
     :returns: A status code and an error message, if it failed
     :rtype: Tuple[int, str]
     """
-    if not automol.smiles.is_reaction(smi):
-        return 415, f"Not a reaction SMILES string: {smi}"
+    try:
+        if not automol.smiles.is_reaction(smi):
+            return 415, f"Not a reaction SMILES string: {smi}"
 
-    # 1. Add all reactant and product species in case they don't already exist
-    rsmis = automol.smiles.reaction_reactants(smi)
-    psmis = automol.smiles.reaction_products(smi)
-    for smi_ in rsmis + psmis:
-        add_species_by_smiles_connectivity(smi_)
+        # 1. Add all reactant and product species in case they don't already exist
+        rsmis = automol.smiles.reaction_reactants(smi)
+        psmis = automol.smiles.reaction_products(smi)
+        for smi_ in rsmis + psmis:
+            status, error = add_species_by_smiles_connectivity(smi_)
+            if status >= 400:
+                return status, error
 
-    # 2. Add the reaction
-    row = lookup_reaction_connectivity(smi, key_type="smiles")
-    if not row:
-        try:
+        # 2. Add the reaction
+        row = lookup_reaction_connectivity(smi, key_type="smiles")
+        if not row:
             _add_reaction_by_smiles_connectivity(smi)
-        except Exception as exc:
-            return 500, f"Adding {smi} to database failed with this exception:\n{exc}"
+    except Exception as exc:
+        return 500, f"Adding {smi} to database failed with this exception:\n{exc}"
     return 0, ""
 
 
@@ -1037,5 +1040,6 @@ if __name__ == "__main__":
     # print(lookup_species(["CCC", "[O][O]"], id_only=True))
     # add_reaction_by_smiles_connectivity("CCCC.[O][O]>>CCC[CH2].O[O]")
     # print(lookup_reaction_connectivity("CCCC.[O][O]>>CCC[CH2].O[O]", id_only=True))
-    print(add_reaction_by_smiles_connectivity("N.[OH]>>[NH2].O"))
+    # print(add_reaction_by_smiles_connectivity("CC(C)CCO[O]>>[CH2]C(C)CCOO"))
+    print(add_reaction_by_smiles_connectivity("C(C)(C)CO[O]>>[CH2](C)(C)COO"))
     # print(get_reactions_by_connectivity(1, id_only=True))

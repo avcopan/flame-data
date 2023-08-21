@@ -349,11 +349,18 @@ function* postSubmissionSaga(action) {
     const url = `/api/${isReaction ? "reaction" : "species"}/connectivity`;
     smiles = smiles.replace(/\s+\+\s+/g, ".").replace(/\s+/g, "");
     const res = yield axios.post(url, { smiles });
-    submission = {...submission, status: "Complete"};
+    console.log("response:", res);
+    submission = { ...submission, status: "Complete" };
     yield put(updateSubmission({ index, update: submission }));
     yield put(getSpecies());
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
+    submission = {
+      ...submission,
+      status: "Error",
+      message: error.response.data.error,
+    };
+    console.log(error);
     yield put(updateSubmission({ index, update: submission }));
   }
 }
