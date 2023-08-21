@@ -26,8 +26,8 @@ export default function DisplayItem({
       )}
       {reactionMode ? (
         <ViewReactionFromSVG
-          reactantSvgStrings={item.r_svg_strings}
-          productSvgStrings={item.p_svg_strings}
+          reactantsSvgString={item.r_svg_string}
+          productsSvgString={item.p_svg_string}
           className={className}
           hoverText={item.conn_smiles}
           withCheckbox={withCheckbox}

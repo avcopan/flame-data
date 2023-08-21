@@ -1,8 +1,9 @@
 import ViewFrame from "./ViewFrame";
+import { ArrowLongDownIcon } from "@heroicons/react/24/outline";
 
 export default function ViewReactionFromSVG({
-  reactantSvgStrings,
-  productSvgStrings,
+  reactantsSvgString,
+  productsSvgString,
   descriptors = [],
   hoverText = "",
   withCheckbox = false,
@@ -11,8 +12,7 @@ export default function ViewReactionFromSVG({
   className = "h-96",
   checkboxClassNames = "checkbox-primary checkbox-sm",
 }) {
-  console.log(reactantSvgStrings[0]);
-
+  const containerClassName = descriptors.length ? "h-3/4" : "h-full";
   return (
     <ViewFrame
       withCheckbox={withCheckbox}
@@ -21,16 +21,26 @@ export default function ViewReactionFromSVG({
       checkboxClassNames={checkboxClassNames}
       className={className}
     >
-      {reactantSvgStrings && (
+      {reactantsSvgString && (
         <>
-          <div className="h-3/4 flex flex-row">
-            {reactantSvgStrings.map((svgString, index) => (
-              <img
-                src={`data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`}
-                key={index}
-                className="w-1/2 rounded-3xl"
-              />
-            ))}
+          <div
+            className={`relative w-full flex flex-col justify-between items-center ${containerClassName}`}
+          >
+            <img
+              src={`data:image/svg+xml;utf8,${encodeURIComponent(
+                reactantsSvgString
+              )}`}
+              className="p-2 h-1/2 max-w-full rounded-3xl"
+            />
+            <img
+              src={`data:image/svg+xml;utf8,${encodeURIComponent(
+                productsSvgString
+              )}`}
+              className="p-2 h-1/2 max-w-full rounded-3xl"
+            />
+            <div className="w-full h-full absolute inset-0 top-1/2 left-1/2">
+              <ArrowLongDownIcon className="text-black h-10 -translate-y-1/2 -translate-x-1/2" />
+            </div>
           </div>
           {descriptors.map((descriptor, idx) => (
             <div key={idx} className="text-neutral text-lg">

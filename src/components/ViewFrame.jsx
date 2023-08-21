@@ -6,7 +6,7 @@ export default function ViewFrame({
   className = "h-96 aspect-square",
   checkboxClassNames = "checkbox-primary checkbox-sm",
 }) {
-  className = `bg-white flex flex-col justify-center items-center rounded-3xl ${className}`;
+  className = `relative bg-white flex flex-col justify-center items-center rounded-3xl ${className}`;
 
   if (!className.includes("aspect")) {
     className += " aspect-square";
@@ -21,7 +21,7 @@ export default function ViewFrame({
           type="checkbox"
           checked={checked}
           onClick={checkHandler}
-          className={`checkbox relative bottom-0 right-2 self-end ${checkboxClassNames}`}
+          className={`checkbox absolute bottom-2 right-2 ${checkboxClassNames}`}
         />
       )}
     </div>
