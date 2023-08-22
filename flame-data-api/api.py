@@ -219,7 +219,7 @@ def get_species_details_by_connectivity(id):
         `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
         `conn_amchi`, `conn_amchi_hash`
     """
-    species_data = flame_data_api.query.get_species_details_by_connectivity(id)
+    species_data = flame_data_api.query.get_species_by_connectivity(id)
     return flame_data_api.response(200, contents=species_data)
 
 
@@ -233,7 +233,7 @@ def get_reaction_details_by_connectivity(id):
         `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
         `conn_amchi`, `conn_amchi_hash`
     """
-    reaction_data = flame_data_api.query.get_reaction_details_by_connectivity(id)
+    reaction_data = flame_data_api.query.get_reactions_by_connectivity(id)
     return flame_data_api.response(200, contents=reaction_data)
 
 
@@ -307,18 +307,6 @@ def update_reaction_geometry(id):
     return flame_data_api.response(204)
 
 
-# Helpers
-def get_user() -> dict:
-    """Get information about the current user"""
-    user = None
-    user_id = flask.session.get("user_id", None)
-
-    if user_id is not None:
-        user = flame_data_api.query.get_user(user_id)
-
-    return user
-
-
 # COLLECTION ROUTES
 @app.route("/api/collection", methods=["GET"])
 def get_user_collections():
@@ -334,8 +322,10 @@ def get_user_collections():
     for coll_row in coll_rows:
         coll_id = coll_row["id"]
         species_rows = flame_data_api.query.get_collection_species(coll_id)
+        reaction_rows = flame_data_api.query.get_collection_reactions(coll_id)
         if species_rows:
             coll_row["species"] = species_rows
+            coll_row["reactions"] = reaction_rows
 
     return flame_data_api.response(200, contents=coll_rows)
 
@@ -365,7 +355,7 @@ def add_species_connectivities_to_user_collection(id):
     """@api {post} /api/collection/species/:id Add species to a collection
 
     @apiParam {Number} id The ID of the collection
-    @apiBody {Number[]} conn_ids The IDs of the connectivities to be added
+    @apiBody {Number[]} conn_ids The IDs of the species connectivities to be added
     """
     user = get_user()
     if user is None:
@@ -374,8 +364,28 @@ def add_species_connectivities_to_user_collection(id):
     conn_ids = flask.request.json.get("conn_ids")
 
     for conn_id in conn_ids:
-        print(f"Adding connectivity {conn_id} to collection {id}")
+        print(f"Adding species connectivity {conn_id} to collection {id}")
         flame_data_api.query.add_species_connectivity_to_collection(id, conn_id)
+
+    return flame_data_api.response(201)
+
+
+@app.route("/api/collection/reaction/<id>", methods=["POST"])
+def add_reaction_connectivities_to_user_collection(id):
+    """@api {post} /api/collection/reaction/:id Add reaction to a collection
+
+    @apiParam {Number} id The ID of the collection
+    @apiBody {Number[]} conn_ids The IDs of the reaction connectivities to be added
+    """
+    user = get_user()
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    conn_ids = flask.request.json.get("conn_ids")
+
+    for conn_id in conn_ids:
+        print(f"Adding reaction connectivity {conn_id} to collection {id}")
+        flame_data_api.query.add_reaction_connectivity_to_collection(id, conn_id)
 
     return flame_data_api.response(201)
 
@@ -391,13 +401,31 @@ def remove_species_connectivities_from_user_collection(id):
     if user is None:
         return flame_data_api.response(401, error="Unauthorized")
 
-    print("HERE")
     conn_ids = flask.request.json.get("conn_ids")
-    print(flask.request.json)
 
     for conn_id in conn_ids:
         print(f"Adding connectivity {conn_id} to collection {id}")
         flame_data_api.query.remove_species_connectivity_from_collection(id, conn_id)
+
+    return flame_data_api.response(204)
+
+
+@app.route("/api/collection/reaction/<id>", methods=["DELETE"])
+def remove_reaction_connectivities_from_user_collection(id):
+    """@api {delete} /api/collection/reaction/:id Remove reaction from a collection
+
+    @apiParam {Number} id The ID of the collection
+    @apiBody {Number[]} conn_ids The IDs of the connectivities to be removed
+    """
+    user = get_user()
+    if user is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    conn_ids = flask.request.json.get("conn_ids")
+
+    for conn_id in conn_ids:
+        print(f"Adding connectivity {conn_id} to collection {id}")
+        flame_data_api.query.remove_reaction_connectivity_from_collection(id, conn_id)
 
     return flame_data_api.response(204)
 
@@ -438,3 +466,15 @@ def delete_user_collection(id):
         return flame_data_api.response(status, error=error)
 
     return flame_data_api.response(204)
+
+
+# Helpers
+def get_user() -> dict:
+    """Get information about the current user"""
+    user = None
+    user_id = flask.session.get("user_id", None)
+
+    if user_id is not None:
+        user = flame_data_api.query.get_user(user_id)
+
+    return user

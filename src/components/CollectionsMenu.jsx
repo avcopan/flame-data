@@ -1,6 +1,6 @@
 import axios from "axios";
-import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { checkHandler } from "../utils/utils";
 import actions from "../state/actions";
 import DisplayItem from "./DisplayItem";
@@ -29,8 +29,11 @@ export default function CollectionsMenu({
   setSelectedCollection,
 }) {
   const dispatch = useDispatch();
-  const [selectedSpecies, setSelectedSpecies] = useState([]);
+  const reactionMode = useSelector((store) => store.reactionMode);
+  const [selectedItems, setSelectedItems] = useState([]);
   const [newCollectionName, setNewCollectionName] = useState("");
+
+  const item_type = reactionMode ? "reactions" : "species";
 
   const toggleSelection = (id) => {
     return () => {
@@ -51,13 +54,13 @@ export default function CollectionsMenu({
     };
   };
 
-  const removeSpeciesFromCollection = () => {
+  const removeItemsFromCollection = () => {
     const payload = {
       coll_id: selectedCollection,
-      conn_ids: selectedSpecies,
+      conn_ids: selectedItems,
     };
-    dispatch(actions.deleteCollectionSpecies(payload));
-    setSelectedSpecies([]);
+    dispatch(actions.deleteCollectionItems(payload));
+    setSelectedItems([]);
   };
 
   const downloadCollection = (collection) => {
@@ -83,33 +86,33 @@ export default function CollectionsMenu({
           <input
             type="radio"
             name="my-accordion-2"
-            checked={collection.id == selectedCollection}
+            checked={collection.id === selectedCollection}
             onChange={toggleSelection(collection.id)}
           />
           <div className="collapse-title flex flex-row justify-between text-xl text-primary font-medium">
             {collection.name}
           </div>
           <div className="collapse-content flex flex-col gap-4 justify-center items-center">
-            <div className="flex flex-wrap justify-start overflow-auto">
-              {collection.species &&
-                collection.species.map((connectivity) => (
+            <div className="flex flex-wrap justify-start overflow-y-auto">
+              {collection[item_type] &&
+                collection[item_type].map((connectivity) => (
                   <DisplayItem
                     key={connectivity.id}
                     item={connectivity}
                     className="m-2 w-32"
                     withCheckbox={true}
-                    checked={selectedSpecies.includes(connectivity.id)}
+                    checked={selectedItems.includes(connectivity.id)}
                     checkHandler={checkHandler(
                       connectivity.id,
-                      selectedSpecies,
-                      setSelectedSpecies
+                      selectedItems,
+                      setSelectedItems
                     )}
                     checkboxClassNames="checkbox-warning checkbox-sm"
                   />
                 ))}
             </div>
             <div className="w-full flex flex-row justify-start gap-4">
-              {collection.species && collection.species.length > 0 && (
+              {collection[item_type] && collection[item_type].length > 0 && (
                 <button
                   onClick={downloadCollection(collection)}
                   className="btn btn-outline btn-secondary"
@@ -117,9 +120,9 @@ export default function CollectionsMenu({
                   Download
                 </button>
               )}
-              {selectedSpecies.length > 0 && (
+              {selectedItems.length > 0 && (
                 <button
-                  onClick={removeSpeciesFromCollection}
+                  onClick={removeItemsFromCollection}
                   className="btn btn-outline btn-warning"
                 >
                   Remove

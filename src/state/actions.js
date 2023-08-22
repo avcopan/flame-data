@@ -16,8 +16,8 @@ import {
   // collection
   getCollections,
   postNewCollection,
-  postCollectionSpecies,
-  deleteCollectionSpecies,
+  postCollectionItems,
+  deleteCollectionItems,
   deleteCollection,
   // miscellaneous
   setRetypeError,
@@ -42,8 +42,8 @@ const actions = {
   // collection
   getCollections,
   postNewCollection,
-  postCollectionSpecies,
-  deleteCollectionSpecies,
+  postCollectionItems,
+  deleteCollectionItems,
   deleteCollection,
   // miscellaneous
   setRetypeError,

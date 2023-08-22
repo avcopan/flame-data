@@ -334,10 +334,9 @@ export const getDetails = (payload) => {
 const DELETE_ITEM = "DELETE_ITEM";
 
 function* deleteItemSaga(action) {
+  const reactionMode = yield select((store) => store.reactionMode);
+  const type = reactionMode ? "reaction" : "species";
   try {
-    const reactionMode = yield select((store) => store.reactionMode);
-    const type = reactionMode ? "reaction" : "species";
-
     const connId = action.payload;
     yield axios.delete(`/api/${type}/connectivity/${connId}`);
     yield put(reactionMode ? getReactions() : getSpecies());
@@ -354,10 +353,9 @@ export const deleteItem = (payload) => {
 const UPDATE_ITEM_GEOMETRY = "UPDATE_ITEM_GEOMETRY";
 
 function* updateItemGeometrySaga(action) {
+  const reactionMode = yield select((store) => store.reactionMode);
+  const type = reactionMode ? "reaction/ts" : "species";
   try {
-    const reactionMode = yield select((store) => store.reactionMode);
-    const type = reactionMode ? "reaction/ts" : "species";
-
     const connId = action.payload.connId;
     const id = action.payload.id;
     yield axios.put(`/api/${type}/${id}`, action.payload);
@@ -390,7 +388,7 @@ function* postSubmissionSaga(action) {
     console.log("response:", res);
     submission = { ...submission, status: "Complete" };
     yield put(updateSubmission({ index, update: submission }));
-    yield put(getSpecies());
+    yield put(isReaction ? getReactions() : getSpecies());
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
     submission = {
@@ -441,30 +439,42 @@ export const postNewCollection = (payload) => {
   return { type: POST_NEW_COLLECTION, payload };
 };
 
-// c. post species to a collection
-const POST_COLLECTION_SPECIES = "POST_COLLECTION_SPECIES";
+// c. post items to a collection
+const POST_COLLECTION_ITEMS = "POST_COLLECTION_ITEMS";
 
-function* postCollectionSpeciesSaga(action) {
+function* postCollectionItemsSaga(action) {
+  const reactionMode = yield select((store) => store.reactionMode);
+  const type = reactionMode ? "reaction" : "species";
   try {
     const coll_id = action.payload.coll_id;
-    yield axios.post(`/api/collection/species/${coll_id}`, action.payload);
+    console.log(
+      `Posting to /api/collection/${type}/${coll_id} with payload`,
+      action.payload
+    );
+    yield axios.post(`/api/collection/${type}/${coll_id}`, action.payload);
     yield put(getCollections());
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
   }
 }
 
-export const postCollectionSpecies = (payload) => {
-  return { type: POST_COLLECTION_SPECIES, payload };
+export const postCollectionItems = (payload) => {
+  return { type: POST_COLLECTION_ITEMS, payload };
 };
 
-// d. delete species from a collection
-const DELETE_COLLECTION_SPECIES = "DELETE_COLLECTION_SPECIES";
+// d. delete items from a collection
+const DELETE_COLLECTION_ITEMS = "DELETE_COLLECTION_ITEMS";
 
-function* deleteCollectionSpeciesSaga(action) {
+function* deleteCollectionItemsSaga(action) {
+  const reactionMode = yield select((store) => store.reactionMode);
+  const type = reactionMode ? "reaction" : "species";
   try {
     const coll_id = action.payload.coll_id;
-    yield axios.delete(`/api/collection/species/${coll_id}`, {
+    console.log(
+      `Deleting from /api/collection/${type}/${coll_id} with payload`,
+      action.payload
+    );
+    yield axios.delete(`/api/collection/${type}/${coll_id}`, {
       data: action.payload,
     });
     yield put(getCollections());
@@ -473,8 +483,8 @@ function* deleteCollectionSpeciesSaga(action) {
   }
 }
 
-export const deleteCollectionSpecies = (payload) => {
-  return { type: DELETE_COLLECTION_SPECIES, payload };
+export const deleteCollectionItems = (payload) => {
+  return { type: DELETE_COLLECTION_ITEMS, payload };
 };
 
 //  e. delete a collection
@@ -513,8 +523,8 @@ function* watcherSaga() {
   // collection
   yield takeLatest(GET_COLLECTIONS, getCollectionsSaga);
   yield takeEvery(POST_NEW_COLLECTION, postNewCollectionSaga);
-  yield takeEvery(POST_COLLECTION_SPECIES, postCollectionSpeciesSaga);
-  yield takeEvery(DELETE_COLLECTION_SPECIES, deleteCollectionSpeciesSaga);
+  yield takeEvery(POST_COLLECTION_ITEMS, postCollectionItemsSaga);
+  yield takeEvery(DELETE_COLLECTION_ITEMS, deleteCollectionItemsSaga);
   yield takeEvery(DELETE_COLLECTION, deleteCollectionSaga);
 }
 

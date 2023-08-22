@@ -32,18 +32,26 @@ export default function HomePage() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (selectedCollection === null && collections.length > 0) {
+      setSelectedCollection(collections[0].id);
+    }
+  }, [collections]);
+
   const submitSearch = () => {
     const payload = { formula: searchFormula, partial: searchPartial };
-    dispatch(actions.getSpecies(payload));
+    dispatch(
+      reactionMode ? actions.getReactions(payload) : actions.getSpecies(payload)
+    );
     setSearchFormula("");
   };
 
-  const addSpeciesToCollection = () => {
+  const addItemsToCollection = () => {
     const payload = {
       coll_id: selectedCollection,
       conn_ids: selectedItems,
     };
-    dispatch(actions.postCollectionSpecies(payload));
+    dispatch(actions.postCollectionItems(payload));
     setSelectedItems([]);
   };
 
@@ -88,7 +96,7 @@ export default function HomePage() {
         <PopupButton
           condition={selectedItems.length > 0}
           text="Add to Collection"
-          onClick={addSpeciesToCollection}
+          onClick={addItemsToCollection}
         />
       </div>
     </div>
