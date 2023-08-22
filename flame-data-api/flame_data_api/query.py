@@ -797,7 +797,7 @@ def get_reaction_details_by_connectivity(
 def get_species(cursor, id: int) -> dict:
     """Get one species by ID
 
-    :param id: The ID of the connectivity species
+    :param id: The ID of the species
     :type id: int
     :return: The table row for this species, as a dictionary
     :rtype: dict
@@ -809,6 +809,24 @@ def get_species(cursor, id: int) -> dict:
     cursor.execute(query_string, query_params)
     species_row = cursor.fetchone()
     return species_row
+
+
+@with_pool_cursor
+def get_reaction_ts(cursor, id: int) -> dict:
+    """Get one reaction TS by ID
+
+    :param id: The ID of the reaction TS
+    :type id: int
+    :return: The table row for this reaction, as a dictionary
+    :rtype: dict
+    """
+    query_string = """
+        SELECT * FROM reaction_ts WHERE id = %s;
+    """
+    query_params = [id]
+    cursor.execute(query_string, query_params)
+    reaction_row = cursor.fetchone()
+    return reaction_row
 
 
 @with_pool_cursor
@@ -886,6 +904,42 @@ def update_species_geometry(cursor, id: int, xyz_str: str) -> bool:
 
     query_string = """
         UPDATE species SET geometry = %s WHERE id = %s;
+    """
+    query_params = [xyz_str, id]
+    cursor.execute(query_string, query_params)
+
+    return 0, ""
+
+
+@with_pool_cursor
+def update_reaction_ts_geometry(cursor, id: int, xyz_str: str) -> bool:
+    """Delete one connectivity reaction
+
+    :param id: The ID of the reaction
+    :type id: int
+    :param xyz_str: The new xyz string for the geometry
+    :type xyz_str: str
+    :returns: Whether or not the update succeeded
+    :rtype: bool
+    """
+    reaction_row = get_reaction_ts(id)
+    if not reaction_row:
+        return 404, f"No resource with ID {id} was found."
+
+    # Currently not actually validating anything
+    # This would be feasible if we were consistently sorting geometries in AMChI order
+    # because we could build a graph from the AMChI string and it would match the
+    # order of the geometry, allowing us to handle the breaking/forming bonds
+    # appropriately
+    ach = reaction_row["amchi"]
+    ret = chem.validate_reaction_geometry(ach, xyz_str)
+    if ret is None:
+        return 415, f"Invalid xyz string for reaction {ach}:\n{xyz_str}"
+
+    xyz_str = ret
+
+    query_string = """
+        UPDATE reaction_ts SET geometry = %s WHERE id = %s;
     """
     query_params = [xyz_str, id]
     cursor.execute(query_string, query_params)

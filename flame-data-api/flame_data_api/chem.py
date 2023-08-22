@@ -243,6 +243,25 @@ def validate_species_geometry(ach: str, xyz_str: str) -> str:
     return automol.geom.xyz_string(geo) if ach == ach_ else None
 
 
+def validate_reaction_geometry(ach: str, xyz_str: str) -> str:
+    """Validate that a geometry matches a reaction
+
+    Currently, doesn't actually validate anything
+
+    If geometries were stored in AMChI order, then we could easily validated based on
+    the AMChI string
+
+    :param ach: An AMChI chemical identifier string
+    :type ach: str
+    :param xyz_str: The reaction geometry, in xyz format
+    :type xyz_str: str
+    :return: A normalized xyz string, if valid; otherwise `None`
+    :rtype: str or NoneType
+    """
+    geo = automol.geom.from_xyz_string(xyz_str)
+    return automol.geom.xyz_string(geo)
+
+
 # HELPERS
 def species_amchi_key(key: str, key_type: str = "smiles") -> str:
     """Get an ChI key from an identifier

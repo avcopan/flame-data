@@ -44,9 +44,7 @@ export default function DetailPage({ isReaction }) {
   }, []);
 
   const deleteItem = () => {
-    dispatch(
-      reactionMode ? actions.deleteReaction(id) : actions.deleteSpecies(id)
-    );
+    dispatch(actions.deleteItem(id));
     navigate("/");
   };
 

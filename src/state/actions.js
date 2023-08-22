@@ -6,13 +6,12 @@ import {
   registerUser,
   // species
   getSpecies,
-  deleteSpecies,
-  updateSpeciesGeometry,
   // reaction
   getReactions,
-  deleteReaction,
-  // species or reaction
+  // generic "item" (species or reaction)
   getDetails,
+  deleteItem,
+  updateItemGeometry,
   postSubmission,
   // collection
   getCollections,
@@ -33,13 +32,12 @@ const actions = {
   registerUser,
   // species
   getSpecies,
-  deleteSpecies,
-  updateSpeciesGeometry,
   // reaction
   getReactions,
-  deleteReaction,
-  // species or reaction
+  // generic "item" (species or reaction)
   getDetails,
+  deleteItem,
+  updateItemGeometry,
   postSubmission,
   // collection
   getCollections,

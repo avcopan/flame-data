@@ -288,6 +288,25 @@ def update_species_geometry(id):
     return flame_data_api.response(204)
 
 
+@app.route("/api/reaction/ts/<id>", methods=["PUT"])
+def update_reaction_geometry(id):
+    """@api {put} /api/reaction/ts/:id Edit a TS geometry of one reaction
+
+    @apiparam {Number} id The ID of the reaction
+    @apiBody {String} geometry The new geometry for this TS
+    """
+    if get_user() is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    xyz_str = flask.request.json.get("geometry")
+
+    status, error = flame_data_api.query.update_reaction_ts_geometry(id, xyz_str)
+    if status >= 400:
+        return flame_data_api.response(status, error=error)
+
+    return flame_data_api.response(204)
+
+
 # Helpers
 def get_user() -> dict:
     """Get information about the current user"""

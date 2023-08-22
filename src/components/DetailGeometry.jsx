@@ -24,7 +24,7 @@ export default function DetailGeometry({ geometry, connId, id }) {
 
   const submitUpdatedGeometry = () => {
     dispatch(
-      actions.updateSpeciesGeometry({ id, connId, geometry: geometryEdit })
+      actions.updateItemGeometry({ id, connId, geometry: geometryEdit })
     );
     window.location.reload();
   };

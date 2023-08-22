@@ -280,41 +280,6 @@ export const getSpecies = (payload) => {
   return { type: GET_SPECIES, payload };
 };
 
-//  b. delete one species
-const DELETE_SPECIES = "DELETE_SPECIES";
-
-function* deleteSpeciesSaga(action) {
-  try {
-    const connId = action.payload;
-    yield axios.delete(`/api/species/connectivity/${connId}`);
-    yield put(getSpecies());
-  } catch (error) {
-    handleErrorForProtectedEndpoint(error);
-  }
-}
-
-export const deleteSpecies = (payload) => {
-  return { type: DELETE_SPECIES, payload };
-};
-
-//  c. update one species geometry
-const UPDATE_SPECIES_GEOMETRY = "UPDATE_SPECIES_GEOMETRY";
-
-function* updateSpeciesGeometrySaga(action) {
-  try {
-    const connId = action.payload.connId;
-    const id = action.payload.id;
-    yield axios.put(`/api/species/${id}`, action.payload);
-    yield put(getDetails(connId));
-  } catch (error) {
-    handleErrorForProtectedEndpoint(error);
-  }
-}
-
-export const updateSpeciesGeometry = (payload) => {
-  return { type: UPDATE_SPECIES_GEOMETRY, payload };
-};
-
 // 3. reactions sagas
 //  a. get all reactions
 const GET_REACTIONS = "GET_REACTIONS";
@@ -339,31 +304,16 @@ export const getReactions = (payload) => {
   return { type: GET_REACTIONS, payload };
 };
 
-//  b. delete one reaction
-const DELETE_REACTION = "DELETE_REACTION";
-
-function* deleteReactionSaga(action) {
-  try {
-    const connId = action.payload;
-    yield axios.delete(`/api/reaction/connectivity/${connId}`);
-    yield put(getReactions());
-  } catch (error) {
-    handleErrorForProtectedEndpoint(error);
-  }
-}
-
-export const deleteReaction = (payload) => {
-  return { type: DELETE_REACTION, payload };
-};
-
-// 4. get details for one species or reaction
+// 4. generic "item" (species or reaction)
+//  a. get details for an item
 const GET_DETAILS = "GET_DETAILS";
 
 function* getDetailsSaga(action) {
   try {
     const reactionMode = yield select((store) => store.reactionMode);
-    const connId = action.payload;
     const type = reactionMode ? "reaction" : "species";
+
+    const connId = action.payload;
     const res = yield axios.get(`/api/${type}/connectivity/${connId}`);
     const data = yield res.data;
     if (reactionMode) {
@@ -380,7 +330,48 @@ export const getDetails = (payload) => {
   return { type: GET_DETAILS, payload };
 };
 
-// 5. submissions sagas
+//  b. delete an item
+const DELETE_ITEM = "DELETE_ITEM";
+
+function* deleteItemSaga(action) {
+  try {
+    const reactionMode = yield select((store) => store.reactionMode);
+    const type = reactionMode ? "reaction" : "species";
+
+    const connId = action.payload;
+    yield axios.delete(`/api/${type}/connectivity/${connId}`);
+    yield put(reactionMode ? getReactions() : getSpecies());
+  } catch (error) {
+    handleErrorForProtectedEndpoint(error);
+  }
+}
+
+export const deleteItem = (payload) => {
+  return { type: DELETE_ITEM, payload };
+};
+
+//  c. update the geometry for an item
+const UPDATE_ITEM_GEOMETRY = "UPDATE_ITEM_GEOMETRY";
+
+function* updateItemGeometrySaga(action) {
+  try {
+    const reactionMode = yield select((store) => store.reactionMode);
+    const type = reactionMode ? "reaction/ts" : "species";
+
+    const connId = action.payload.connId;
+    const id = action.payload.id;
+    yield axios.put(`/api/${type}/${id}`, action.payload);
+    yield put(getDetails(connId));
+  } catch (error) {
+    handleErrorForProtectedEndpoint(error);
+  }
+}
+
+export const updateItemGeometry = (payload) => {
+  return { type: UPDATE_ITEM_GEOMETRY, payload };
+};
+
+//  d. post an item for submission to the database
 const POST_SUBMISSION = "POST_SUBMISSION";
 
 function* postSubmissionSaga(action) {
@@ -512,13 +503,12 @@ function* watcherSaga() {
   yield takeLatest(REGISTER_USER, registerUserSaga);
   // species
   yield takeLatest(GET_SPECIES, getSpeciesSaga);
-  yield takeEvery(DELETE_SPECIES, deleteSpeciesSaga);
-  yield takeEvery(UPDATE_SPECIES_GEOMETRY, updateSpeciesGeometrySaga);
   // reaction
   yield takeLatest(GET_REACTIONS, getReactionsSaga);
-  yield takeEvery(DELETE_REACTION, deleteReactionSaga);
-  // species or reaction
+  // generic "item" (species or reaction)
   yield takeEvery(GET_DETAILS, getDetailsSaga);
+  yield takeEvery(DELETE_ITEM, deleteItemSaga);
+  yield takeEvery(UPDATE_ITEM_GEOMETRY, updateItemGeometrySaga);
   yield takeEvery(POST_SUBMISSION, postSubmissionSaga);
   // collection
   yield takeLatest(GET_COLLECTIONS, getCollectionsSaga);
