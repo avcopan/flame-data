@@ -1,41 +1,55 @@
 import {
-  setRetypeError,
+  // user
   getUser,
   loginUser,
   logoutUser,
   registerUser,
+  // species
   getSpecies,
-  getDetails,
   deleteSpecies,
   updateSpeciesGeometry,
+  // reaction
   getReactions,
-  setReactionMode,
+  deleteReaction,
+  // species or reaction
+  getDetails,
   postSubmission,
+  // collection
   getCollections,
   postNewCollection,
   postCollectionSpecies,
   deleteCollectionSpecies,
   deleteCollection,
+  // miscellaneous
+  setRetypeError,
+  setReactionMode,
 } from "./store";
 
 const actions = {
-  setRetypeError,
+  // user
   getUser,
   loginUser,
   logoutUser,
   registerUser,
+  // species
   getSpecies,
-  getDetails,
   deleteSpecies,
   updateSpeciesGeometry,
+  // reaction
   getReactions,
-  setReactionMode,
+  deleteReaction,
+  // species or reaction
+  getDetails,
   postSubmission,
+  // collection
   getCollections,
   postNewCollection,
   postCollectionSpecies,
   deleteCollectionSpecies,
   deleteCollection,
+  // miscellaneous
+  setRetypeError,
+  setReactionMode,
 };
 
 export default actions;

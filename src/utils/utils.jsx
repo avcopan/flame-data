@@ -40,3 +40,10 @@ export function formatFormula(formula) {
     </>
   );
 }
+
+export function handleErrorForProtectedEndpoint(error) {
+  if (error.response.status === 401) {
+    alert("You are not authorized to make this request. Are you logged in?");
+  }
+  console.error(error);
+}

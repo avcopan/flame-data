@@ -1,7 +1,11 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { formatFormula, prettyReactionSmiles } from "../utils/utils";
+import {
+  formatFormula,
+  prettyReactionSmiles,
+  textToggler,
+} from "../utils/utils";
 import actions from "../state/actions";
 import DetailItem from "../components/DetailItem";
 import DetailStats from "../components/DetailStats";
@@ -13,10 +17,13 @@ export default function DetailPage({ isReaction }) {
   const navigate = useNavigate();
   const user = useSelector((store) => store.user);
   const reactionMode = useSelector((store) => store.reactionMode);
-  const itemDetails = useSelector((store) =>
+  const details = useSelector((store) =>
     reactionMode ? store.reactionDetails : store.speciesDetails
   );
-  const detailItems = itemDetails[id];
+
+  const toggleText = textToggler(reactionMode, "reaction", "species");
+
+  const detailItems = details[id];
   const headlineStatsList = [];
   if (detailItems) {
     headlineStatsList.push(
@@ -36,8 +43,10 @@ export default function DetailPage({ isReaction }) {
     dispatch(actions.getDetails(id));
   }, []);
 
-  const deleteSpecies = () => {
-    dispatch(actions.deleteSpecies(id));
+  const deleteItem = () => {
+    dispatch(
+      reactionMode ? actions.deleteReaction(id) : actions.deleteSpecies(id)
+    );
     navigate("/");
   };
 
@@ -62,8 +71,8 @@ export default function DetailPage({ isReaction }) {
         {/* Open the modal using ID.showModal() method */}
         {user && (
           <DeleteButton
-            warningMessage={`Are you sure? This will delete all records for species ${id}`}
-            handleDelete={deleteSpecies}
+            warningMessage={`Are you sure? This will delete all records for ${toggleText()} ${id}`}
+            handleDelete={deleteItem}
           />
         )}
       </div>

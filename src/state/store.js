@@ -2,6 +2,7 @@ import axios from "axios";
 import { configureStore, createSlice } from "@reduxjs/toolkit";
 import createSagaMiddleware from "redux-saga";
 import { select, put, takeLatest, takeEvery } from "redux-saga/effects";
+import { handleErrorForProtectedEndpoint } from "../utils/utils";
 
 // SLICES/REDUCERS
 // 1. user slice/reducer
@@ -279,38 +280,7 @@ export const getSpecies = (payload) => {
   return { type: GET_SPECIES, payload };
 };
 
-//  b. get details for one species or reaction
-const GET_DETAILS = "GET_DETAILS";
-
-function* getDetailsSaga(action) {
-  try {
-    const reactionMode = yield select((store) => store.reactionMode);
-    const connId = action.payload;
-    const type = reactionMode ? "reaction" : "species";
-    const res = yield axios.get(`/api/${type}/connectivity/${connId}`);
-    const data = yield res.data;
-    if (reactionMode) {
-      yield put(addReactionDetails({ [connId]: data.contents }));
-    } else {
-      yield put(addSpeciesDetails({ [connId]: data.contents }));
-    }
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-export const getDetails = (payload) => {
-  return { type: GET_DETAILS, payload };
-};
-
-//  c. delete one species
-function handleErrorForProtectedEndpoint(error) {
-  if (error.response.status === 401) {
-    alert("You are not authorized to make this request. Are you logged in?");
-  }
-  console.error(error);
-}
-
+//  b. delete one species
 const DELETE_SPECIES = "DELETE_SPECIES";
 
 function* deleteSpeciesSaga(action) {
@@ -327,7 +297,7 @@ export const deleteSpecies = (payload) => {
   return { type: DELETE_SPECIES, payload };
 };
 
-//  d. update one species geometry
+//  c. update one species geometry
 const UPDATE_SPECIES_GEOMETRY = "UPDATE_SPECIES_GEOMETRY";
 
 function* updateSpeciesGeometrySaga(action) {
@@ -369,7 +339,48 @@ export const getReactions = (payload) => {
   return { type: GET_REACTIONS, payload };
 };
 
-// 4. submissions sagas
+//  b. delete one reaction
+const DELETE_REACTION = "DELETE_REACTION";
+
+function* deleteReactionSaga(action) {
+  try {
+    const connId = action.payload;
+    yield axios.delete(`/api/reaction/connectivity/${connId}`);
+    yield put(getReactions());
+  } catch (error) {
+    handleErrorForProtectedEndpoint(error);
+  }
+}
+
+export const deleteReaction = (payload) => {
+  return { type: DELETE_REACTION, payload };
+};
+
+// 4. get details for one species or reaction
+const GET_DETAILS = "GET_DETAILS";
+
+function* getDetailsSaga(action) {
+  try {
+    const reactionMode = yield select((store) => store.reactionMode);
+    const connId = action.payload;
+    const type = reactionMode ? "reaction" : "species";
+    const res = yield axios.get(`/api/${type}/connectivity/${connId}`);
+    const data = yield res.data;
+    if (reactionMode) {
+      yield put(addReactionDetails({ [connId]: data.contents }));
+    } else {
+      yield put(addSpeciesDetails({ [connId]: data.contents }));
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export const getDetails = (payload) => {
+  return { type: GET_DETAILS, payload };
+};
+
+// 5. submissions sagas
 const POST_SUBMISSION = "POST_SUBMISSION";
 
 function* postSubmissionSaga(action) {
@@ -405,7 +416,7 @@ export const postSubmission = (payload) => {
   return { type: POST_SUBMISSION, payload };
 };
 
-// 5. collections sagas
+// 6. collections sagas
 //  a. get all collections
 const GET_COLLECTIONS = "GET_COLLECTIONS";
 
@@ -494,16 +505,22 @@ export const deleteCollection = (payload) => {
 
 // WIRING: create watcher saga
 function* watcherSaga() {
+  // user
   yield takeLatest(GET_USER, getUserSaga);
   yield takeLatest(LOGIN_USER, loginUserSaga);
   yield takeLatest(LOGOUT_USER, logoutUserSaga);
   yield takeLatest(REGISTER_USER, registerUserSaga);
+  // species
   yield takeLatest(GET_SPECIES, getSpeciesSaga);
-  yield takeEvery(GET_DETAILS, getDetailsSaga);
   yield takeEvery(DELETE_SPECIES, deleteSpeciesSaga);
   yield takeEvery(UPDATE_SPECIES_GEOMETRY, updateSpeciesGeometrySaga);
+  // reaction
   yield takeLatest(GET_REACTIONS, getReactionsSaga);
+  yield takeEvery(DELETE_REACTION, deleteReactionSaga);
+  // species or reaction
+  yield takeEvery(GET_DETAILS, getDetailsSaga);
   yield takeEvery(POST_SUBMISSION, postSubmissionSaga);
+  // collection
   yield takeLatest(GET_COLLECTIONS, getCollectionsSaga);
   yield takeEvery(POST_NEW_COLLECTION, postNewCollectionSaga);
   yield takeEvery(POST_COLLECTION_SPECIES, postCollectionSpeciesSaga);
