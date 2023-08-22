@@ -820,11 +820,41 @@ def delete_species_connectivity(cursor, id: int) -> (int, str):
     :returns: A status code and an error message, if it failed
     :rtype: str
     """
-    query_string = """
+    # 1. Delete from the species connectivity table
+    query_string1 = """
         DELETE FROM species_connectivity WHERE id = %s;
     """
-    query_params = [id]
-    cursor.execute(query_string, query_params)
+    query_params1 = [id]
+    cursor.execute(query_string1, query_params1)
+
+    if not bool(cursor.rowcount):
+        return 404, f"No resource with ID {id} was found."
+
+    # 2. Delete from the reaction connectivity table
+    query_string2 = """
+        DELETE FROM reaction_connectivity
+        WHERE %s = ANY(r_conn_ids) OR %s = ANY(p_conn_ids);
+    """
+    query_params2 = [id, id]
+    cursor.execute(query_string2, query_params2)
+
+    return 0, ""
+
+
+@with_pool_cursor
+def delete_reaction_connectivity(cursor, id: int) -> (int, str):
+    """Delete one reaction connectivity
+
+    :param id: The ID of the reaction connectivity
+    :type id: int
+    :returns: A status code and an error message, if it failed
+    :rtype: str
+    """
+    query_string1 = """
+        DELETE FROM reaction_connectivity WHERE id = %s;
+    """
+    query_params1 = [id]
+    cursor.execute(query_string1, query_params1)
 
     if not bool(cursor.rowcount):
         return 404, f"No resource with ID {id} was found."

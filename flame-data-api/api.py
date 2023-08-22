@@ -253,6 +253,22 @@ def delete_species_connectivity(id):
     return flame_data_api.response(204)
 
 
+@app.route("/api/reaction/connectivity/<id>", methods=["DELETE"])
+def delete_reaction_connectivity(id):
+    """@api {delete} /api/reaction/connectivity/:id Delete one connectivity reaction
+
+    @apiparam {Number} id The ID of the connectivity reaction
+    """
+    if get_user() is None:
+        return flame_data_api.response(401, error="Unauthorized")
+
+    status, error = flame_data_api.query.delete_reaction_connectivity(id)
+    if status >= 400:
+        return flame_data_api.response(status, error=error)
+
+    return flame_data_api.response(204)
+
+
 @app.route("/api/species/<id>", methods=["PUT"])
 def update_species_geometry(id):
     """@api {put} /api/species/:id Edit the geometry of one species
