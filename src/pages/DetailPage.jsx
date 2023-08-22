@@ -1,10 +1,14 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import {
+  formatFormula,
+  prettyReactionSmiles,
+  capitalizeText,
+} from "../utils/utils";
 import actions from "../state/actions";
-import { prettyReactionSmiles } from "../utils/utils";
 import DetailItem from "../components/SpeciesDetailItem";
-import FormattedFormula from "../components/FormattedFormula";
+import DetailStats from "../components/DetailStats";
 import DeleteButton from "../components/DeleteButton";
 
 export default function DetailPage({ isReaction }) {
@@ -17,6 +21,16 @@ export default function DetailPage({ isReaction }) {
     reactionMode ? store.reactionDetails : store.speciesDetails
   );
   const detailItems = itemDetails[id];
+  const connectivityStatsList = [
+    // title    key        transform
+    ["Formula", "formula", formatFormula],
+    ["SMILES", "conn_smiles", prettyReactionSmiles],
+    ["Spin Multiplicity", "spin_mult"],
+  ];
+
+  if (reactionMode) {
+    connectivityStatsList.splice(1, 0, ["Reaction Class", "class", capitalizeText]);
+  }
 
   useEffect(() => {
     if (reactionMode !== isReaction) {
@@ -36,24 +50,12 @@ export default function DetailPage({ isReaction }) {
   return (
     detailItems && (
       <div className="max-w-screen-2xl flex flex-col">
-        <div className="mb-8 stats shadow">
-          <div className="stat">
-            <div className="stat-title">Formula</div>
-            <div className="stat-value">
-              <FormattedFormula formula={detailItems[0].formula} />
-            </div>
-          </div>
-          <div className="stat">
-            <div className="stat-title">SMILES</div>
-            <div className="stat-value">
-              {prettyReactionSmiles(detailItems[0].conn_smiles)}
-            </div>
-          </div>
-          <div className="stat">
-            <div className="stat-title">Spin Multiplicity</div>
-            <div className="stat-value">{detailItems[0].spin_mult}</div>
-          </div>
-        </div>
+        <DetailStats
+          statsObject={detailItems[0]}
+          statsList={connectivityStatsList}
+          containerClassName="mb-8 shadow-2xl"
+          valueClassName="text-3xl"
+        />
         <div className="mb-8 flex flex-col">
           {detailItems.map((detailItem, index) => (
             <DetailItem key={index} detailItem={detailItem} />

@@ -32,14 +32,12 @@ export default function DetailItem({ detailItem }) {
   };
 
   return (
-    <div className="mb-6 card flex flex-row flex-wrap gap-4 justify-center items-start bg-base-100 shadow-xl">
-      <figure className="">
-        <ViewSpeciesFromXYZ
-          id={`I${detailItem.id}`}
-          className="m-4 w-96"
-          xyzString={geometry}
-        />
-      </figure>
+    <div className="mb-6 card flex flex-row flex-wrap gap-4 justify-center items-start bg-base-100 shadow-2xl">
+      <ViewSpeciesFromXYZ
+        id={`I${detailItem.id}`}
+        className="m-4 w-96"
+        xyzString={geometry}
+      />
       <div className="items-center">
         <div className="stats stats-vertical shadow max-w-xl">
           <div className="stat">

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { ChevronLeftIcon } from "@heroicons/react/24/outline";
-import FormattedFormula from "./FormattedFormula";
+import { formatFormula } from "../utils/utils";
 import ViewSpeciesFromSVG from "./ViewSpeciesFromSVG";
 import ViewReactionFromSVG from "./ViewReactionFromSVG";
 
@@ -21,9 +21,7 @@ export default function DisplayItem({
       {firstInGroup && (
         <>
           <ChevronLeftIcon className="text-neutral rotate-45 h-6" />
-          <div className="pl-6 text-neutral">
-            <FormattedFormula formula={item.formula} />
-          </div>
+          <div className="pl-6 text-neutral">{formatFormula(item.formula)}</div>
         </>
       )}
       {reactionMode ? (

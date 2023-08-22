@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
 import * as OCL from "openchemlib/full";
+import { useState, useEffect, useMemo } from "react";
+import { formatFormula } from "../utils/utils";
 import ViewSpeciesFromSVG from "./ViewSpeciesFromSVG";
-import FormattedFormula from "./FormattedFormula";
 
 export default function ViewSpeciesFromSmiles({ smiles, className = "h-96" }) {
   // Replace CC + [OH] with CC.[OH] for convenience
@@ -38,7 +38,7 @@ export default function ViewSpeciesFromSmiles({ smiles, className = "h-96" }) {
   return (
     <ViewSpeciesFromSVG
       svgString={svgString}
-      descriptors={[<FormattedFormula formula={formulaString} />]}
+      descriptors={[formatFormula(formulaString)]}
       className={className}
     />
   );
