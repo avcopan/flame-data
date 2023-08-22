@@ -632,7 +632,7 @@ def _add_reaction_by_smiles_connectivity(cursor, smi: str) -> int:
 
 
 @with_pool_cursor
-def get_species_by_connectivity(
+def get_species_details_by_connectivity(
     cursor, id: int, id_only: bool = False
 ) -> Union[List[dict], List[int]]:
     """Get all species with a certain connectivity ID
@@ -734,7 +734,7 @@ def get_reactions_by_connectivity(
 
 
 @with_pool_cursor
-def get_reaction_transition_states_by_connectivity(
+def get_reaction_details_by_connectivity(
     cursor, id: int, id_only: bool = False
 ) -> Union[List[dict], List[int]]:
     """Get all reactions with a certain connectivity ID
@@ -750,32 +750,12 @@ def get_reaction_transition_states_by_connectivity(
     """
     query_string = """
         SELECT
-            reaction_ts.id,
+            reaction.id,
             -- reaction connectivity columns
-            formula,
-            conn_smiles,
-            r_svg_string,
-            p_svg_string,
-            r_conn_inchi,
-            p_conn_inchi,
-            r_conn_inchi_hash,
-            p_conn_inchi_hash,
-            r_conn_amchi,
-            p_conn_amchi,
-            r_conn_amchi_hash,
-            p_conn_amchi_hash,
-            r_formulas,
-            p_formulas,
-            r_conn_inchis,
-            p_conn_inchis,
-            r_conn_inchi_hashes,
-            p_conn_inchi_hashes,
-            r_conn_amchis,
-            p_conn_amchis,
-            r_conn_amchi_hashes,
-            p_conn_amchi_hashes,
-            r_conn_ids,
-            p_conn_ids,
+            MAX(formula) AS formula,
+            MAX(conn_smiles) AS conn_smiles,
+            MAX(r_conn_ids) AS r_conn_ids,
+            MAX(p_conn_ids) AS p_conn_ids,
             -- reaction  columns
             smiles,
             r_amchi,
@@ -790,17 +770,19 @@ def get_reaction_transition_states_by_connectivity(
             p_amchi_keys,
             conn_id,
             -- estate columns
-            spin_mult,
+            MAX(spin_mult) AS spin_mult,
             -- TS columns
-            geometry,
-            class,
-            amchi,
-            amchi_key
+            ARRAY_AGG(reaction_ts.id) AS ts_ids,
+            ARRAY_AGG(geometry) AS geometries,
+            ARRAY_AGG(class) AS classes,
+            ARRAY_AGG(amchi) AS amchis,
+            ARRAY_AGG(amchi_key) AS amchi_keys
         FROM reaction_connectivity
         JOIN reaction ON reaction.conn_id = reaction_connectivity.id
         JOIN reaction_estate ON reaction_estate.reaction_id = reaction.id
         JOIN reaction_ts ON reaction_ts.estate_id = reaction_estate.id
-        WHERE reaction_connectivity.id = %s;
+        WHERE reaction_connectivity.id = %s
+        GROUP BY reaction.id;
     """
     query_params = [id]
     cursor.execute(query_string, query_params)
@@ -981,7 +963,7 @@ def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
     :param conn_id: The connectivity ID of the species
     :type conn_id: int
     """
-    species_ids = get_species_by_connectivity(conn_id, id_only=True)
+    species_ids = get_species_details_by_connectivity(conn_id, id_only=True)
 
     query_string = """
         INSERT INTO collections_species (coll_id, species_id)
@@ -1019,7 +1001,7 @@ def remove_species_connectivity_from_collection(cursor, coll_id: int, conn_id: i
     :param conn_id: The connectivity ID of the species
     :type conn_id: int
     """
-    species_ids = get_species_by_connectivity(conn_id, id_only=True)
+    species_ids = get_species_details_by_connectivity(conn_id, id_only=True)
 
     query_string = """
         DELETE FROM collections_species

@@ -30,7 +30,7 @@ export default function DetailGeometry({ geometry, connId, id }) {
   };
 
   return (
-    <div className="flex flex-row flex-wrap gap-12 justify-center items-start">
+    <div className="mb-6 flex flex-row flex-wrap gap-12 justify-center items-start">
       <ViewSpeciesFromXYZ
         id={`I${id}`}
         className="m-4 w-96"

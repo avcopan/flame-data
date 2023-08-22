@@ -1,11 +1,7 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  formatFormula,
-  prettyReactionSmiles,
-  capitalizeText,
-} from "../utils/utils";
+import { formatFormula, prettyReactionSmiles } from "../utils/utils";
 import actions from "../state/actions";
 import DetailItem from "../components/DetailItem";
 import DetailStats from "../components/DetailStats";
@@ -29,13 +25,6 @@ export default function DetailPage({ isReaction }) {
       ["Spin Multiplicity", detailItems[0].spin_mult]
     );
   }
-  if (detailItems && reactionMode) {
-    headlineStatsList.splice(1, 0, [
-      "Reaction Class",
-      "class",
-      capitalizeText,
-    ]);
-  }
 
   useEffect(() => {
     if (reactionMode !== isReaction) {
@@ -54,9 +43,8 @@ export default function DetailPage({ isReaction }) {
 
   return (
     detailItems && (
-      <div className="max-w-screen-2xl flex flex-col">
+      <div className="flex flex-col">
         <DetailStats
-          statsObject={detailItems[0]}
           statsList={headlineStatsList}
           containerClassName="mb-8 shadow-2xl"
           valueClassName="text-3xl"

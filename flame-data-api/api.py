@@ -219,7 +219,7 @@ def get_species_details_by_connectivity(id):
         `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
         `conn_amchi`, `conn_amchi_hash`
     """
-    species_data = flame_data_api.query.get_species_by_connectivity(id)
+    species_data = flame_data_api.query.get_species_details_by_connectivity(id)
     return flame_data_api.response(200, contents=species_data)
 
 
@@ -233,7 +233,7 @@ def get_reaction_details_by_connectivity(id):
         `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
         `conn_amchi`, `conn_amchi_hash`
     """
-    reaction_data = flame_data_api.query.get_reaction_transition_states_by_connectivity(id)
+    reaction_data = flame_data_api.query.get_reaction_details_by_connectivity(id)
     return flame_data_api.response(200, contents=reaction_data)
 
 

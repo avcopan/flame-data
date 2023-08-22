@@ -8,7 +8,7 @@ export default function DetailStats({
   return (
     <div className={`stats ${containerClassName}`}>
       {statsList.map(([title, value, transform], index) => (
-        <div key={index} className="stat">
+        <div key={index} className="stat border-none">
           <div className="stat-title">{title}</div>
           <div className={`stat-value ${valueClassName}`}>
             {transform ? transform(value) : value}
