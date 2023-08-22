@@ -55,8 +55,8 @@ export default function DetailPage({ isReaction }) {
           </div>
         </div>
         <div className="mb-8 flex flex-col">
-          {detailItems.map((detailItem) => (
-            <DetailItem key={detailItem.id} detailItem={detailItem} />
+          {detailItems.map((detailItem, index) => (
+            <DetailItem key={index} detailItem={detailItem} />
           ))}
         </div>
         {/* Open the modal using ID.showModal() method */}

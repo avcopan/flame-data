@@ -1,6 +1,3 @@
--- -- Restart command:
--- DROP TABLE IF EXISTS users, collections, species_connectivity, species_estate, species, collections_species;
-
 -- USER TABLES
 
 CREATE TABLE users (

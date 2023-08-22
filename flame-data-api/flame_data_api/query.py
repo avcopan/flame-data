@@ -750,7 +750,7 @@ def get_reaction_transition_states_by_connectivity(
     """
     query_string = """
         SELECT
-            reaction.id,
+            reaction_ts.id,
             -- reaction connectivity columns
             formula,
             conn_smiles,
