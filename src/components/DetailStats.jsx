@@ -1,18 +1,17 @@
 export default function DetailStats({
-  statsObject,
   statsList,
   vertical = false,
   containerClassName = "shadow",
-  valueClassName = "",
+  valueClassName = "text-base",
 }) {
   containerClassName += vertical ? " stats-vertical" : "";
   return (
     <div className={`stats ${containerClassName}`}>
-      {statsList.map(([title, key, transform], index) => (
+      {statsList.map(([title, value, transform], index) => (
         <div key={index} className="stat">
           <div className="stat-title">{title}</div>
           <div className={`stat-value ${valueClassName}`}>
-            {transform ? transform(statsObject[key]) : statsObject[key]}
+            {transform ? transform(value) : value}
           </div>
         </div>
       ))}

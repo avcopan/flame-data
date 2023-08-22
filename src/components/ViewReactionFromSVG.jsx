@@ -1,5 +1,5 @@
 import ViewFrame from "./ViewFrame";
-import { ArrowLongDownIcon } from "@heroicons/react/24/outline";
+import { ArrowDownIcon } from "@heroicons/react/24/outline";
 
 export default function ViewReactionFromSVG({
   reactantsSvgString,
@@ -39,7 +39,7 @@ export default function ViewReactionFromSVG({
               className="p-2 h-1/2 max-w-full rounded-3xl"
             />
             <div className="w-full h-full absolute inset-0 top-1/2 left-1/2">
-              <ArrowLongDownIcon className="text-black h-10 -translate-y-1/2 -translate-x-1/2" />
+              <ArrowDownIcon className="text-neutral h-5 -translate-y-1/2 -translate-x-1/2" />
             </div>
           </div>
           {descriptors.map((descriptor, idx) => (

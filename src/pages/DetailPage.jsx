@@ -7,7 +7,7 @@ import {
   capitalizeText,
 } from "../utils/utils";
 import actions from "../state/actions";
-import DetailItem from "../components/SpeciesDetailItem";
+import DetailItem from "../components/DetailItem";
 import DetailStats from "../components/DetailStats";
 import DeleteButton from "../components/DeleteButton";
 
@@ -21,15 +21,20 @@ export default function DetailPage({ isReaction }) {
     reactionMode ? store.reactionDetails : store.speciesDetails
   );
   const detailItems = itemDetails[id];
-  const connectivityStatsList = [
-    // title    key        transform
-    ["Formula", "formula", formatFormula],
-    ["SMILES", "conn_smiles", prettyReactionSmiles],
-    ["Spin Multiplicity", "spin_mult"],
-  ];
-
-  if (reactionMode) {
-    connectivityStatsList.splice(1, 0, ["Reaction Class", "class", capitalizeText]);
+  const headlineStatsList = [];
+  if (detailItems) {
+    headlineStatsList.push(
+      ["Formula", detailItems[0].formula, formatFormula],
+      ["SMILES", detailItems[0].conn_smiles, prettyReactionSmiles],
+      ["Spin Multiplicity", detailItems[0].spin_mult]
+    );
+  }
+  if (detailItems && reactionMode) {
+    headlineStatsList.splice(1, 0, [
+      "Reaction Class",
+      "class",
+      capitalizeText,
+    ]);
   }
 
   useEffect(() => {
@@ -52,13 +57,18 @@ export default function DetailPage({ isReaction }) {
       <div className="max-w-screen-2xl flex flex-col">
         <DetailStats
           statsObject={detailItems[0]}
-          statsList={connectivityStatsList}
+          statsList={headlineStatsList}
           containerClassName="mb-8 shadow-2xl"
           valueClassName="text-3xl"
         />
         <div className="mb-8 flex flex-col">
           {detailItems.map((detailItem, index) => (
-            <DetailItem key={index} detailItem={detailItem} />
+            <DetailItem
+              key={index}
+              detailItem={detailItem}
+              isomerIndex={index}
+              isomerCount={detailItems.length}
+            />
           ))}
         </div>
         {/* Open the modal using ID.showModal() method */}
