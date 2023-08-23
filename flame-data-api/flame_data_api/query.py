@@ -665,6 +665,28 @@ def get_species_by_connectivity(
 
 
 @with_pool_cursor
+def get_species_connectivity_ids_by_reaction_connectivity(cursor, id: int) -> List[int]:
+    """Get all species connectivities for a certain reaction
+
+    :param id: The ID of the connectivity species
+    :type id: int
+    :param id_only: Look up just the ID?, default False
+    :type id_only: bool, optional
+    :return: The ID of each species connectivity for the reaction
+    :rtype: List[int]
+    """
+    query_string = """
+        SELECT (p_conn_ids || r_conn_ids) as "ids"
+        FROM reaction_connectivity
+        WHERE reaction_connectivity.id = %s;
+    """
+    query_params = [id]
+    cursor.execute(query_string, query_params)
+    query_result = cursor.fetchone()
+    return list(set(query_result["ids"]))
+
+
+@with_pool_cursor
 def get_reactions_by_connectivity(
     cursor, id: int, id_only: bool = False
 ) -> Union[List[dict], List[int]]:
@@ -1015,13 +1037,17 @@ def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
 
 @with_pool_cursor
 def add_reaction_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
-    """Add all reaction of a given connectivity to a collection
+    """Add all reactions of a given connectivity to a collection
 
     :param coll_id: The ID of the collection
     :type coll_id: int
-    :param conn_id: The connectivity ID of the reaction
+    :param conn_id: The connectivity ID of the reactions
     :type conn_id: int
     """
+    spc_conn_ids = get_species_connectivity_ids_by_reaction_connectivity(conn_id)
+    for spc_conn_id in spc_conn_ids:
+        add_species_connectivity_to_collection(coll_id, spc_conn_id)
+
     reaction_ids = get_reactions_by_connectivity(conn_id, id_only=True)
 
     query_string = """
@@ -1253,5 +1279,6 @@ if __name__ == "__main__":
     # add_reaction_by_smiles_connectivity("CCCC.[O][O]>>CCC[CH2].O[O]")
     # print(lookup_reaction_connectivity("CCCC.[O][O]>>CCC[CH2].O[O]", id_only=True))
     # print(add_reaction_by_smiles_connectivity("CC(C)CCO[O]>>[CH2]C(C)CCOO"))
-    print(add_reaction_by_smiles_connectivity("C(C)(C)CO[O]>>[CH2](C)(C)COO"))
+    # print(add_reaction_by_smiles_connectivity("C(C)(C)CO[O]>>[CH2](C)(C)COO"))
     # print(get_reactions_by_connectivity(1, id_only=True))
+    print(get_species_connectivity_ids_by_reaction_connectivity(31))
