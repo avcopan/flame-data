@@ -93,7 +93,7 @@ export default function CollectionsMenu({
             {collection.name}
           </div>
           <div className="collapse-content flex flex-col gap-4 justify-center items-center">
-            <div className="flex flex-wrap justify-start overflow-x-visible overflow-y-auto">
+            <div className="flex flex-wrap justify-start overflow-x-hidden overflow-y-auto">
               {collection[item_type] &&
                 collection[item_type].map((connectivity) => (
                   <DisplayItem
