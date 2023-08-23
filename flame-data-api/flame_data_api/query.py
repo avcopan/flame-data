@@ -911,7 +911,7 @@ def get_user_collections(cursor, user_id: int) -> List[dict]:
     :rtype: List[dict]
     """
     query_string = """
-        SELECT * FROM collections WHERE user_id = %s;
+        SELECT * FROM collection WHERE user_id = %s;
     """
     query_params = [user_id]
 
@@ -931,11 +931,11 @@ def get_collection_species(cursor, coll_id: int) -> List[dict]:
     """
     query_string = """
         SELECT species_connectivity.*, ARRAY_AGG(species.id) AS species_ids
-        FROM collections_species
+        FROM collection_species
         JOIN species ON species_id = species.id
         JOIN species_estate ON species.estate_id = species_estate.id
         JOIN species_connectivity ON species_estate.conn_id = species_connectivity.id
-        WHERE collections_species.coll_id = %s
+        WHERE collection_species.coll_id = %s
         GROUP BY species_connectivity.id;
     """
     query_params = [coll_id]
@@ -956,10 +956,10 @@ def get_collection_reactions(cursor, coll_id: int) -> List[dict]:
     """
     query_string = """
         SELECT reaction_connectivity.*, ARRAY_AGG(reaction.id) AS reaction_ids
-        FROM collections_reactions
+        FROM collection_reactions
         JOIN reaction ON reaction.id =  reaction_id
         JOIN reaction_connectivity ON reaction_connectivity.id = reaction.conn_id
-        WHERE collections_reactions.coll_id = %s
+        WHERE collection_reactions.coll_id = %s
         GROUP BY reaction_connectivity.id;
     """
     query_params = [coll_id]
@@ -981,7 +981,7 @@ def add_user_collection(cursor, user_id: int, name: str) -> dict:
     :rtype: dict
     """
     query_string = """
-        INSERT INTO collections (name, user_id) VALUES (%s, %s)
+        INSERT INTO collection (name, user_id) VALUES (%s, %s)
         RETURNING *;
     """
     query_params = [name, user_id]
@@ -1007,7 +1007,7 @@ def lookup_user_collection(
     :rtype: Union[dict, int]
     """
     query_string = """
-        SELECT * FROM collections WHERE (name, user_id) = (%s, %s);
+        SELECT * FROM collection WHERE (name, user_id) = (%s, %s);
     """
     query_params = [name, user_id]
 
@@ -1028,7 +1028,7 @@ def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
     species_ids = get_species_by_connectivity(conn_id, id_only=True)
 
     query_string = """
-        INSERT INTO collections_species (coll_id, species_id)
+        INSERT INTO collection_species (coll_id, species_id)
         VALUES  (%s, %s) ON CONFLICT (coll_id, species_id) DO NOTHING;
     """
     query_params = [[coll_id, id] for id in species_ids]
@@ -1051,7 +1051,7 @@ def add_reaction_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
     reaction_ids = get_reactions_by_connectivity(conn_id, id_only=True)
 
     query_string = """
-        INSERT INTO collections_reactions (coll_id, reaction_id)
+        INSERT INTO collection_reactions (coll_id, reaction_id)
         VALUES  (%s, %s) ON CONFLICT (coll_id, reaction_id) DO NOTHING;
     """
     query_params = [[coll_id, id] for id in reaction_ids]
@@ -1070,7 +1070,7 @@ def remove_species_connectivity_from_collection(cursor, coll_id: int, conn_id: i
     species_ids = get_species_by_connectivity(conn_id, id_only=True)
 
     query_string = """
-        DELETE FROM collections_species
+        DELETE FROM collection_species
         WHERE (coll_id, species_id) = (%s, %s);
     """
     query_params = [[coll_id, id] for id in species_ids]
@@ -1089,7 +1089,7 @@ def remove_reaction_connectivity_from_collection(cursor, coll_id: int, conn_id: 
     reaction_ids = get_reactions_by_connectivity(conn_id, id_only=True)
 
     query_string = """
-        DELETE FROM collections_reactions
+        DELETE FROM collection_reactions
         WHERE (coll_id, reaction_id) = (%s, %s);
     """
     query_params = [[coll_id, id] for id in reaction_ids]
@@ -1107,7 +1107,7 @@ def get_collection_name(cursor, coll_id: int) -> str:
     :rtype: List[dict]
     """
     query_string = """
-        SELECT name FROM collections WHERE id = %s;
+        SELECT name FROM collection WHERE id = %s;
     """
     query_params = [coll_id]
 
@@ -1132,11 +1132,11 @@ def get_collection_species_data(cursor, coll_id: int) -> List[dict]:
     query_string = """
         SELECT
             formula, conn_smiles, spin_mult, smiles, inchi, amchi, geometry
-        FROM collections_species
+        FROM collection_species
         JOIN species ON species_id = species.id
         JOIN species_estate ON species.estate_id = species_estate.id
         JOIN species_connectivity ON species_estate.conn_id = species_connectivity.id
-        WHERE collections_species.coll_id = %s;
+        WHERE collection_species.coll_id = %s;
     """
     query_params = [coll_id]
 
@@ -1167,12 +1167,12 @@ def get_collection_reactions_data(cursor, coll_id: int) -> List[dict]:
             ARRAY_AGG(reaction_ts.geometry) AS geometries,
             ARRAY_AGG(reaction_ts.class) AS classes,
             ARRAY_AGG(reaction_ts.amchi) AS amchis
-        FROM collections_reactions
-        JOIN reaction ON reaction.id = collections_reactions.reaction_id
+        FROM collection_reactions
+        JOIN reaction ON reaction.id = collection_reactions.reaction_id
         JOIN reaction_connectivity ON reaction_connectivity.id = reaction.conn_id
         JOIN reaction_estate ON reaction_estate.reaction_id = reaction.id
         JOIN reaction_ts ON reaction_ts.estate_id = reaction_estate.id
-        WHERE collections_reactions.coll_id = %s
+        WHERE collection_reactions.coll_id = %s
         GROUP BY reaction.id
         ORDER BY reaction.id;
     """
@@ -1187,15 +1187,15 @@ def get_collection_reactions_data(cursor, coll_id: int) -> List[dict]:
             ARRAY_AGG(reactant_species_estate.spin_mult) AS r_spin_mults,
             ARRAY_AGG(reactant_species.inchi) AS r_inchis,
             ARRAY_AGG(reactant_species.amchi) AS r_amchis
-        FROM collections_reactions
-        JOIN reaction ON reaction.id = collections_reactions.reaction_id
+        FROM collection_reactions
+        JOIN reaction ON reaction.id = collection_reactions.reaction_id
         -- reactant joins
         JOIN reaction_reactants ON reaction_reactants.reaction_id = reaction.id
         JOIN species AS reactant_species
           ON reactant_species.id = reaction_reactants.species_id
         JOIN species_estate AS reactant_species_estate
           ON reactant_species_estate.id = reactant_species.estate_id
-        WHERE collections_reactions.coll_id = %s
+        WHERE collection_reactions.coll_id = %s
         GROUP BY reaction.id
         ORDER BY reaction.id;
     """
@@ -1209,15 +1209,15 @@ def get_collection_reactions_data(cursor, coll_id: int) -> List[dict]:
             ARRAY_AGG(product_species_estate.spin_mult) AS p_spin_mults,
             ARRAY_AGG(product_species.inchi) AS p_inchis,
             ARRAY_AGG(product_species.amchi) AS p_amchis
-        FROM collections_reactions
-        JOIN reaction ON reaction.id = collections_reactions.reaction_id
+        FROM collection_reactions
+        JOIN reaction ON reaction.id = collection_reactions.reaction_id
         -- product joins
         JOIN reaction_products ON reaction_products.reaction_id = reaction.id
         JOIN species AS product_species
           ON product_species.id = reaction_products.species_id
         JOIN species_estate AS product_species_estate
           ON product_species_estate.id = product_species.estate_id
-        WHERE collections_reactions.coll_id = %s
+        WHERE collection_reactions.coll_id = %s
         GROUP BY reaction.id
         ORDER BY reaction.id;
     """
@@ -1249,7 +1249,7 @@ def delete_collection(cursor, coll_id: int) -> (int, str):
     :rtype: str
     """
     query_string = """
-        DELETE FROM collections WHERE id = %s;
+        DELETE FROM collection WHERE id = %s;
     """
     query_params = [coll_id]
     cursor.execute(query_string, query_params)

@@ -42,7 +42,7 @@ CREATE TABLE species (
 -- REACTION TABLES
 
 -- Restart command:
--- DROP TABLE IF EXISTS reaction_connectivity, reaction, reaction_estate, reaction_ts, reaction_reactants, reaction_products, collections_reactions;
+-- DROP TABLE IF EXISTS reaction_connectivity, reaction, reaction_estate, reaction_ts, reaction_reactants, reaction_products, collection_reactions;
 
 -- This table contains duplicate information that could be recreated using a JOIN It is
 -- mainly for searching purposes
@@ -138,8 +138,7 @@ CREATE TABLE reaction_products (
 
 -- COLLECTION TABLES
 
--- Rename these to "collection" for consistency
-CREATE TABLE collections (
+CREATE TABLE collection (
   id SERIAL PRIMARY KEY,
   name TEXT,
   user_id INT
@@ -147,9 +146,9 @@ CREATE TABLE collections (
     ON DELETE CASCADE
 );
 
-CREATE TABLE collections_species (
+CREATE TABLE collection_species (
   coll_id INT
-    REFERENCES collections(id)
+    REFERENCES collection(id)
     ON DELETE CASCADE,
   species_id BIGINT
     REFERENCES species(id)
@@ -157,9 +156,9 @@ CREATE TABLE collections_species (
   PRIMARY KEY(coll_id, species_id)
 );
 
-CREATE TABLE collections_reactions (
+CREATE TABLE collection_reactions (
   coll_id INT
-    REFERENCES collections(id)
+    REFERENCES collection(id)
     ON DELETE CASCADE,
   reaction_id BIGINT
     REFERENCES reaction(id)

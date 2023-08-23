@@ -23,9 +23,9 @@ export default function HomePage() {
   );
 
   useEffect(() => {
-    dispatch(actions.getReactions());
-    dispatch(actions.getSpecies());
-  }, []);
+    dispatch(reactionMode ? actions.getReactions() : actions.getSpecies());
+    setIsSearch(false);
+  }, [reactionMode]);
 
   useEffect(() => {
     if (user) {
