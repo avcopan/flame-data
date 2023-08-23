@@ -23,9 +23,9 @@ export default function HomePage() {
   );
 
   useEffect(() => {
-    dispatch(reactionMode ? actions.getReactions() : actions.getSpecies());
-    setIsSearch(false);
-  }, [reactionMode]);
+    dispatch(actions.getSpecies());
+    dispatch(actions.getReactions());
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -41,9 +41,13 @@ export default function HomePage() {
 
   const submitSearch = () => {
     const payload = { formula: searchFormula, partial: searchPartial };
-    dispatch(
-      reactionMode ? actions.getReactions(payload) : actions.getSpecies(payload)
-    );
+    if (reactionMode) {
+      dispatch(actions.getReactions(payload));
+      dispatch(actions.getSpecies(payload));
+    } else {
+      dispatch(actions.getSpecies(payload));
+      dispatch(actions.getReactions(payload));
+    }
     setSearchFormula("");
     setIsSearch(true);
   };
