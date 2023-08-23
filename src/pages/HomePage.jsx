@@ -16,6 +16,7 @@ export default function HomePage() {
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [searchFormula, setSearchFormula] = useState("");
   const [searchPartial, setSearchPartial] = useState(false);
+  const [isSearch, setIsSearch] = useState(false);
 
   const itemList = useSelector((store) =>
     reactionMode ? store.reactions : store.species
@@ -44,6 +45,13 @@ export default function HomePage() {
       reactionMode ? actions.getReactions(payload) : actions.getSpecies(payload)
     );
     setSearchFormula("");
+    setIsSearch(true);
+  };
+
+  const clearSearch = () => {
+    dispatch(reactionMode ? actions.getReactions() : actions.getSpecies());
+    setSearchFormula("");
+    setIsSearch(false);
   };
 
   const addItemsToCollection = () => {
@@ -58,7 +66,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col gap-6 justify-center items-center">
       <ReactionModeSelector />
-      <div className="flex flex-row gap-6 mb-12">
+      <div className="relative flex flex-row gap-6 mb-12">
         <div className="w-96 flex flex-col gap-6">
           <input
             type="text"
@@ -97,6 +105,12 @@ export default function HomePage() {
           condition={selectedItems.length > 0}
           text="Add to Collection"
           onClick={addItemsToCollection}
+        />
+        <PopupButton
+          condition={isSearch}
+          text="Clear Search"
+          onClick={clearSearch}
+          className="btn-accent bottom-20 left-4"
         />
       </div>
     </div>
