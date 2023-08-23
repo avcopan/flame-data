@@ -610,7 +610,7 @@ def _add_reaction_by_smiles_connectivity(cursor, smi: str) -> int:
 
     query_string5 = """
         INSERT INTO reaction_reactants (reaction_id, species_id)
-        VALUES (%(id)s, %(species_id)s);
+        VALUES (%(id)s, %(species_id)s) ON CONFLICT DO NOTHING;
     """
     query_params5 = [
         {**query_result2, "species_id": species_id}
@@ -621,11 +621,11 @@ def _add_reaction_by_smiles_connectivity(cursor, smi: str) -> int:
 
     query_string6 = """
         INSERT INTO reaction_products (reaction_id, species_id)
-        VALUES (%(id)s, %(species_id)s);
+        VALUES (%(id)s, %(species_id)s) ON CONFLICT DO NOTHING;
     """
     query_params6 = [
         {**query_result2, "species_id": species_id}
-        for query_result2, species_ids in zip(query_results2, r_species_ids_lst)
+        for query_result2, species_ids in zip(query_results2, p_species_ids_lst)
         for species_id in species_ids
     ]
     cursor.executemany(query_string6, query_params6)
@@ -920,7 +920,7 @@ def get_collection_species(cursor, coll_id: int) -> List[dict]:
 
     cursor.execute(query_string, query_params)
     species_rows = cursor.fetchall()
-    return species_rows
+    return species_rows if species_rows else []
 
 
 @with_pool_cursor
@@ -944,7 +944,7 @@ def get_collection_reactions(cursor, coll_id: int) -> List[dict]:
 
     cursor.execute(query_string, query_params)
     reaction_rows = cursor.fetchall()
-    return reaction_rows
+    return reaction_rows if reaction_rows else []
 
 
 @with_pool_cursor
@@ -1100,13 +1100,12 @@ def get_collection_species_data(cursor, coll_id: int) -> List[dict]:
 
     :param coll_id: The collection ID
     :type coll_id: int
-    :return: The rows associated with this species
+    :return: The species rows associated with this collection
     :rtype: List[dict]
     """
     query_string = """
         SELECT
-            formula, conn_smiles, conn_inchi, conn_amchi, spin_mult, smiles, inchi,
-            amchi, geometry
+            formula, conn_smiles, spin_mult, smiles, inchi, amchi, geometry
         FROM collections_species
         JOIN species ON species_id = species.id
         JOIN species_estate ON species.estate_id = species_estate.id
@@ -1118,6 +1117,100 @@ def get_collection_species_data(cursor, coll_id: int) -> List[dict]:
     cursor.execute(query_string, query_params)
     species_rows = cursor.fetchall()
     return species_rows
+
+
+@with_pool_cursor
+def get_collection_reactions_data(cursor, coll_id: int) -> List[dict]:
+    """Get data for all reactions in a collection (no IDs included)
+
+    :param coll_id: The collection ID
+    :type coll_id: int
+    :return: The reaction rows associated with this collection
+    :rtype: List[dict]
+    """
+    query_string1 = """
+        SELECT
+            -- reaction connectivity columns
+            MAX(formula) AS formula,
+            MAX(conn_smiles) AS conn_smiles,
+            -- reaction  columns
+            reaction.smiles,
+            -- estate columns
+            MAX(reaction_estate.spin_mult) AS spin_mult,
+            -- TS columns
+            ARRAY_AGG(reaction_ts.geometry) AS geometries,
+            ARRAY_AGG(reaction_ts.class) AS classes,
+            ARRAY_AGG(reaction_ts.amchi) AS amchis
+        FROM collections_reactions
+        JOIN reaction ON reaction.id = collections_reactions.reaction_id
+        JOIN reaction_connectivity ON reaction_connectivity.id = reaction.conn_id
+        JOIN reaction_estate ON reaction_estate.reaction_id = reaction.id
+        JOIN reaction_ts ON reaction_ts.estate_id = reaction_estate.id
+        WHERE collections_reactions.coll_id = %s
+        GROUP BY reaction.id
+        ORDER BY reaction.id;
+    """
+    query_params = [coll_id]
+
+    cursor.execute(query_string1, query_params)
+    rxn_rows = cursor.fetchall()
+
+    query_string2 = """
+        SELECT
+            -- reactant columns
+            ARRAY_AGG(reactant_species_estate.spin_mult) AS r_spin_mults,
+            ARRAY_AGG(reactant_species.inchi) AS r_inchis,
+            ARRAY_AGG(reactant_species.amchi) AS r_amchis
+        FROM collections_reactions
+        JOIN reaction ON reaction.id = collections_reactions.reaction_id
+        -- reactant joins
+        JOIN reaction_reactants ON reaction_reactants.reaction_id = reaction.id
+        JOIN species AS reactant_species
+          ON reactant_species.id = reaction_reactants.species_id
+        JOIN species_estate AS reactant_species_estate
+          ON reactant_species_estate.id = reactant_species.estate_id
+        WHERE collections_reactions.coll_id = %s
+        GROUP BY reaction.id
+        ORDER BY reaction.id;
+    """
+
+    cursor.execute(query_string2, query_params)
+    rxn_r_rows = cursor.fetchall()
+
+    query_string3 = """
+        SELECT
+            -- product columns
+            ARRAY_AGG(product_species_estate.spin_mult) AS p_spin_mults,
+            ARRAY_AGG(product_species.inchi) AS p_inchis,
+            ARRAY_AGG(product_species.amchi) AS p_amchis
+        FROM collections_reactions
+        JOIN reaction ON reaction.id = collections_reactions.reaction_id
+        -- product joins
+        JOIN reaction_products ON reaction_products.reaction_id = reaction.id
+        JOIN species AS product_species
+          ON product_species.id = reaction_products.species_id
+        JOIN species_estate AS product_species_estate
+          ON product_species_estate.id = product_species.estate_id
+        WHERE collections_reactions.coll_id = %s
+        GROUP BY reaction.id
+        ORDER BY reaction.id;
+    """
+
+    cursor.execute(query_string3, query_params)
+    rxn_p_rows = cursor.fetchall()
+
+    for rxn_row, rxn_r_row, rxn_p_row in zip(rxn_rows, rxn_r_rows, rxn_p_rows):
+        # Add reactant information
+        rxn_row.update(**rxn_r_row, **rxn_p_row)
+        # Zip TS information
+        geometries = rxn_row.pop("geometries")
+        classes = rxn_row.pop("classes")
+        amchis = rxn_row.pop("amchis")
+        rxn_row["transition_states"] = list(
+            {"geometry": g, "class": c, "amchi": a}
+            for (g, c, a) in zip(geometries, classes, amchis)
+        )
+    return rxn_rows
 
 
 @with_pool_cursor

@@ -323,9 +323,8 @@ def get_user_collections():
         coll_id = coll_row["id"]
         species_rows = flame_data_api.query.get_collection_species(coll_id)
         reaction_rows = flame_data_api.query.get_collection_reactions(coll_id)
-        if species_rows:
-            coll_row["species"] = species_rows
-            coll_row["reactions"] = reaction_rows
+        coll_row["species"] = species_rows
+        coll_row["reactions"] = reaction_rows
 
     return flame_data_api.response(200, contents=coll_rows)
 
@@ -444,8 +443,9 @@ def get_user_collection_data(id):
 
     name = flame_data_api.query.get_collection_name(id)
     species_data = flame_data_api.query.get_collection_species_data(id)
+    reactions_data = flame_data_api.query.get_collection_reactions_data(id)
 
-    coll_data = {"name": name, "species": species_data}
+    coll_data = {"name": name, "species": species_data, "reactions": reactions_data}
     return flame_data_api.response(200, contents=coll_data)
 
 

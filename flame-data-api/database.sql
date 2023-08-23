@@ -117,23 +117,23 @@ CREATE TABLE reaction_ts (
 -- REAGENTS TABLES
 
 CREATE TABLE reaction_reactants (
-  id BIGSERIAL PRIMARY KEY,
   reaction_id BIGINT
     REFERENCES reaction(id)
     ON DELETE CASCADE,
   species_id BIGINT
     REFERENCES species(id)
-    ON DELETE CASCADE
+    ON DELETE CASCADE,
+  PRIMARY KEY(reaction_id, species_id)
 );
 
 CREATE TABLE reaction_products (
-  id BIGSERIAL PRIMARY KEY,
   reaction_id BIGINT
     REFERENCES reaction(id)
     ON DELETE CASCADE,
   species_id BIGINT
     REFERENCES species(id)
-    ON DELETE CASCADE
+    ON DELETE CASCADE,
+  PRIMARY KEY(reaction_id, species_id)
 );
 
 -- COLLECTION TABLES
