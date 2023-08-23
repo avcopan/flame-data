@@ -54,6 +54,10 @@ export default function HomePage() {
     setIsSearch(false);
   };
 
+  const selectAllItems = () => {
+    setSelectedItems(itemList.map((item) => item.id));
+  };
+
   const addItemsToCollection = () => {
     const payload = {
       coll_id: selectedCollection,
@@ -102,15 +106,21 @@ export default function HomePage() {
           />
         )}
         <PopupButton
-          condition={selectedItems.length > 0}
-          text="Add to Collection"
-          onClick={addItemsToCollection}
+          condition={isSearch}
+          text="Select All"
+          onClick={selectAllItems}
+          className="btn-warning bottom-36 left-4"
         />
         <PopupButton
           condition={isSearch}
           text="Clear Search"
           onClick={clearSearch}
           className="btn-accent bottom-20 left-4"
+        />
+        <PopupButton
+          condition={selectedItems.length > 0}
+          text="Add to Collection"
+          onClick={addItemsToCollection}
         />
       </div>
     </div>
