@@ -29,7 +29,7 @@ export default function Header() {
             </li>
             {user && (
               <li>
-                <Link to="/add-new">Add new...</Link>
+                <Link to="/submit">Submit</Link>
               </li>
             )}
             {user ? (

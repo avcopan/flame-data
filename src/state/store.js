@@ -2,6 +2,7 @@ import axios from "axios";
 import { configureStore, createSlice } from "@reduxjs/toolkit";
 import createSagaMiddleware from "redux-saga";
 import { select, put, takeLatest, takeEvery } from "redux-saga/effects";
+import { handleErrorForProtectedEndpoint } from "../utils/utils";
 
 // SLICES/REDUCERS
 // 1. user slice/reducer
@@ -80,25 +81,70 @@ const speciesDetailsSlice = createSlice({
 const addSpeciesDetails = speciesDetailsSlice.actions.addSpeciesDetails;
 const speciesDetailsReducer = speciesDetailsSlice.reducer;
 
-// 5. new species slice/reducer
-const newSpeciesSlice = createSlice({
-  name: "newSpecies",
+// 5. reactions slice/reducer(s)
+const reactionsSlice = createSlice({
+  name: "reactions",
   initialState: [],
   reducers: {
-    addNewSpecies: (state, action) => {
-      return [...state, action.payload];
-    },
-    clearNewSpecies: () => {
-      return [];
+    setReactions: (_, action) => {
+      return action.payload;
     },
   },
 });
 
-export const addNewSpecies = newSpeciesSlice.actions.addNewSpecies;
-export const clearNewSpecies = newSpeciesSlice.actions.clearNewSpecies;
-const newSpeciesReducer = newSpeciesSlice.reducer;
+const setReactions = reactionsSlice.actions.setReactions;
+const reactionsReducer = reactionsSlice.reducer;
 
-// 6. collections slice/reducer
+// 6. reaction details cache slice/reducer
+const reactionDetailsSlice = createSlice({
+  name: "reactionDetails",
+  initialState: {},
+  reducers: {
+    addReactionDetails: (state, action) => {
+      return { ...state, ...action.payload };
+    },
+  },
+});
+
+const addReactionDetails = reactionDetailsSlice.actions.addReactionDetails;
+const reactionDetailsReducer = reactionDetailsSlice.reducer;
+
+// 7. reactionMode slice/reducer(s)
+const reactionModeSlice = createSlice({
+  name: "reactionMode",
+  initialState: false,
+  reducers: {
+    setReactionMode: (_, action) => {
+      return action.payload;
+    },
+  },
+});
+
+export const setReactionMode = reactionModeSlice.actions.setReactionMode;
+const reactionModeReducer = reactionModeSlice.reducer;
+
+// 8. submission slice/reducer
+const submissionsSlice = createSlice({
+  name: "submissions",
+  initialState: [],
+  reducers: {
+    addSubmission: (state, action) => {
+      return [...state, action.payload];
+    },
+    updateSubmission: (state, action) => {
+      const { index, update } = action.payload;
+      return state.map((submission, i) =>
+        i === index ? { ...submission, ...update } : submission
+      );
+    },
+  },
+});
+
+const addSubmission = submissionsSlice.actions.addSubmission;
+const updateSubmission = submissionsSlice.actions.updateSubmission;
+const submissionsReducer = submissionsSlice.reducer;
+
+// 9. collections slice/reducer
 const collectionsSlice = createSlice({
   name: "collections",
   initialState: [],
@@ -122,7 +168,10 @@ const store = configureStore({
     error: errorReducer,
     species: speciesReducer,
     speciesDetails: speciesDetailsReducer,
-    newSpecies: newSpeciesReducer,
+    reactions: reactionsReducer,
+    reactionDetails: reactionDetailsReducer,
+    reactionMode: reactionModeReducer,
+    submissions: submissionsReducer,
     collections: collectionsReducer,
   },
   middleware: (defaultMiddleware) => defaultMiddleware().concat(sagaMiddleware),
@@ -218,7 +267,6 @@ function* getSpeciesSaga(action) {
       const formula = action.payload.formula;
       const partial = action.payload.partial ? "partial" : "";
       requestUrl += `?formula=${formula}&${partial}`;
-      console.log(requestUrl);
     }
     const res = yield axios.get(requestUrl);
     const data = yield res.data;
@@ -232,86 +280,132 @@ export const getSpecies = (payload) => {
   return { type: GET_SPECIES, payload };
 };
 
-//  b. get details for one species
-const GET_SPECIES_DETAILS = "GET_SPECIES_DETAILS";
+// 3. reactions sagas
+//  a. get all reactions
+const GET_REACTIONS = "GET_REACTIONS";
 
-function* getSpeciesDetailsSaga(action) {
+function* getReactionsSaga(action) {
   try {
-    const connId = action.payload;
-    const res = yield axios.get(`/api/species/connectivity/${connId}`);
+    let requestUrl = "/api/reaction/connectivity";
+    if (action.payload && action.payload.formula) {
+      const formula = action.payload.formula;
+      const partial = action.payload.partial ? "partial" : "";
+      requestUrl += `?formula=${formula}&${partial}`;
+    }
+    const res = yield axios.get(requestUrl);
     const data = yield res.data;
-    yield put(addSpeciesDetails({ [connId]: data.contents }));
+    yield put(setReactions(data.contents));
   } catch (error) {
     console.error(error);
   }
 }
 
-export const getSpeciesDetails = (payload) => {
-  return { type: GET_SPECIES_DETAILS, payload };
+export const getReactions = (payload) => {
+  return { type: GET_REACTIONS, payload };
 };
 
-//  c. post new species in batch
-function handleErrorForProtectedEndpoint(error) {
-  if (error.response.status === 401) {
-    alert("You are not authorized to make this request. Are you logged in?");
-  }
-  console.error(error);
-}
+// 4. generic "item" (species or reaction)
+//  a. get details for an item
+const GET_DETAILS = "GET_DETAILS";
 
-const POST_NEW_SPECIES = "POST_NEW_SPECIES";
-
-function* postNewSpeciesSaga() {
+function* getDetailsSaga(action) {
   try {
-    const smilesList = yield select((store) => store.newSpecies);
-    yield put(clearNewSpecies());
-    const requestBody = { smilesList };
-    const res = yield axios.post("/api/species/connectivity", requestBody);
+    const reactionMode = yield select((store) => store.reactionMode);
+    const type = reactionMode ? "reaction" : "species";
+
+    const connId = action.payload;
+    const res = yield axios.get(`/api/${type}/connectivity/${connId}`);
+    const data = yield res.data;
+    if (reactionMode) {
+      yield put(addReactionDetails({ [connId]: data.contents }));
+    } else {
+      yield put(addSpeciesDetails({ [connId]: data.contents }));
+    }
   } catch (error) {
-    handleErrorForProtectedEndpoint(error);
+    console.error(error);
   }
 }
 
-export const postNewSpecies = () => {
-  return { type: POST_NEW_SPECIES };
+export const getDetails = (payload) => {
+  return { type: GET_DETAILS, payload };
 };
 
-//  d. delete one species
-const DELETE_SPECIES = "DELETE_SPECIES";
+//  b. delete an item
+const DELETE_ITEM = "DELETE_ITEM";
 
-function* deleteSpeciesSaga(action) {
+function* deleteItemSaga(action) {
+  const reactionMode = yield select((store) => store.reactionMode);
+  const type = reactionMode ? "reaction" : "species";
   try {
     const connId = action.payload;
-    yield axios.delete(`/api/species/connectivity/${connId}`);
-    yield put(getSpecies());
+    yield axios.delete(`/api/${type}/connectivity/${connId}`);
+    yield put(reactionMode ? getReactions() : getSpecies());
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
   }
 }
 
-export const deleteSpecies = (payload) => {
-  return { type: DELETE_SPECIES, payload };
+export const deleteItem = (payload) => {
+  return { type: DELETE_ITEM, payload };
 };
 
-//  e. update one species geometry
-const UPDATE_SPECIES_GEOMETRY = "UPDATE_SPECIES_GEOMETRY";
+//  c. update the geometry for an item
+const UPDATE_ITEM_GEOMETRY = "UPDATE_ITEM_GEOMETRY";
 
-function* updateSpeciesGeometrySaga(action) {
+function* updateItemGeometrySaga(action) {
+  const reactionMode = yield select((store) => store.reactionMode);
+  const type = reactionMode ? "reaction/ts" : "species";
   try {
     const connId = action.payload.connId;
     const id = action.payload.id;
-    yield axios.put(`/api/species/${id}`, action.payload);
-    console.log("submitting put request for species", connId);
-    yield put(getSpeciesDetails(connId));
+    yield axios.put(`/api/${type}/${id}`, action.payload);
+    yield put(getDetails(connId));
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
   }
 }
 
-export const updateSpeciesGeometry = (payload) => {
-  return { type: UPDATE_SPECIES_GEOMETRY, payload };
+export const updateItemGeometry = (payload) => {
+  return { type: UPDATE_ITEM_GEOMETRY, payload };
 };
 
-// 3. collections sagas
+//  d. post an item for submission to the database
+const POST_SUBMISSION = "POST_SUBMISSION";
+
+function* postSubmissionSaga(action) {
+  // 1. Determine the index of the new submission
+  const submissions = yield select((store) => store.submissions);
+  const index = submissions.length;
+  // 2. Add it to the submissions store
+  let { smiles, isReaction } = action.payload;
+  let submission = { smiles, isReaction, status: "Submitted" };
+  yield put(addSubmission(submission));
+  try {
+    // 3. Submit the POST request
+    const url = `/api/${isReaction ? "reaction" : "species"}/connectivity`;
+    smiles = smiles.replace(/\s+\+\s+/g, ".").replace(/\s+/g, "");
+    const res = yield axios.post(url, { smiles });
+    console.log("response:", res);
+    submission = { ...submission, status: "Complete" };
+    yield put(updateSubmission({ index, update: submission }));
+    yield put(isReaction ? getReactions() : getSpecies());
+  } catch (error) {
+    handleErrorForProtectedEndpoint(error);
+    submission = {
+      ...submission,
+      status: "Error",
+      message: error.response.data.error,
+    };
+    console.log(error);
+    yield put(updateSubmission({ index, update: submission }));
+  }
+}
+
+export const postSubmission = (payload) => {
+  return { type: POST_SUBMISSION, payload };
+};
+
+// 6. collections sagas
 //  a. get all collections
 const GET_COLLECTIONS = "GET_COLLECTIONS";
 
@@ -345,31 +439,42 @@ export const postNewCollection = (payload) => {
   return { type: POST_NEW_COLLECTION, payload };
 };
 
-// c. post species to a collection
-const POST_COLLECTION_SPECIES = "POST_COLLECTION_SPECIES";
+// c. post items to a collection
+const POST_COLLECTION_ITEMS = "POST_COLLECTION_ITEMS";
 
-function* postCollectionSpeciesSaga(action) {
+function* postCollectionItemsSaga(action) {
+  const reactionMode = yield select((store) => store.reactionMode);
+  const type = reactionMode ? "reaction" : "species";
   try {
     const coll_id = action.payload.coll_id;
-    yield axios.post(`/api/collection/species/${coll_id}`, action.payload);
+    console.log(
+      `Posting to /api/collection/${type}/${coll_id} with payload`,
+      action.payload
+    );
+    yield axios.post(`/api/collection/${type}/${coll_id}`, action.payload);
     yield put(getCollections());
   } catch (error) {
     handleErrorForProtectedEndpoint(error);
   }
 }
 
-export const postCollectionSpecies = (payload) => {
-  return { type: POST_COLLECTION_SPECIES, payload };
+export const postCollectionItems = (payload) => {
+  return { type: POST_COLLECTION_ITEMS, payload };
 };
 
-// d. delet species from a collection
-const DELETE_COLLECTION_SPECIES = "DELETE_COLLECTION_SPECIES";
+// d. delete items from a collection
+const DELETE_COLLECTION_ITEMS = "DELETE_COLLECTION_ITEMS";
 
-function* deleteCollectionSpeciesSaga(action) {
+function* deleteCollectionItemsSaga(action) {
+  const reactionMode = yield select((store) => store.reactionMode);
+  const type = reactionMode ? "reaction" : "species";
   try {
     const coll_id = action.payload.coll_id;
-    console.log("deleteCollectionSpecies payload:", action.payload);
-    yield axios.delete(`/api/collection/species/${coll_id}`, {
+    console.log(
+      `Deleting from /api/collection/${type}/${coll_id} with payload`,
+      action.payload
+    );
+    yield axios.delete(`/api/collection/${type}/${coll_id}`, {
       data: action.payload,
     });
     yield put(getCollections());
@@ -378,8 +483,8 @@ function* deleteCollectionSpeciesSaga(action) {
   }
 }
 
-export const deleteCollectionSpecies = (payload) => {
-  return { type: DELETE_COLLECTION_SPECIES, payload };
+export const deleteCollectionItems = (payload) => {
+  return { type: DELETE_COLLECTION_ITEMS, payload };
 };
 
 //  e. delete a collection
@@ -401,19 +506,25 @@ export const deleteCollection = (payload) => {
 
 // WIRING: create watcher saga
 function* watcherSaga() {
+  // user
   yield takeLatest(GET_USER, getUserSaga);
   yield takeLatest(LOGIN_USER, loginUserSaga);
   yield takeLatest(LOGOUT_USER, logoutUserSaga);
   yield takeLatest(REGISTER_USER, registerUserSaga);
+  // species
   yield takeLatest(GET_SPECIES, getSpeciesSaga);
-  yield takeEvery(GET_SPECIES_DETAILS, getSpeciesDetailsSaga);
-  yield takeEvery(DELETE_SPECIES, deleteSpeciesSaga);
-  yield takeEvery(POST_NEW_SPECIES, postNewSpeciesSaga);
-  yield takeEvery(UPDATE_SPECIES_GEOMETRY, updateSpeciesGeometrySaga);
+  // reaction
+  yield takeLatest(GET_REACTIONS, getReactionsSaga);
+  // generic "item" (species or reaction)
+  yield takeEvery(GET_DETAILS, getDetailsSaga);
+  yield takeEvery(DELETE_ITEM, deleteItemSaga);
+  yield takeEvery(UPDATE_ITEM_GEOMETRY, updateItemGeometrySaga);
+  yield takeEvery(POST_SUBMISSION, postSubmissionSaga);
+  // collection
   yield takeLatest(GET_COLLECTIONS, getCollectionsSaga);
   yield takeEvery(POST_NEW_COLLECTION, postNewCollectionSaga);
-  yield takeEvery(POST_COLLECTION_SPECIES, postCollectionSpeciesSaga);
-  yield takeEvery(DELETE_COLLECTION_SPECIES, deleteCollectionSpeciesSaga);
+  yield takeEvery(POST_COLLECTION_ITEMS, postCollectionItemsSaga);
+  yield takeEvery(DELETE_COLLECTION_ITEMS, deleteCollectionItemsSaga);
   yield takeEvery(DELETE_COLLECTION, deleteCollectionSaga);
 }
 

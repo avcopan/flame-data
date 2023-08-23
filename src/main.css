@@ -1,6 +1,4 @@
 @tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 @layer base {
   h1 {
@@ -11,4 +9,22 @@
     @apply text-xl;
     @apply mb-2;
   }
+  th {
+    @apply text-primary text-lg p-2;
+  }
+  td {
+    @apply text-base p-2;
+  }
+  td:nth-child(2) {
+    @apply italic;
+  }
+  thead > tr {
+    @apply bg-base-200;
+  }
+  tbody > tr {
+    @apply hover:bg-base-300;
+  }
 }
+
+@tailwind components;
+@tailwind utilities;

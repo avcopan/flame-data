@@ -3,20 +3,20 @@ import ViewFrame from "./ViewFrame";
 export default function ViewSpeciesFromSVG({
   svgString,
   descriptors = [],
-  className,
   hoverText = "",
   withCheckbox = false,
   checked = false,
   checkHandler = () => {},
+  className = "h-96",
   checkboxClassNames = "checkbox-primary checkbox-sm",
 }) {
   return (
     <ViewFrame
-      className={className}
       withCheckbox={withCheckbox}
       checked={checked}
       checkHandler={checkHandler}
       checkboxClassNames={checkboxClassNames}
+      className={className}
     >
       {svgString && (
         <>

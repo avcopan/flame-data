@@ -1,57 +1,76 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import {
+  formatFormula,
+  prettyReactionSmiles,
+  textToggler,
+} from "../utils/utils";
 import actions from "../state/actions";
-import SpeciesDetailItem from "../components/SpeciesDetailItem";
-import FormattedFormula from "../components/FormattedFormula";
+import DetailItem from "../components/DetailItem";
+import DetailStats from "../components/DetailStats";
 import DeleteButton from "../components/DeleteButton";
 
-export default function DetailPage() {
-  const { connId } = useParams();
+export default function DetailPage({ isReaction }) {
+  const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector((store) => store.user);
-  const speciesDetails = useSelector((store) => store.speciesDetails);
-  const isomerList = speciesDetails[connId];
+  const reactionMode = useSelector((store) => store.reactionMode);
+  const details = useSelector((store) =>
+    reactionMode ? store.reactionDetails : store.speciesDetails
+  );
+
+  const toggleText = textToggler(reactionMode, "reaction", "species");
+
+  const detailItems = details[id];
+  const headlineStatsList = [];
+  if (detailItems) {
+    headlineStatsList.push(
+      ["Formula", detailItems[0].formula, formatFormula],
+      ["SMILES", detailItems[0].conn_smiles, prettyReactionSmiles],
+      ["Spin Multiplicity", detailItems[0].spin_mult]
+    );
+  }
 
   useEffect(() => {
-    dispatch(actions.getSpeciesDetails(connId));
+    if (reactionMode !== isReaction) {
+      dispatch(actions.setReactionMode(isReaction));
+    }
   }, []);
 
-  const deleteSpecies = () => {
-    dispatch(actions.deleteSpecies(connId));
+  useEffect(() => {
+    dispatch(actions.getDetails(id));
+  }, []);
+
+  const deleteItem = () => {
+    dispatch(actions.deleteItem(id));
     navigate("/");
   };
 
   return (
-    isomerList && (
-      <div className="max-w-screen-xl flex flex-col">
-        <div className="mb-8 stats shadow">
-          <div className="stat">
-            <div className="stat-title">Formula</div>
-            <div className="stat-value">
-              <FormattedFormula formula={isomerList[0].formula} />
-            </div>
-          </div>
-          <div className="stat">
-            <div className="stat-title">SMILES</div>
-            <div className="stat-value">{isomerList[0].conn_smiles}</div>
-          </div>
-          <div className="stat">
-            <div className="stat-title">Multiplicity</div>
-            <div className="stat-value">{isomerList[0].spin_mult}</div>
-          </div>
-        </div>
+    detailItems && (
+      <div className="flex flex-col">
+        <DetailStats
+          statsList={headlineStatsList}
+          containerClassName="mb-8 shadow-2xl"
+          valueClassName="text-3xl"
+        />
         <div className="mb-8 flex flex-col">
-          {isomerList.map((isomer) => (
-            <SpeciesDetailItem key={isomer.id} isomer={isomer} />
+          {detailItems.map((detailItem, index) => (
+            <DetailItem
+              key={index}
+              detailItem={detailItem}
+              isomerIndex={index}
+              isomerCount={detailItems.length}
+            />
           ))}
         </div>
         {/* Open the modal using ID.showModal() method */}
         {user && (
           <DeleteButton
-            warningMessage={`Are you sure? This will delete all records for species ${connId}`}
-            handleDelete={deleteSpecies}
+            warningMessage={`Are you sure? This will delete all records for ${toggleText()} ${id}`}
+            handleDelete={deleteItem}
           />
         )}
       </div>

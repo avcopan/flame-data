@@ -1,41 +1,53 @@
 import {
-  setRetypeError,
+  // user
   getUser,
   loginUser,
   logoutUser,
   registerUser,
+  // species
   getSpecies,
-  getSpeciesDetails,
-  addNewSpecies,
-  clearNewSpecies,
-  postNewSpecies,
-  deleteSpecies,
-  updateSpeciesGeometry,
+  // reaction
+  getReactions,
+  // generic "item" (species or reaction)
+  getDetails,
+  deleteItem,
+  updateItemGeometry,
+  postSubmission,
+  // collection
   getCollections,
   postNewCollection,
-  postCollectionSpecies,
-  deleteCollectionSpecies,
+  postCollectionItems,
+  deleteCollectionItems,
   deleteCollection,
+  // miscellaneous
+  setRetypeError,
+  setReactionMode,
 } from "./store";
 
 const actions = {
-  setRetypeError,
+  // user
   getUser,
   loginUser,
   logoutUser,
   registerUser,
+  // species
   getSpecies,
-  getSpeciesDetails,
-  addNewSpecies,
-  clearNewSpecies,
-  postNewSpecies,
-  deleteSpecies,
-  updateSpeciesGeometry,
+  // reaction
+  getReactions,
+  // generic "item" (species or reaction)
+  getDetails,
+  deleteItem,
+  updateItemGeometry,
+  postSubmission,
+  // collection
   getCollections,
   postNewCollection,
-  postCollectionSpecies,
-  deleteCollectionSpecies,
+  postCollectionItems,
+  deleteCollectionItems,
   deleteCollection,
+  // miscellaneous
+  setRetypeError,
+  setReactionMode,
 };
 
 export default actions;

@@ -1,42 +1,63 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import actions from "../state/actions";
+import ReactionModeSelector from "../components/ReactionModeSelector";
 import BinarySelector from "../components/BinarySelector";
-import SpeciesList from "../components/SpeciesList";
+import DisplayList from "../components/DisplayList";
 import CollectionsMenu from "../components/CollectionsMenu";
+import PopupButton from "../components/PopupButton";
 
 export default function HomePage() {
   const dispatch = useDispatch();
   const user = useSelector((store) => store.user);
-  const speciesList = useSelector((store) => store.species);
   const collections = useSelector((store) => store.collections);
-  const [selectedSpecies, setSelectedSpecies] = useState([]);
+  const reactionMode = useSelector((store) => store.reactionMode);
+  const [selectedItems, setSelectedItems] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [searchFormula, setSearchFormula] = useState("");
   const [searchPartial, setSearchPartial] = useState(false);
 
+  const itemList = useSelector((store) =>
+    reactionMode ? store.reactions : store.species
+  );
+
   useEffect(() => {
+    dispatch(actions.getReactions());
     dispatch(actions.getSpecies());
-    dispatch(actions.getCollections());
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      dispatch(actions.getCollections());
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (selectedCollection === null && collections.length > 0) {
+      setSelectedCollection(collections[0].id);
+    }
+  }, [collections]);
 
   const submitSearch = () => {
     const payload = { formula: searchFormula, partial: searchPartial };
-    dispatch(actions.getSpecies(payload));
+    dispatch(
+      reactionMode ? actions.getReactions(payload) : actions.getSpecies(payload)
+    );
     setSearchFormula("");
   };
 
-  const addSpeciesToCollection = () => {
+  const addItemsToCollection = () => {
     const payload = {
       coll_id: selectedCollection,
-      conn_ids: selectedSpecies,
+      conn_ids: selectedItems,
     };
-    dispatch(actions.postCollectionSpecies(payload));
-    setSelectedSpecies([]);
+    dispatch(actions.postCollectionItems(payload));
+    setSelectedItems([]);
   };
 
   return (
     <div className="flex flex-col gap-6 justify-center items-center">
+      <ReactionModeSelector />
       <div className="flex flex-row gap-6 mb-12">
         <div className="w-96 flex flex-col gap-6">
           <input
@@ -48,10 +69,10 @@ export default function HomePage() {
             onChange={(e) => setSearchFormula(e.target.value)}
           />
           <BinarySelector
-            topText="Partial match"
-            bottomText="Exact match"
-            topSelected={searchPartial}
-            setTopSelected={setSearchPartial}
+            text1="Partial match"
+            text2="Exact match"
+            selection={searchPartial}
+            setSelection={setSearchPartial}
           />
         </div>
         <button className="btn btn-outline" onClick={submitSearch}>
@@ -59,11 +80,11 @@ export default function HomePage() {
         </button>
       </div>
       <div className="flex flex-row justify-center gap-12 items-start">
-        <SpeciesList
-          speciesList={speciesList}
+        <DisplayList
+          itemList={itemList}
+          selectedItems={selectedItems}
+          setSelectedItems={setSelectedItems}
           className={user ? "w-2/3" : "w-full"}
-          selectedSpecies={selectedSpecies}
-          setSelectedSpecies={setSelectedSpecies}
         />
         {user && (
           <CollectionsMenu
@@ -72,14 +93,11 @@ export default function HomePage() {
             setSelectedCollection={setSelectedCollection}
           />
         )}
-        {selectedSpecies.length > 0 && (
-          <button
-            onClick={addSpeciesToCollection}
-            className="btn btn-primary m-1 fixed bottom-4 left-4"
-          >
-            Add to Collection
-          </button>
-        )}
+        <PopupButton
+          condition={selectedItems.length > 0}
+          text="Add to Collection"
+          onClick={addItemsToCollection}
+        />
       </div>
     </div>
   );

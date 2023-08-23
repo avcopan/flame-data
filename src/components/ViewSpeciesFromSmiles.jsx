@@ -1,9 +1,12 @@
-import { useState, useEffect, useMemo } from "react";
 import * as OCL from "openchemlib/full";
+import { useState, useEffect, useMemo } from "react";
+import { formatFormula } from "../utils/utils";
 import ViewSpeciesFromSVG from "./ViewSpeciesFromSVG";
-import FormattedFormula from "./FormattedFormula";
 
-export default function ViewSpeciesFromSmiles({ smiles, className }) {
+export default function ViewSpeciesFromSmiles({ smiles, className = "h-96" }) {
+  // Replace CC + [OH] with CC.[OH] for convenience
+  smiles = smiles.replace(/\s+\+\s+/g, ".");
+
   let svgString, formulaString;
   const [molecule, setMolecule] = useState(null);
   const smilesOptions = { noStereo: true };
@@ -30,13 +33,12 @@ export default function ViewSpeciesFromSmiles({ smiles, className }) {
 
   if (molecule) {
     svgString = molecule.toSVG(400, 400, "", svgOptions);
-    // const formulaString = molecule.getMolecularFormula().formula.replace(/(\d+)/g, '<sub>$1</sub>');
     formulaString = molecule.getMolecularFormula().formula;
   }
   return (
     <ViewSpeciesFromSVG
       svgString={svgString}
-      descriptors={[<FormattedFormula formula={formulaString} />]}
+      descriptors={[formatFormula(formulaString)]}
       className={className}
     />
   );
