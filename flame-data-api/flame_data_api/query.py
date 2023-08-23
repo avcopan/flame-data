@@ -144,23 +144,7 @@ def search_species_connectivities(
 
     cursor.execute(query_string, query_params)
     conn_rows = cursor.fetchall()
-
-    if conn_rows:
-        # Sort the species by formula
-        # 1. Generate sorting information
-        fmls = [automol.formula.from_string(row["formula"]) for row in conn_rows]
-        symbs = automol.formula.sorted_symbols_in_sequence(fmls)
-        counts = [automol.formula.heavy_atom_count(f) for f in fmls]
-        srt_vecs = [automol.formula.sort_vector(f, symbs) for f in fmls]
-        # 2. Do the sorting
-        conn_rows = [
-            row
-            for _, _, row in sorted(
-                zip(counts, srt_vecs, conn_rows), key=lambda x: x[:-1]
-            )
-        ]
-
-    return conn_rows
+    return sort_rows_by_formula(conn_rows)
 
 
 @with_pool_cursor
@@ -188,23 +172,7 @@ def search_reaction_connectivities(
 
     cursor.execute(query_string, query_params)
     conn_rows = cursor.fetchall()
-
-    if conn_rows:
-        # Sort the reaction by formula
-        # 1. Generate sorting information
-        fmls = [automol.formula.from_string(row["formula"]) for row in conn_rows]
-        symbs = automol.formula.sorted_symbols_in_sequence(fmls)
-        counts = [automol.formula.heavy_atom_count(f) for f in fmls]
-        srt_vecs = [automol.formula.sort_vector(f, symbs) for f in fmls]
-        # 2. Do the sorting
-        conn_rows = [
-            row
-            for _, _, row in sorted(
-                zip(counts, srt_vecs, conn_rows), key=lambda x: x[:-1]
-            )
-        ]
-
-    return conn_rows
+    return sort_rows_by_formula(conn_rows)
 
 
 def lookup_species_connectivity(
@@ -942,7 +910,7 @@ def get_collection_species(cursor, coll_id: int) -> List[dict]:
 
     cursor.execute(query_string, query_params)
     species_rows = cursor.fetchall()
-    return species_rows if species_rows else []
+    return sort_rows_by_formula(species_rows)
 
 
 @with_pool_cursor
@@ -966,7 +934,7 @@ def get_collection_reactions(cursor, coll_id: int) -> List[dict]:
 
     cursor.execute(query_string, query_params)
     reaction_rows = cursor.fetchall()
-    return reaction_rows if reaction_rows else []
+    return sort_rows_by_formula(reaction_rows)
 
 
 @with_pool_cursor
@@ -1142,7 +1110,7 @@ def get_collection_species_data(cursor, coll_id: int) -> List[dict]:
 
     cursor.execute(query_string, query_params)
     species_rows = cursor.fetchall()
-    return species_rows
+    return sort_rows_by_formula(species_rows)
 
 
 @with_pool_cursor
@@ -1236,7 +1204,7 @@ def get_collection_reactions_data(cursor, coll_id: int) -> List[dict]:
             {"geometry": g, "class": c, "amchi": a}
             for (g, c, a) in zip(geometries, classes, amchis)
         )
-    return rxn_rows
+    return sort_rows_by_formula(rxn_rows)
 
 
 @with_pool_cursor
@@ -1271,6 +1239,31 @@ def results_from_executemany(cursor, id_only=False):
             break
 
     return query_results
+
+
+def sort_rows_by_formula(rows):
+    """Sort rows by formula
+
+    :param rows: Rows with a "formula" column
+    :type rows: dict
+    """
+    if not rows or "formula" not in rows[0]:
+        return rows
+
+    # Sort the species by formula
+    # 1. Generate sorting information
+    fmls = [automol.formula.from_string(row["formula"]) for row in rows]
+    symbs = automol.formula.sorted_symbols_in_sequence(fmls)
+    counts = [automol.formula.heavy_atom_count(f) for f in fmls]
+    srt_vecs = [automol.formula.sort_vector(f, symbs) for f in fmls]
+    # 2. Do the sorting
+    rows = [
+        row
+        for _, _, row in sorted(
+            zip(counts, srt_vecs, rows), key=lambda x: x[:-1]
+        )
+    ]
+    return rows
 
 
 if __name__ == "__main__":
