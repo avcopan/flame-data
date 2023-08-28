@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "flame_data_api"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
+python = ">=3.10,<3.13"
 flask = "^2.3.2"
 python-dotenv = "^1.0.0"
 psycopg = "^3.1.9"
@@ -32,6 +32,7 @@ py3dmol = "^2.0.3"
 psycopg-pool = "^3.1.7"
 lxml = "^4.9.3"
 notebook = "^7.0.2"
+automol = "^2023.8.0"
 
 
 [build-system]
