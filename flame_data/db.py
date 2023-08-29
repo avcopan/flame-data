@@ -10,11 +10,11 @@ dotenv.load_dotenv()
 
 pool = psycopg_pool.ConnectionPool(
     psycopg.conninfo.make_conninfo(
-        dbname=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
-        host="localhost",
-        port="5432",
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+        dbname=os.getenv("DB_NAME"),
     ),
 )
 
