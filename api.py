@@ -1,10 +1,19 @@
 import flame_data
 import flask
 import flask_bcrypt
+from flask.helpers import send_from_directory
+from flask_cors import cross_origin
 
 # Create a bcrypt instance
 app = flame_data.start_app()
 bcrypt = flask_bcrypt.Bcrypt(app)
+
+
+# STATIC FILES
+@app.route("/")
+@cross_origin
+def serve():
+    return send_from_directory(app.static_folder, "index.html")
 
 
 # AUTHENTICATION ROUTES
@@ -66,9 +75,7 @@ def register_user():
     password = flask.request.json.get("password")
 
     if flame_data.query.lookup_user(email) is not None:
-        return flame_data.response(
-            409, error="A user with this email already exists"
-        )
+        return flame_data.response(409, error="A user with this email already exists")
 
     hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
 
@@ -95,9 +102,7 @@ def get_species_connectivities():
     """
     fml_str = flask.request.args.get("formula")
     is_partial = flask.request.args.get("partial") is not None
-    species_conns = flame_data.query.search_species_connectivities(
-        fml_str, is_partial
-    )
+    species_conns = flame_data.query.search_species_connectivities(fml_str, is_partial)
     return flame_data.response(200, contents=species_conns)
 
 

@@ -11,7 +11,9 @@ dotenv.load_dotenv()
 
 
 def start_app():
-    app = flask.Flask(__name__)
+    app = flask.Flask(
+        __name__, static_folder=os.getenv("STATIC_FOLDER"), static_url_path=""
+    )
     app.config.update(
         SECRET_KEY=os.getenv("SECRET_KEY"),
         SESSION_TYPE="sqlalchemy",
@@ -36,6 +38,6 @@ def start_app():
         db.create_all()
 
     # Allow credentials in CORS
-    flask_cors.CORS(app, supports_credentials=True)
+    flask_cors.CORS(app, supports_credentials=True, resources=r"/api/*")
 
     return app
