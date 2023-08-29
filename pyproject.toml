@@ -33,6 +33,7 @@ psycopg-pool = "^3.1.7"
 lxml = "^4.9.3"
 notebook = "^7.0.2"
 automol = "^2023.8.0"
+gunicorn = "^21.2.0"
 
 
 [build-system]

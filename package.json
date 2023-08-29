@@ -5,11 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "server": "cd flame-data-api && .venv/bin/flask run --no-debugger",
+    "dev-server": ".venv/bin/flask run --no-debugger",
+    "server": ".venv/bin/gunicorn -b 127.0.0.1:5000 api:app",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "heroku-postbuild": "npm install && npm run build"
   },
+  "cacheDirectories": [
+    "node_modules"
+  ],
   "dependencies": {
     "@heroicons/react": "^2.0.18",
     "@reduxjs/toolkit": "^1.9.5",
@@ -35,5 +40,6 @@
     "eslint-plugin-react-refresh": "^0.4.3",
     "tailwindcss": "^3.3.3",
     "vite": "^4.4.5"
-  }
+  },
+  "heroku-run-build-script": true
 }

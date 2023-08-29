@@ -3,13 +3,13 @@ from typing import List, Tuple, Union
 import automol
 
 from flame_data_api import chem
-from flame_data_api.db import with_pool_cursor
+from flame_data_api.db import with_pool_cursor_starter
 from flame_data_api.utils import row_with_array_literals
 
 
 # USER TABLE
-@with_pool_cursor
-def get_user(cursor, id: int, return_password: bool = False) -> dict:
+@with_pool_cursor_starter
+def get_user(cursor_starter_, id: int, return_password: bool = False) -> dict:
     """Look up a user by ID
 
     :param id: The user's ID
@@ -24,16 +24,18 @@ def get_user(cursor, id: int, return_password: bool = False) -> dict:
     """
     query_params = [id]
 
-    cursor.execute(query_string, query_params)
-    user = cursor.fetchone()
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        user = cursor.fetchone()
+
     if user and not return_password:
         user.pop("password")
 
     return user
 
 
-@with_pool_cursor
-def lookup_user(cursor, email: str, return_password: bool = False) -> dict:
+@with_pool_cursor_starter
+def lookup_user(cursor_starter_, email: str, return_password: bool = False) -> dict:
     """Look up a user by email
 
     :param email: The user's email
@@ -48,16 +50,20 @@ def lookup_user(cursor, email: str, return_password: bool = False) -> dict:
     """
     query_params = [email]
 
-    cursor.execute(query_string, query_params)
-    user = cursor.fetchone()
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        user = cursor.fetchone()
+
     if user and not return_password:
         user.pop("password")
 
     return user
 
 
-@with_pool_cursor
-def add_user(cursor, email: str, password: str, return_password: bool = False) -> dict:
+@with_pool_cursor_starter
+def add_user(
+    cursor_starter_, email: str, password: str, return_password: bool = False
+) -> dict:
     """Add a new user, returning the user's data with their assigned ID
 
     Automatically creates a new collection for the user
@@ -77,8 +83,10 @@ def add_user(cursor, email: str, password: str, return_password: bool = False) -
     """
     query_params = [email, password]
 
-    cursor.execute(query_string, query_params)
-    user_row = cursor.fetchone()
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        user_row = cursor.fetchone()
+
     if user_row and not return_password:
         user_row.pop("password")
 
@@ -119,9 +127,9 @@ def formula_matching_clauses_and_params(
     return clause_string, query_params
 
 
-@with_pool_cursor
+@with_pool_cursor_starter
 def search_species_connectivities(
-    cursor, fml_str: str = None, is_partial: bool = False
+    cursor_starter_, fml_str: str = None, is_partial: bool = False
 ) -> List[dict]:
     """Get connectivity species grouped by formula
 
@@ -142,14 +150,16 @@ def search_species_connectivities(
         SELECT * FROM species_connectivity {clause_string};
     """
 
-    cursor.execute(query_string, query_params)
-    conn_rows = cursor.fetchall()
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        conn_rows = cursor.fetchall()
+
     return sort_rows_by_formula(conn_rows)
 
 
-@with_pool_cursor
+@with_pool_cursor_starter
 def search_reaction_connectivities(
-    cursor, fml_str: str = None, is_partial: bool = False
+    cursor_starter_, fml_str: str = None, is_partial: bool = False
 ) -> List[dict]:
     """Get connectivity reaction grouped by formula
 
@@ -170,8 +180,10 @@ def search_reaction_connectivities(
         SELECT * FROM reaction_connectivity {clause_string};
     """
 
-    cursor.execute(query_string, query_params)
-    conn_rows = cursor.fetchall()
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        conn_rows = cursor.fetchall()
+
     return sort_rows_by_formula(conn_rows)
 
 
@@ -193,9 +205,9 @@ def lookup_species_connectivity(
     return ret
 
 
-@with_pool_cursor
+@with_pool_cursor_starter
 def lookup_species_connectivities(
-    cursor, keys: List[str], key_type: str = "smiles", id_only: bool = False
+    cursor_starter_, keys: List[str], key_type: str = "smiles", id_only: bool = False
 ) -> Union[List[dict], List[int]]:
     """Look up a species connectivity using some identifying key
 
@@ -217,8 +229,11 @@ def lookup_species_connectivities(
         WHERE {'conn_amchi_hash' if is_amchi else 'conn_inchi_hash'} = %s;
     """
     query_params = [[h] for h in hashes]
-    cursor.executemany(query_string, query_params, returning=True)
-    query_results = results_from_executemany(cursor, id_only=id_only)
+
+    with cursor_starter_() as cursor:
+        cursor.executemany(query_string, query_params, returning=True)
+        query_results = results_from_executemany(cursor, id_only=id_only)
+
     return query_results
 
 
@@ -241,9 +256,9 @@ def lookup_reaction_connectivity(
     return ret
 
 
-@with_pool_cursor
+@with_pool_cursor_starter
 def lookup_reaction_connectivities(
-    cursor,
+    cursor_starter_,
     keys: List[Union[str, Tuple[str, str]]],
     key_type: str = "smiles",
     id_only: bool = False,
@@ -271,14 +286,17 @@ def lookup_reaction_connectivities(
             {'p_conn_amchi_hash' if is_amchi else 'p_conn_inchi_hash'} = %s;
     """
     query_params = [h for h in hash_pairs]
-    cursor.executemany(query_string, query_params, returning=True)
-    query_results = results_from_executemany(cursor, id_only=id_only)
+
+    with cursor_starter_() as cursor:
+        cursor.executemany(query_string, query_params, returning=True)
+        query_results = results_from_executemany(cursor, id_only=id_only)
+
     return query_results
 
 
-@with_pool_cursor
+@with_pool_cursor_starter
 def lookup_species(
-    cursor, keys: str, key_type: str = "smiles", id_only: bool = False
+    cursor_starter_, keys: str, key_type: str = "smiles", id_only: bool = False
 ) -> dict:
     """Look up a species connectivity using some identifying key
 
@@ -298,8 +316,11 @@ def lookup_species(
         WHERE amchi_key = %s;
     """
     query_params = [[c] for c in chi_keys]
-    cursor.executemany(query_string, query_params, returning=True)
-    query_results = results_from_executemany(cursor, id_only=id_only)
+
+    with cursor_starter_() as cursor:
+        cursor.executemany(query_string, query_params, returning=True)
+        query_results = results_from_executemany(cursor, id_only=id_only)
+
     return query_results
 
 
@@ -321,8 +342,8 @@ def add_species_by_smiles_connectivity(smi: str) -> Tuple[int, str]:
     return 0, ""
 
 
-@with_pool_cursor
-def _add_species_by_smiles_connectivity(cursor, smi: str) -> int:
+@with_pool_cursor_starter
+def _add_species_by_smiles_connectivity(cursor_starter_, smi: str) -> int:
     """Add a new species using its SMILES string, returning the connectivity ID
 
     (Only for species that don't already exist!)
@@ -336,42 +357,44 @@ def _add_species_by_smiles_connectivity(cursor, smi: str) -> int:
     estate_row = chem.species_estate_row(smi)
     spc_rows = chem.species_rows(smi)
 
-    # INSERT INTO species_connectivity
-    query_string1 = """
-        INSERT INTO species_connectivity
-        (formula, svg_string, conn_smiles, conn_inchi, conn_inchi_hash, conn_amchi,
-        conn_amchi_hash)
-        VALUES
-        (%(formula)s, %(svg_string)s, %(conn_smiles)s, %(conn_inchi)s,
-        %(conn_inchi_hash)s, %(conn_amchi)s,
-        %(conn_amchi_hash)s)
-        RETURNING id;
-    """
-    query_params1 = conn_row
-    cursor.execute(query_string1, query_params1)
-    query_result1 = cursor.fetchone()
+    with cursor_starter_() as cursor:
+        # INSERT INTO species_connectivity
+        query_string1 = """
+          INSERT INTO species_connectivity
+          (formula, svg_string, conn_smiles, conn_inchi, conn_inchi_hash, conn_amchi,
+          conn_amchi_hash)
+          VALUES
+          (%(formula)s, %(svg_string)s, %(conn_smiles)s, %(conn_inchi)s,
+          %(conn_inchi_hash)s, %(conn_amchi)s,
+          %(conn_amchi_hash)s)
+          RETURNING id;
+        """
+        query_params1 = conn_row
 
-    # INSERT INTO species_estate
-    query_string2 = """
-        INSERT INTO species_estate
-        (spin_mult, conn_id)
-        VALUES
-        (%(spin_mult)s, %(id)s)
-        RETURNING id;
-    """
-    query_params2 = {**query_result1, **estate_row}
-    cursor.execute(query_string2, query_params2)
-    query_result2 = cursor.fetchone()
+        cursor.execute(query_string1, query_params1)
+        query_result1 = cursor.fetchone()
 
-    # INSERT INTO species
-    query_string3 = """
-        INSERT INTO species
-        (geometry, smiles, inchi, amchi, amchi_key, estate_id)
-        VALUES
-        (%(geometry)s, %(smiles)s, %(inchi)s, %(amchi)s, %(amchi_key)s, %(id)s)
-    """
-    query_params3 = [{**query_result2, **spc_row} for spc_row in spc_rows]
-    cursor.executemany(query_string3, query_params3)
+        # INSERT INTO species_estate
+        query_string2 = """
+          INSERT INTO species_estate
+          (spin_mult, conn_id)
+          VALUES
+          (%(spin_mult)s, %(id)s)
+          RETURNING id;
+      """
+        query_params2 = {**query_result1, **estate_row}
+        cursor.execute(query_string2, query_params2)
+        query_result2 = cursor.fetchone()
+
+        # INSERT INTO species
+        query_string3 = """
+          INSERT INTO species
+          (geometry, smiles, inchi, amchi, amchi_key, estate_id)
+          VALUES
+          (%(geometry)s, %(smiles)s, %(inchi)s, %(amchi)s, %(amchi_key)s, %(id)s)
+      """
+        query_params3 = [{**query_result2, **spc_row} for spc_row in spc_rows]
+        cursor.executemany(query_string3, query_params3)
 
     return query_result1["id"]
 
@@ -405,8 +428,8 @@ def add_reaction_by_smiles_connectivity(smi: str) -> Tuple[int, str]:
     return 0, ""
 
 
-@with_pool_cursor
-def _add_reaction_by_smiles_connectivity(cursor, smi: str) -> int:
+@with_pool_cursor_starter
+def _add_reaction_by_smiles_connectivity(cursor_starter_, smi: str) -> int:
     """Add a new reaction using its SMILES string, returning the connectivity ID
 
     :param smi: SMILES string
@@ -432,176 +455,178 @@ def _add_reaction_by_smiles_connectivity(cursor, smi: str) -> int:
     conn_row["r_conn_ids"] = r_conn_ids
     conn_row["p_conn_ids"] = p_conn_ids
 
-    # INSERT INTO reaction_connectivity
-    query_string1 = """
-        INSERT INTO reaction_connectivity
-        (
-            formula,
-            conn_smiles,
-            r_svg_string,
-            p_svg_string,
-            r_conn_inchi,
-            p_conn_inchi,
-            r_conn_inchi_hash,
-            p_conn_inchi_hash,
-            r_conn_amchi,
-            p_conn_amchi,
-            r_conn_amchi_hash,
-            p_conn_amchi_hash,
-            r_formulas,
-            p_formulas,
-            r_conn_inchis,
-            p_conn_inchis,
-            r_conn_inchi_hashes,
-            p_conn_inchi_hashes,
-            r_conn_amchis,
-            p_conn_amchis,
-            r_conn_amchi_hashes,
-            p_conn_amchi_hashes,
-            r_conn_ids,
-            p_conn_ids
-        )
-        VALUES
-        (
-            %(formula)s,
-            %(conn_smiles)s,
-            %(r_svg_string)s,
-            %(p_svg_string)s,
-            %(r_conn_inchi)s,
-            %(p_conn_inchi)s,
-            %(r_conn_inchi_hash)s,
-            %(p_conn_inchi_hash)s,
-            %(r_conn_amchi)s,
-            %(p_conn_amchi)s,
-            %(r_conn_amchi_hash)s,
-            %(p_conn_amchi_hash)s,
-            %(r_formulas)s,
-            %(p_formulas)s,
-            %(r_conn_inchis)s,
-            %(p_conn_inchis)s,
-            %(r_conn_inchi_hashes)s,
-            %(p_conn_inchi_hashes)s,
-            %(r_conn_amchis)s,
-            %(p_conn_amchis)s,
-            %(r_conn_amchi_hashes)s,
-            %(p_conn_amchi_hashes)s,
-            %(r_conn_ids)s,
-            %(p_conn_ids)s
-        )
-        RETURNING id;
-    """
-    query_params1 = row_with_array_literals(conn_row)
-    cursor.execute(query_string1, query_params1)
-    query_result1 = cursor.fetchone()
+    with cursor_starter_() as cursor:
+        # INSERT INTO reaction_connectivity
+        query_string1 = """
+          INSERT INTO reaction_connectivity
+          (
+              formula,
+              conn_smiles,
+              r_svg_string,
+              p_svg_string,
+              r_conn_inchi,
+              p_conn_inchi,
+              r_conn_inchi_hash,
+              p_conn_inchi_hash,
+              r_conn_amchi,
+              p_conn_amchi,
+              r_conn_amchi_hash,
+              p_conn_amchi_hash,
+              r_formulas,
+              p_formulas,
+              r_conn_inchis,
+              p_conn_inchis,
+              r_conn_inchi_hashes,
+              p_conn_inchi_hashes,
+              r_conn_amchis,
+              p_conn_amchis,
+              r_conn_amchi_hashes,
+              p_conn_amchi_hashes,
+              r_conn_ids,
+              p_conn_ids
+          )
+          VALUES
+          (
+              %(formula)s,
+              %(conn_smiles)s,
+              %(r_svg_string)s,
+              %(p_svg_string)s,
+              %(r_conn_inchi)s,
+              %(p_conn_inchi)s,
+              %(r_conn_inchi_hash)s,
+              %(p_conn_inchi_hash)s,
+              %(r_conn_amchi)s,
+              %(p_conn_amchi)s,
+              %(r_conn_amchi_hash)s,
+              %(p_conn_amchi_hash)s,
+              %(r_formulas)s,
+              %(p_formulas)s,
+              %(r_conn_inchis)s,
+              %(p_conn_inchis)s,
+              %(r_conn_inchi_hashes)s,
+              %(p_conn_inchi_hashes)s,
+              %(r_conn_amchis)s,
+              %(p_conn_amchis)s,
+              %(r_conn_amchi_hashes)s,
+              %(p_conn_amchi_hashes)s,
+              %(r_conn_ids)s,
+              %(p_conn_ids)s
+          )
+          RETURNING id;
+        """
+        query_params1 = row_with_array_literals(conn_row)
+        cursor.execute(query_string1, query_params1)
+        query_result1 = cursor.fetchone()
 
-    # INSERT INTO reaction
-    query_string2 = """
-        INSERT INTO reaction
-        (
-            smiles,
-            r_amchi,
-            p_amchi,
-            r_amchi_key,
-            p_amchi_key,
-            r_inchis,
-            p_inchis,
-            r_amchis,
-            p_amchis,
-            r_amchi_keys,
-            p_amchi_keys,
-            conn_id
-        )
-        VALUES
-        (
-            %(smiles)s,
-            %(r_amchi)s,
-            %(p_amchi)s,
-            %(r_amchi_key)s,
-            %(p_amchi_key)s,
-            %(r_inchis)s,
-            %(p_inchis)s,
-            %(r_amchis)s,
-            %(p_amchis)s,
-            %(r_amchi_keys)s,
-            %(p_amchi_keys)s,
-            %(id)s
-        )
-        RETURNING id;
-    """
-    query_results2 = []
-    query_params2 = [
-        row_with_array_literals({**query_result1, **rxn_row}) for rxn_row in rxn_rows
-    ]
-    cursor.executemany(query_string2, query_params2, returning=True)
-    query_results2 = results_from_executemany(cursor)
+        # INSERT INTO reaction
+        query_string2 = """
+          INSERT INTO reaction
+          (
+              smiles,
+              r_amchi,
+              p_amchi,
+              r_amchi_key,
+              p_amchi_key,
+              r_inchis,
+              p_inchis,
+              r_amchis,
+              p_amchis,
+              r_amchi_keys,
+              p_amchi_keys,
+              conn_id
+          )
+          VALUES
+          (
+              %(smiles)s,
+              %(r_amchi)s,
+              %(p_amchi)s,
+              %(r_amchi_key)s,
+              %(p_amchi_key)s,
+              %(r_inchis)s,
+              %(p_inchis)s,
+              %(r_amchis)s,
+              %(p_amchis)s,
+              %(r_amchi_keys)s,
+              %(p_amchi_keys)s,
+              %(id)s
+          )
+          RETURNING id;
+        """
+        query_results2 = []
+        query_params2 = [
+            row_with_array_literals({**query_result1, **rxn_row})
+            for rxn_row in rxn_rows
+        ]
+        cursor.executemany(query_string2, query_params2, returning=True)
+        query_results2 = results_from_executemany(cursor_starter_)
 
-    # INSERT INTO reaction_estate
-    query_string3 = """
-        INSERT INTO reaction_estate (spin_mult, reaction_id)
-        VALUES (%(spin_mult)s, %(id)s)
-        RETURNING id;
-    """
-    query_params3 = [
-        {**query_result2, **estate_row} for query_result2 in query_results2
-    ]
-    cursor.executemany(query_string3, query_params3, returning=True)
-    query_results3 = results_from_executemany(cursor)
+        # INSERT INTO reaction_estate
+        query_string3 = """
+          INSERT INTO reaction_estate (spin_mult, reaction_id)
+          VALUES (%(spin_mult)s, %(id)s)
+          RETURNING id;
+        """
+        query_params3 = [
+            {**query_result2, **estate_row} for query_result2 in query_results2
+        ]
+        cursor.executemany(query_string3, query_params3, returning=True)
+        query_results3 = results_from_executemany(cursor_starter_)
 
-    # INSERT INTO reaction_ts
-    assert len(query_results3) == len(ts_grouped_rows), "Sanity check"
+        # INSERT INTO reaction_ts
+        assert len(query_results3) == len(ts_grouped_rows), "Sanity check"
 
-    query_string4 = """
-        INSERT INTO reaction_ts
-        (geometry, class, amchi, amchi_key, estate_id)
-        VALUES
-        (%(geometry)s, %(class)s, %(amchi)s, %(amchi_key)s, %(id)s)
-        RETURNING id;
-    """
-    query_params4 = [
-        {**query_result3, **ts_row}
-        for query_result3, ts_rows in zip(query_results3, ts_grouped_rows)
-        for ts_row in ts_rows
-    ]
-    cursor.executemany(query_string4, query_params4, returning=True)
+        query_string4 = """
+          INSERT INTO reaction_ts
+          (geometry, class, amchi, amchi_key, estate_id)
+          VALUES
+          (%(geometry)s, %(class)s, %(amchi)s, %(amchi_key)s, %(id)s)
+          RETURNING id;
+        """
+        query_params4 = [
+            {**query_result3, **ts_row}
+            for query_result3, ts_rows in zip(query_results3, ts_grouped_rows)
+            for ts_row in ts_rows
+        ]
+        cursor.executemany(query_string4, query_params4, returning=True)
 
-    # INSERT INTO reaction_reactants
-    r_species_ids_lst = [
-        lookup_species(r["r_amchi_keys"], key_type="amchi_key", id_only=True)
-        for r in rxn_rows
-    ]
-    p_species_ids_lst = [
-        lookup_species(r["p_amchi_keys"], key_type="amchi_key", id_only=True)
-        for r in rxn_rows
-    ]
-    assert len(query_results2) == len(r_species_ids_lst), "Sanity check"
-    assert len(query_results2) == len(p_species_ids_lst), "Sanity check"
+        # INSERT INTO reaction_reactants
+        r_species_ids_lst = [
+            lookup_species(r["r_amchi_keys"], key_type="amchi_key", id_only=True)
+            for r in rxn_rows
+        ]
+        p_species_ids_lst = [
+            lookup_species(r["p_amchi_keys"], key_type="amchi_key", id_only=True)
+            for r in rxn_rows
+        ]
+        assert len(query_results2) == len(r_species_ids_lst), "Sanity check"
+        assert len(query_results2) == len(p_species_ids_lst), "Sanity check"
 
-    query_string5 = """
-        INSERT INTO reaction_reactants (reaction_id, species_id)
-        VALUES (%(id)s, %(species_id)s) ON CONFLICT DO NOTHING;
-    """
-    query_params5 = [
-        {**query_result2, "species_id": species_id}
-        for query_result2, species_ids in zip(query_results2, r_species_ids_lst)
-        for species_id in species_ids
-    ]
-    cursor.executemany(query_string5, query_params5)
+        query_string5 = """
+          INSERT INTO reaction_reactants (reaction_id, species_id)
+          VALUES (%(id)s, %(species_id)s) ON CONFLICT DO NOTHING;
+        """
+        query_params5 = [
+            {**query_result2, "species_id": species_id}
+            for query_result2, species_ids in zip(query_results2, r_species_ids_lst)
+            for species_id in species_ids
+        ]
+        cursor.executemany(query_string5, query_params5)
 
-    query_string6 = """
-        INSERT INTO reaction_products (reaction_id, species_id)
-        VALUES (%(id)s, %(species_id)s) ON CONFLICT DO NOTHING;
-    """
-    query_params6 = [
-        {**query_result2, "species_id": species_id}
-        for query_result2, species_ids in zip(query_results2, p_species_ids_lst)
-        for species_id in species_ids
-    ]
-    cursor.executemany(query_string6, query_params6)
+        query_string6 = """
+          INSERT INTO reaction_products (reaction_id, species_id)
+          VALUES (%(id)s, %(species_id)s) ON CONFLICT DO NOTHING;
+        """
+        query_params6 = [
+            {**query_result2, "species_id": species_id}
+            for query_result2, species_ids in zip(query_results2, p_species_ids_lst)
+            for species_id in species_ids
+        ]
+        cursor.executemany(query_string6, query_params6)
 
 
-@with_pool_cursor
+@with_pool_cursor_starter
 def get_species_by_connectivity(
-    cursor, id: int, id_only: bool = False
+    cursor_starter_, id: int, id_only: bool = False
 ) -> Union[List[dict], List[int]]:
     """Get all species with a certain connectivity ID
 
@@ -624,16 +649,21 @@ def get_species_by_connectivity(
         WHERE species_connectivity.id = %s;
     """
     query_params = [id]
-    cursor.execute(query_string, query_params)
-    query_results = cursor.fetchall()
+
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        query_results = cursor.fetchall()
+
     if id_only:
         query_results = [r["id"] for r in query_results]
 
     return query_results
 
 
-@with_pool_cursor
-def get_species_connectivity_ids_by_reaction_connectivity(cursor, id: int) -> List[int]:
+@with_pool_cursor_starter
+def get_species_connectivity_ids_by_reaction_connectivity(
+    cursor_starter_, id: int
+) -> List[int]:
     """Get all species connectivities for a certain reaction
 
     :param id: The ID of the connectivity species
@@ -649,14 +679,17 @@ def get_species_connectivity_ids_by_reaction_connectivity(cursor, id: int) -> Li
         WHERE reaction_connectivity.id = %s;
     """
     query_params = [id]
-    cursor.execute(query_string, query_params)
-    query_result = cursor.fetchone()
+
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        query_result = cursor.fetchone()
+
     return list(set(query_result["ids"]))
 
 
-@with_pool_cursor
+@with_pool_cursor_starter
 def get_reactions_by_connectivity(
-    cursor, id: int, id_only: bool = False
+    cursor_starter_, id: int, id_only: bool = False
 ) -> Union[List[dict], List[int]]:
     """Get all reactions with a certain connectivity ID
 
@@ -706,16 +739,19 @@ def get_reactions_by_connectivity(
         GROUP BY reaction.id;
     """
     query_params = [id]
-    cursor.execute(query_string, query_params)
-    query_results = cursor.fetchall()
+
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        query_results = cursor.fetchall()
+
     if id_only:
         query_results = [r["id"] for r in query_results]
 
     return query_results
 
 
-@with_pool_cursor
-def get_species(cursor, id: int) -> dict:
+@with_pool_cursor_starter
+def get_species(cursor_starter_, id: int) -> dict:
     """Get one species by ID
 
     :param id: The ID of the species
@@ -727,13 +763,16 @@ def get_species(cursor, id: int) -> dict:
         SELECT * FROM species WHERE id = %s;
     """
     query_params = [id]
-    cursor.execute(query_string, query_params)
-    species_row = cursor.fetchone()
+
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        species_row = cursor.fetchone()
+
     return species_row
 
 
-@with_pool_cursor
-def get_reaction_ts(cursor, id: int) -> dict:
+@with_pool_cursor_starter
+def get_reaction_ts(cursor_starter_, id: int) -> dict:
     """Get one reaction TS by ID
 
     :param id: The ID of the reaction TS
@@ -745,13 +784,16 @@ def get_reaction_ts(cursor, id: int) -> dict:
         SELECT * FROM reaction_ts WHERE id = %s;
     """
     query_params = [id]
-    cursor.execute(query_string, query_params)
-    reaction_row = cursor.fetchone()
+
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        reaction_row = cursor.fetchone()
+
     return reaction_row
 
 
-@with_pool_cursor
-def delete_species_connectivity(cursor, id: int) -> (int, str):
+@with_pool_cursor_starter
+def delete_species_connectivity(cursor_starter_, id: int) -> (int, str):
     """Delete one species connectivity
 
     :param id: The ID of the species connectivity
@@ -764,9 +806,11 @@ def delete_species_connectivity(cursor, id: int) -> (int, str):
         DELETE FROM species_connectivity WHERE id = %s;
     """
     query_params1 = [id]
-    cursor.execute(query_string1, query_params1)
 
-    if not bool(cursor.rowcount):
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string1, query_params1)
+
+    if not bool(cursor_starter_.rowcount):
         return 404, f"No resource with ID {id} was found."
 
     # 2. Delete from the reaction connectivity table
@@ -780,8 +824,8 @@ def delete_species_connectivity(cursor, id: int) -> (int, str):
     return 0, ""
 
 
-@with_pool_cursor
-def delete_reaction_connectivity(cursor, id: int) -> (int, str):
+@with_pool_cursor_starter
+def delete_reaction_connectivity(cursor_starter_, id: int) -> (int, str):
     """Delete one reaction connectivity
 
     :param id: The ID of the reaction connectivity
@@ -793,16 +837,18 @@ def delete_reaction_connectivity(cursor, id: int) -> (int, str):
         DELETE FROM reaction_connectivity WHERE id = %s;
     """
     query_params1 = [id]
-    cursor.execute(query_string1, query_params1)
 
-    if not bool(cursor.rowcount):
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string1, query_params1)
+
+    if not bool(cursor_starter_.rowcount):
         return 404, f"No resource with ID {id} was found."
 
     return 0, ""
 
 
-@with_pool_cursor
-def update_species_geometry(cursor, id: int, xyz_str: str) -> bool:
+@with_pool_cursor_starter
+def update_species_geometry(cursor_starter_, id: int, xyz_str: str) -> bool:
     """Delete one connectivity species
 
     :param id: The ID of the species
@@ -827,13 +873,15 @@ def update_species_geometry(cursor, id: int, xyz_str: str) -> bool:
         UPDATE species SET geometry = %s WHERE id = %s;
     """
     query_params = [xyz_str, id]
-    cursor.execute(query_string, query_params)
+
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
 
     return 0, ""
 
 
-@with_pool_cursor
-def update_reaction_ts_geometry(cursor, id: int, xyz_str: str) -> bool:
+@with_pool_cursor_starter
+def update_reaction_ts_geometry(cursor_starter_, id: int, xyz_str: str) -> bool:
     """Delete one connectivity reaction
 
     :param id: The ID of the reaction
@@ -863,14 +911,16 @@ def update_reaction_ts_geometry(cursor, id: int, xyz_str: str) -> bool:
         UPDATE reaction_ts SET geometry = %s WHERE id = %s;
     """
     query_params = [xyz_str, id]
-    cursor.execute(query_string, query_params)
+
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
 
     return 0, ""
 
 
 # COLLECTIONS TABLES
-@with_pool_cursor
-def get_user_collections(cursor, user_id: int) -> List[dict]:
+@with_pool_cursor_starter
+def get_user_collections(cursor_starter_, user_id: int) -> List[dict]:
     """Get the collections associated with a user
 
     :param user_id: The user's ID
@@ -883,13 +933,15 @@ def get_user_collections(cursor, user_id: int) -> List[dict]:
     """
     query_params = [user_id]
 
-    cursor.execute(query_string, query_params)
-    coll_rows = cursor.fetchall()
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        coll_rows = cursor.fetchall()
+
     return coll_rows
 
 
-@with_pool_cursor
-def get_collection_species(cursor, coll_id: int) -> List[dict]:
+@with_pool_cursor_starter
+def get_collection_species(cursor_starter_, coll_id: int) -> List[dict]:
     """Get all species in a collection
 
     :param coll_id: The collection ID
@@ -908,13 +960,15 @@ def get_collection_species(cursor, coll_id: int) -> List[dict]:
     """
     query_params = [coll_id]
 
-    cursor.execute(query_string, query_params)
-    species_rows = cursor.fetchall()
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        species_rows = cursor.fetchall()
+
     return sort_rows_by_formula(species_rows)
 
 
-@with_pool_cursor
-def get_collection_reactions(cursor, coll_id: int) -> List[dict]:
+@with_pool_cursor_starter
+def get_collection_reactions(cursor_starter_, coll_id: int) -> List[dict]:
     """Get all reactions in a collection
 
     :param coll_id: The collection ID
@@ -932,13 +986,15 @@ def get_collection_reactions(cursor, coll_id: int) -> List[dict]:
     """
     query_params = [coll_id]
 
-    cursor.execute(query_string, query_params)
-    reaction_rows = cursor.fetchall()
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        reaction_rows = cursor.fetchall()
+
     return sort_rows_by_formula(reaction_rows)
 
 
-@with_pool_cursor
-def add_user_collection(cursor, user_id: int, name: str) -> dict:
+@with_pool_cursor_starter
+def add_user_collection(cursor_starter_, user_id: int, name: str) -> dict:
     """Add a new collection for a user with a specific name
 
     :param user_id: The user's ID
@@ -954,14 +1010,16 @@ def add_user_collection(cursor, user_id: int, name: str) -> dict:
     """
     query_params = [name, user_id]
 
-    cursor.execute(query_string, query_params)
-    coll_row = cursor.fetchone()
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        coll_row = cursor.fetchone()
+
     return coll_row
 
 
-@with_pool_cursor
+@with_pool_cursor_starter
 def lookup_user_collection(
-    cursor, user_id: int, name: str, id_only: bool = False
+    cursor_starter_, user_id: int, name: str, id_only: bool = False
 ) -> Union[dict, int]:
     """Get a certain user collection by name
 
@@ -979,13 +1037,15 @@ def lookup_user_collection(
     """
     query_params = [name, user_id]
 
-    cursor.execute(query_string, query_params)
-    query_result = cursor.fetchone()
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        query_result = cursor.fetchone()
+
     return query_result["id"] if query_result and id_only else query_result
 
 
-@with_pool_cursor
-def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
+@with_pool_cursor_starter
+def add_species_connectivity_to_collection(cursor_starter_, coll_id: int, conn_id: int):
     """Add all species of a given connectivity to a collection
 
     :param coll_id: The ID of the collection
@@ -1000,11 +1060,15 @@ def add_species_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
         VALUES  (%s, %s) ON CONFLICT (coll_id, species_id) DO NOTHING;
     """
     query_params = [[coll_id, id] for id in species_ids]
-    cursor.executemany(query_string, query_params)
+
+    with cursor_starter_() as cursor:
+        cursor.executemany(query_string, query_params)
 
 
-@with_pool_cursor
-def add_reaction_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
+@with_pool_cursor_starter
+def add_reaction_connectivity_to_collection(
+    cursor_starter_, coll_id: int, conn_id: int
+):
     """Add all reactions of a given connectivity to a collection
 
     :param coll_id: The ID of the collection
@@ -1023,11 +1087,15 @@ def add_reaction_connectivity_to_collection(cursor, coll_id: int, conn_id: int):
         VALUES  (%s, %s) ON CONFLICT (coll_id, reaction_id) DO NOTHING;
     """
     query_params = [[coll_id, id] for id in reaction_ids]
-    cursor.executemany(query_string, query_params)
+
+    with cursor_starter_() as cursor:
+        cursor.executemany(query_string, query_params)
 
 
-@with_pool_cursor
-def remove_species_connectivity_from_collection(cursor, coll_id: int, conn_id: int):
+@with_pool_cursor_starter
+def remove_species_connectivity_from_collection(
+    cursor_starter_, coll_id: int, conn_id: int
+):
     """Remove all species of a given connectivity from a collection
 
     :param coll_id: The ID of the collection
@@ -1042,11 +1110,15 @@ def remove_species_connectivity_from_collection(cursor, coll_id: int, conn_id: i
         WHERE (coll_id, species_id) = (%s, %s);
     """
     query_params = [[coll_id, id] for id in species_ids]
-    cursor.executemany(query_string, query_params)
+
+    with cursor_starter_() as cursor:
+        cursor.executemany(query_string, query_params)
 
 
-@with_pool_cursor
-def remove_reaction_connectivity_from_collection(cursor, coll_id: int, conn_id: int):
+@with_pool_cursor_starter
+def remove_reaction_connectivity_from_collection(
+    cursor_starter_, coll_id: int, conn_id: int
+):
     """Remove all reaction of a given connectivity from a collection
 
     :param coll_id: The ID of the collection
@@ -1061,11 +1133,13 @@ def remove_reaction_connectivity_from_collection(cursor, coll_id: int, conn_id: 
         WHERE (coll_id, reaction_id) = (%s, %s);
     """
     query_params = [[coll_id, id] for id in reaction_ids]
-    cursor.executemany(query_string, query_params)
+
+    with cursor_starter_() as cursor:
+        cursor.executemany(query_string, query_params)
 
 
-@with_pool_cursor
-def get_collection_name(cursor, coll_id: int) -> str:
+@with_pool_cursor_starter
+def get_collection_name(cursor_starter_, coll_id: int) -> str:
     """Get the collections associated with a user
 
     :param coll_id: The collection ID
@@ -1079,8 +1153,9 @@ def get_collection_name(cursor, coll_id: int) -> str:
     """
     query_params = [coll_id]
 
-    cursor.execute(query_string, query_params)
-    coll_row = cursor.fetchone()
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        coll_row = cursor.fetchone()
 
     if not coll_row or "name" not in coll_row:
         return None
@@ -1088,8 +1163,8 @@ def get_collection_name(cursor, coll_id: int) -> str:
     return coll_row["name"]
 
 
-@with_pool_cursor
-def get_collection_species_data(cursor, coll_id: int) -> List[dict]:
+@with_pool_cursor_starter
+def get_collection_species_data(cursor_starter_, coll_id: int) -> List[dict]:
     """Get data for all species in a collection (no IDs included)
 
     :param coll_id: The collection ID
@@ -1108,13 +1183,15 @@ def get_collection_species_data(cursor, coll_id: int) -> List[dict]:
     """
     query_params = [coll_id]
 
-    cursor.execute(query_string, query_params)
-    species_rows = cursor.fetchall()
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+        species_rows = cursor.fetchall()
+
     return sort_rows_by_formula(species_rows)
 
 
-@with_pool_cursor
-def get_collection_reactions_data(cursor, coll_id: int) -> List[dict]:
+@with_pool_cursor_starter
+def get_collection_reactions_data(cursor_starter_, coll_id: int) -> List[dict]:
     """Get data for all reactions in a collection (no IDs included)
 
     :param coll_id: The collection ID
@@ -1122,76 +1199,77 @@ def get_collection_reactions_data(cursor, coll_id: int) -> List[dict]:
     :return: The reaction rows associated with this collection
     :rtype: List[dict]
     """
-    query_string1 = """
-        SELECT
-            -- reaction connectivity columns
-            MAX(formula) AS formula,
-            MAX(conn_smiles) AS conn_smiles,
-            -- reaction  columns
-            reaction.smiles,
-            -- estate columns
-            MAX(reaction_estate.spin_mult) AS spin_mult,
-            -- TS columns
-            ARRAY_AGG(reaction_ts.geometry) AS geometries,
-            ARRAY_AGG(reaction_ts.class) AS classes,
-            ARRAY_AGG(reaction_ts.amchi) AS amchis
-        FROM collection_reactions
-        JOIN reaction ON reaction.id = collection_reactions.reaction_id
-        JOIN reaction_connectivity ON reaction_connectivity.id = reaction.conn_id
-        JOIN reaction_estate ON reaction_estate.reaction_id = reaction.id
-        JOIN reaction_ts ON reaction_ts.estate_id = reaction_estate.id
-        WHERE collection_reactions.coll_id = %s
-        GROUP BY reaction.id
-        ORDER BY reaction.id;
-    """
-    query_params = [coll_id]
+    with cursor_starter_() as cursor:
+        query_string1 = """
+          SELECT
+              -- reaction connectivity columns
+              MAX(formula) AS formula,
+              MAX(conn_smiles) AS conn_smiles,
+              -- reaction  columns
+              reaction.smiles,
+              -- estate columns
+              MAX(reaction_estate.spin_mult) AS spin_mult,
+              -- TS columns
+              ARRAY_AGG(reaction_ts.geometry) AS geometries,
+              ARRAY_AGG(reaction_ts.class) AS classes,
+              ARRAY_AGG(reaction_ts.amchi) AS amchis
+          FROM collection_reactions
+          JOIN reaction ON reaction.id = collection_reactions.reaction_id
+          JOIN reaction_connectivity ON reaction_connectivity.id = reaction.conn_id
+          JOIN reaction_estate ON reaction_estate.reaction_id = reaction.id
+          JOIN reaction_ts ON reaction_ts.estate_id = reaction_estate.id
+          WHERE collection_reactions.coll_id = %s
+          GROUP BY reaction.id
+          ORDER BY reaction.id;
+        """
+        query_params = [coll_id]
 
-    cursor.execute(query_string1, query_params)
-    rxn_rows = cursor.fetchall()
+        cursor.execute(query_string1, query_params)
+        rxn_rows = cursor.fetchall()
 
-    query_string2 = """
-        SELECT
-            -- reactant columns
-            ARRAY_AGG(reactant_species_estate.spin_mult) AS r_spin_mults,
-            ARRAY_AGG(reactant_species.inchi) AS r_inchis,
-            ARRAY_AGG(reactant_species.amchi) AS r_amchis
-        FROM collection_reactions
-        JOIN reaction ON reaction.id = collection_reactions.reaction_id
-        -- reactant joins
-        JOIN reaction_reactants ON reaction_reactants.reaction_id = reaction.id
-        JOIN species AS reactant_species
-          ON reactant_species.id = reaction_reactants.species_id
-        JOIN species_estate AS reactant_species_estate
-          ON reactant_species_estate.id = reactant_species.estate_id
-        WHERE collection_reactions.coll_id = %s
-        GROUP BY reaction.id
-        ORDER BY reaction.id;
-    """
+        query_string2 = """
+          SELECT
+              -- reactant columns
+              ARRAY_AGG(reactant_species_estate.spin_mult) AS r_spin_mults,
+              ARRAY_AGG(reactant_species.inchi) AS r_inchis,
+              ARRAY_AGG(reactant_species.amchi) AS r_amchis
+          FROM collection_reactions
+          JOIN reaction ON reaction.id = collection_reactions.reaction_id
+          -- reactant joins
+          JOIN reaction_reactants ON reaction_reactants.reaction_id = reaction.id
+          JOIN species AS reactant_species
+            ON reactant_species.id = reaction_reactants.species_id
+          JOIN species_estate AS reactant_species_estate
+            ON reactant_species_estate.id = reactant_species.estate_id
+          WHERE collection_reactions.coll_id = %s
+          GROUP BY reaction.id
+          ORDER BY reaction.id;
+        """
 
-    cursor.execute(query_string2, query_params)
-    rxn_r_rows = cursor.fetchall()
+        cursor.execute(query_string2, query_params)
+        rxn_r_rows = cursor.fetchall()
 
-    query_string3 = """
-        SELECT
-            -- product columns
-            ARRAY_AGG(product_species_estate.spin_mult) AS p_spin_mults,
-            ARRAY_AGG(product_species.inchi) AS p_inchis,
-            ARRAY_AGG(product_species.amchi) AS p_amchis
-        FROM collection_reactions
-        JOIN reaction ON reaction.id = collection_reactions.reaction_id
-        -- product joins
-        JOIN reaction_products ON reaction_products.reaction_id = reaction.id
-        JOIN species AS product_species
-          ON product_species.id = reaction_products.species_id
-        JOIN species_estate AS product_species_estate
-          ON product_species_estate.id = product_species.estate_id
-        WHERE collection_reactions.coll_id = %s
-        GROUP BY reaction.id
-        ORDER BY reaction.id;
-    """
+        query_string3 = """
+          SELECT
+              -- product columns
+              ARRAY_AGG(product_species_estate.spin_mult) AS p_spin_mults,
+              ARRAY_AGG(product_species.inchi) AS p_inchis,
+              ARRAY_AGG(product_species.amchi) AS p_amchis
+          FROM collection_reactions
+          JOIN reaction ON reaction.id = collection_reactions.reaction_id
+          -- product joins
+          JOIN reaction_products ON reaction_products.reaction_id = reaction.id
+          JOIN species AS product_species
+            ON product_species.id = reaction_products.species_id
+          JOIN species_estate AS product_species_estate
+            ON product_species_estate.id = product_species.estate_id
+          WHERE collection_reactions.coll_id = %s
+          GROUP BY reaction.id
+          ORDER BY reaction.id;
+        """
 
-    cursor.execute(query_string3, query_params)
-    rxn_p_rows = cursor.fetchall()
+        cursor.execute(query_string3, query_params)
+        rxn_p_rows = cursor.fetchall()
 
     for rxn_row, rxn_r_row, rxn_p_row in zip(rxn_rows, rxn_r_rows, rxn_p_rows):
         # Add reactant information
@@ -1207,8 +1285,8 @@ def get_collection_reactions_data(cursor, coll_id: int) -> List[dict]:
     return sort_rows_by_formula(rxn_rows)
 
 
-@with_pool_cursor
-def delete_collection(cursor, coll_id: int) -> (int, str):
+@with_pool_cursor_starter
+def delete_collection(cursor_starter_, coll_id: int) -> (int, str):
     """Delete one species connectivity
 
     :param coll_id: The ID of the species connectivity
@@ -1220,9 +1298,11 @@ def delete_collection(cursor, coll_id: int) -> (int, str):
         DELETE FROM collection WHERE id = %s;
     """
     query_params = [coll_id]
-    cursor.execute(query_string, query_params)
 
-    if not bool(cursor.rowcount):
+    with cursor_starter_() as cursor:
+        cursor.execute(query_string, query_params)
+
+    if not bool(cursor_starter_.rowcount):
         return 404, f"No resource with ID {coll_id} was found."
 
     return 0, ""
@@ -1258,10 +1338,7 @@ def sort_rows_by_formula(rows):
     srt_vecs = [automol.formula.sort_vector(f, symbs) for f in fmls]
     # 2. Do the sorting
     rows = [
-        row
-        for _, _, row in sorted(
-            zip(counts, srt_vecs, rows), key=lambda x: x[:-1]
-        )
+        row for _, _, row in sorted(zip(counts, srt_vecs, rows), key=lambda x: x[:-1])
     ]
     return rows
 
