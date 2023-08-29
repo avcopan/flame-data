@@ -1,11 +1,10 @@
 {
-  "name": "react-flask-authentication-starter",
+  "name": "flame-data-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "server": "cd flame-data-api && .venv/bin/flask run --no-debugger",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"

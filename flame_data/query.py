@@ -2,9 +2,9 @@ from typing import List, Tuple, Union
 
 import automol
 
-from flame_data_api import chem
-from flame_data_api.db import with_pool_cursor
-from flame_data_api.utils import row_with_array_literals
+from flame_data import chem
+from flame_data.db import with_pool_cursor
+from flame_data.utils import row_with_array_literals
 
 
 # USER TABLE

@@ -3,7 +3,7 @@ from typing import List, Tuple, Union
 
 import automol
 
-from flame_data_api.utils import is_nonstring_sequence
+from flame_data.utils import is_nonstring_sequence
 
 
 # PREPARE DATA FOR DATABASE

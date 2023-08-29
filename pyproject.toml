@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "flame-data"
+version = "0.1.0"
+description = ""
+authors = ["Andreas Copan <avcopan@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+flask = "^2.3.3"
+python-dotenv = "^1.0.0"
+psycopg = "^3.1.10"
+psycopg-pool = "^3.1.7"
+flask-bcrypt = "^1.0.1"
+flask-session = "^0.5.0"
+flask-cors = "^4.0.0"
+flask-sqlalchemy = "^3.0.5"
+automol = "^2023.8.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
