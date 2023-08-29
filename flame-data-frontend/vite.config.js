@@ -7,10 +7,27 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: "https://flamedata-58c8bcdf83bd.herokuapp.com/",
+        // target: "http://127.0.0.1:5000",
         changeOrigin: true,
         secure: false,
         ws: true,
+      },
+    },
+  },
+  build: {
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            return id
+              .toString()
+              .split("node_modules/")[1]
+              .split("/")[0]
+              .toString();
+          }
+        },
       },
     },
   },

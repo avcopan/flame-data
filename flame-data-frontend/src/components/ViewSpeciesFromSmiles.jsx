@@ -1,4 +1,4 @@
-import * as OCL from "openchemlib/full";
+import * as OCL from "openchemlib/minimal";
 import { useState, useEffect, useMemo } from "react";
 import { formatFormula } from "../utils/utils";
 import ViewSpeciesFromSVG from "./ViewSpeciesFromSVG";
