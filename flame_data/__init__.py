@@ -1,11 +1,8 @@
-from flame_data.app import start_app
-from flame_data.response import response
-from flame_data import query
-from flame_data import chem
-from flame_data import utils
+from flame_data import chem, query, utils
+from flame_data._app import app
 
 __all__ = [
-    "start_app",
+    "app",
     "response",
     "query",
     "chem",

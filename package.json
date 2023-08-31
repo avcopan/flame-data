@@ -1,0 +1,9 @@
+{
+  "name": "flame-data",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "cd flame-data-frontend && npm install && npm run build"
+  }
+}

@@ -1,19 +1,75 @@
-import flame_data
+import os
+
+import dotenv
 import flask
 import flask_bcrypt
-from flask.helpers import send_from_directory
-from flask_cors import cross_origin
+import flask_cors
+import flask_session
+import flask_sqlalchemy
+import sqlalchemy
 
-# Create a bcrypt instance
-app = flame_data.start_app()
+from flame_data import query
+from flame_data.utils import response
+
+dotenv.load_dotenv()
+
+
+# 1. Create the app
+app = flask.Flask(
+    __name__,
+    static_folder=os.path.join("..", os.getenv("STATIC_FOLDER")),
+    static_url_path="",
+)
+
+# 2. Configure the app
+app.config.update(
+    SECRET_KEY=os.getenv("SECRET_KEY"),
+    SESSION_TYPE="sqlalchemy",
+    SESSION_USE_SIGNER=True,
+    SQLALCHEMY_DATABASE_URI=sqlalchemy.engine.URL.create(
+        "postgresql+psycopg",
+        username=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT"),
+        database=os.getenv("DB_NAME"),
+    ),
+)
+
+# 3. Create SQLAlchemy database instance (only for authentication session)
+db = flask_sqlalchemy.SQLAlchemy(app)
+app.config.update(
+    SESSION_SQLALCHEMY=db,
+)
+
+# 4. Start the session
+flask_session.Session(app)
+with app.app_context():
+    db.create_all()
+
+# 5. Allow credentials in CORS
+flask_cors.CORS(app, supports_credentials=True)
+
+# 6. Create a bcrypt instance
 bcrypt = flask_bcrypt.Bcrypt(app)
+
+
+# helper functions
+def get_user() -> dict:
+    """Get information about the current user"""
+    user = None
+    user_id = flask.session.get("user_id", None)
+
+    if user_id is not None:
+        user = query.get_user(user_id)
+
+    return user
 
 
 # STATIC FILES
 @app.route("/")
-@cross_origin
-def serve():
-    return send_from_directory(app.static_folder, "index.html")
+def server():
+    return flask.helpers.send_from_directory(app.static_folder, "index.html")
 
 
 # AUTHENTICATION ROUTES
@@ -25,9 +81,9 @@ def get_current_user():
     """
     user = get_user()
     if user is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
-    return flame_data.response(200, contents=user)
+    return response(200, contents=user)
 
 
 @app.route("/api/login", methods=["POST"])
@@ -41,10 +97,10 @@ def login_user():
     email = flask.request.json.get("email")
     password = flask.request.json.get("password")
 
-    user = flame_data.query.lookup_user(email, return_password=True)
+    user = query.lookup_user(email, return_password=True)
     # If the user doesn't exist or password doesn't match, return a 401
     if user is None or not bcrypt.check_password_hash(user["password"], password):
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
     # Don't return the password
     user.pop("password")
@@ -52,14 +108,14 @@ def login_user():
     # Create a new session for the user
     flask.session["user_id"] = user["id"]
 
-    return flame_data.response(200, contents=user)
+    return response(200, contents=user)
 
 
 @app.route("/api/logout", methods=["POST"])
 def logout_user():
     """@api {post} /api/logout Logout and end the session, clearing cookies"""
     flask.session.pop("user_id")
-    return flame_data.response(200)
+    return response(200)
 
 
 @app.route("/api/register", methods=["POST"])
@@ -74,20 +130,20 @@ def register_user():
     email = flask.request.json.get("email")
     password = flask.request.json.get("password")
 
-    if flame_data.query.lookup_user(email) is not None:
-        return flame_data.response(409, error="A user with this email already exists")
+    if query.lookup_user(email) is not None:
+        return response(409, error="A user with this email already exists")
 
     hashed_password = bcrypt.generate_password_hash(password).decode("utf-8")
 
-    user = flame_data.query.add_user(email, hashed_password)
+    user = query.add_user(email, hashed_password)
 
     # All users get a "My Data" collection to start with
-    flame_data.query.add_user_collection(user["id"], "My Data")
+    query.add_user_collection(user["id"], "My Data")
 
     # Create a new session for the user
     flask.session["user_id"] = user["id"]
 
-    return flame_data.response(201, contents=user)
+    return response(201, contents=user)
 
 
 # SPECIES/REACTION ROUTES
@@ -102,8 +158,8 @@ def get_species_connectivities():
     """
     fml_str = flask.request.args.get("formula")
     is_partial = flask.request.args.get("partial") is not None
-    species_conns = flame_data.query.search_species_connectivities(fml_str, is_partial)
-    return flame_data.response(200, contents=species_conns)
+    species_conns = query.search_species_connectivities(fml_str, is_partial)
+    return response(200, contents=species_conns)
 
 
 @app.route("/api/reaction/connectivity", methods=["GET"])
@@ -117,10 +173,8 @@ def get_reaction_connectivities():
     """
     fml_str = flask.request.args.get("formula")
     is_partial = flask.request.args.get("partial") is not None
-    reaction_conns = flame_data.query.search_reaction_connectivities(
-        fml_str, is_partial
-    )
-    return flame_data.response(200, contents=reaction_conns)
+    reaction_conns = query.search_reaction_connectivities(fml_str, is_partial)
+    return response(200, contents=reaction_conns)
 
 
 @app.route("/api/species/connectivity", methods=["POST"])
@@ -131,27 +185,25 @@ def add_species_connectivity():
     """
     user = get_user()
     if user is None:
-        return flame_data.response(401, error="Unauthorized")
-    coll_id = flame_data.query.lookup_user_collection(
-        user["id"], "My Data", id_only=True
-    )
+        return response(401, error="Unauthorized")
+    coll_id = query.lookup_user_collection(user["id"], "My Data", id_only=True)
 
     smi = flask.request.json.get("smiles")
 
     # 1. Add the species
-    status, error = flame_data.query.add_species_by_smiles_connectivity(smi)
+    status, error = query.add_species_by_smiles_connectivity(smi)
     if status >= 400:
-        return flame_data.response(status, error=error)
+        return response(status, error=error)
 
     # 2. Look up the connectivity ID
-    id = flame_data.query.lookup_species_connectivity(smi, id_only=True)
+    id = query.lookup_species_connectivity(smi, id_only=True)
     print("The ID for this connectivity is", id)
 
     # 3. Add these species to the user's "My Data" collection
     print(f"Adding the species to collection {coll_id}")
-    flame_data.query.add_species_connectivity_to_collection(coll_id, id)
+    query.add_species_connectivity_to_collection(coll_id, id)
 
-    return flame_data.response(201)
+    return response(201)
 
 
 @app.route("/api/reaction/connectivity", methods=["POST"])
@@ -162,25 +214,23 @@ def add_reaction_connectivity():
     """
     user = get_user()
     if user is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
     smi = flask.request.json.get("smiles")
-    status, error = flame_data.query.add_reaction_by_smiles_connectivity(smi)
+    status, error = query.add_reaction_by_smiles_connectivity(smi)
     if status >= 400:
-        return flame_data.response(status, error=error)
+        return response(status, error=error)
 
-    id = flame_data.query.lookup_reaction_connectivity(smi, id_only=True)
+    id = query.lookup_reaction_connectivity(smi, id_only=True)
     print("The ID for this connectivity is", id)
 
     # 3. Add these reaction to the user's "My Data" collection
-    coll_id = flame_data.query.lookup_user_collection(
-        user["id"], "My Data", id_only=True
-    )
+    coll_id = query.lookup_user_collection(user["id"], "My Data", id_only=True)
     if coll_id is not None:
         print(f"Adding the reaction to collection {coll_id}")
-        flame_data.query.add_reaction_connectivity_to_collection(coll_id, id)
+        query.add_reaction_connectivity_to_collection(coll_id, id)
 
-    return flame_data.response(201)
+    return response(201)
 
 
 @app.route("/api/species/connectivity/batch", methods=["POST"])
@@ -191,27 +241,25 @@ def add_species_connectivities():
     """
     user = get_user()
     if user is None:
-        return flame_data.response(401, error="Unauthorized")
-    coll_id = flame_data.query.lookup_user_collection(
-        user["id"], "My Data", id_only=True
-    )
+        return response(401, error="Unauthorized")
+    coll_id = query.lookup_user_collection(user["id"], "My Data", id_only=True)
 
     smis = flask.request.json.get("smilesList")
     for smi in smis:
         # 1. Add the species
-        status, error = flame_data.query.add_species_by_smiles_connectivity(smi)
+        status, error = query.add_species_by_smiles_connectivity(smi)
         if status >= 400:
-            return flame_data.response(status, error=error)
+            return response(status, error=error)
 
         # 2. Look up the connectivity ID
-        id = flame_data.query.lookup_species_connectivity(smi, id_only=True)
+        id = query.lookup_species_connectivity(smi, id_only=True)
         print("The ID for this connectivity is", id)
 
         # 3. Add these species to the user's "My Data" collection
         print(f"Adding the species to collection {coll_id}")
-        flame_data.query.add_species_connectivity_to_collection(coll_id, id)
+        query.add_species_connectivity_to_collection(coll_id, id)
 
-    return flame_data.response(201)
+    return response(201)
 
 
 @app.route("/api/species/connectivity/<id>", methods=["GET"])
@@ -224,8 +272,8 @@ def get_species_details_by_connectivity(id):
         `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
         `conn_amchi`, `conn_amchi_hash`
     """
-    species_data = flame_data.query.get_species_by_connectivity(id)
-    return flame_data.response(200, contents=species_data)
+    species_data = query.get_species_by_connectivity(id)
+    return response(200, contents=species_data)
 
 
 @app.route("/api/reaction/connectivity/<id>", methods=["GET"])
@@ -238,8 +286,8 @@ def get_reaction_details_by_connectivity(id):
         `formula`, `svg_string`, `conn_smiles`, `conn_inchi`, `conn_inchi_hash`,
         `conn_amchi`, `conn_amchi_hash`
     """
-    reaction_data = flame_data.query.get_reactions_by_connectivity(id)
-    return flame_data.response(200, contents=reaction_data)
+    reaction_data = query.get_reactions_by_connectivity(id)
+    return response(200, contents=reaction_data)
 
 
 @app.route("/api/species/connectivity/<id>", methods=["DELETE"])
@@ -249,13 +297,13 @@ def delete_species_connectivity(id):
     @apiparam {Number} id The ID of the connectivity species
     """
     if get_user() is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
-    status, error = flame_data.query.delete_species_connectivity(id)
+    status, error = query.delete_species_connectivity(id)
     if status >= 400:
-        return flame_data.response(status, error=error)
+        return response(status, error=error)
 
-    return flame_data.response(204)
+    return response(204)
 
 
 @app.route("/api/reaction/connectivity/<id>", methods=["DELETE"])
@@ -265,13 +313,13 @@ def delete_reaction_connectivity(id):
     @apiparam {Number} id The ID of the connectivity reaction
     """
     if get_user() is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
-    status, error = flame_data.query.delete_reaction_connectivity(id)
+    status, error = query.delete_reaction_connectivity(id)
     if status >= 400:
-        return flame_data.response(status, error=error)
+        return response(status, error=error)
 
-    return flame_data.response(204)
+    return response(204)
 
 
 @app.route("/api/species/<id>", methods=["PUT"])
@@ -282,15 +330,15 @@ def update_species_geometry(id):
     @apiBody {String} geometry The new geometry for this species
     """
     if get_user() is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
     xyz_str = flask.request.json.get("geometry")
 
-    status, error = flame_data.query.update_species_geometry(id, xyz_str)
+    status, error = query.update_species_geometry(id, xyz_str)
     if status >= 400:
-        return flame_data.response(status, error=error)
+        return response(status, error=error)
 
-    return flame_data.response(204)
+    return response(204)
 
 
 @app.route("/api/reaction/ts/<id>", methods=["PUT"])
@@ -301,15 +349,15 @@ def update_reaction_geometry(id):
     @apiBody {String} geometry The new geometry for this TS
     """
     if get_user() is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
     xyz_str = flask.request.json.get("geometry")
 
-    status, error = flame_data.query.update_reaction_ts_geometry(id, xyz_str)
+    status, error = query.update_reaction_ts_geometry(id, xyz_str)
     if status >= 400:
-        return flame_data.response(status, error=error)
+        return response(status, error=error)
 
-    return flame_data.response(204)
+    return response(204)
 
 
 # COLLECTION ROUTES
@@ -321,17 +369,17 @@ def get_user_collections():
     """
     user = get_user()
     if user is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
-    coll_rows = flame_data.query.get_user_collections(user["id"])
+    coll_rows = query.get_user_collections(user["id"])
     for coll_row in coll_rows:
         coll_id = coll_row["id"]
-        species_rows = flame_data.query.get_collection_species(coll_id)
-        reaction_rows = flame_data.query.get_collection_reactions(coll_id)
+        species_rows = query.get_collection_species(coll_id)
+        reaction_rows = query.get_collection_reactions(coll_id)
         coll_row["species"] = species_rows
         coll_row["reactions"] = reaction_rows
 
-    return flame_data.response(200, contents=coll_rows)
+    return response(200, contents=coll_rows)
 
 
 @app.route("/api/collection", methods=["POST"])
@@ -345,13 +393,13 @@ def add_user_collection():
     """
     user = get_user()
     if user is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
     name = flask.request.json.get("name")
     print("The new collection name:", name)
-    flame_data.query.add_user_collection(user["id"], name)
+    query.add_user_collection(user["id"], name)
 
-    return flame_data.response(201)
+    return response(201)
 
 
 @app.route("/api/collection/species/<id>", methods=["POST"])
@@ -363,15 +411,15 @@ def add_species_connectivities_to_user_collection(id):
     """
     user = get_user()
     if user is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
     conn_ids = flask.request.json.get("conn_ids")
 
     for conn_id in conn_ids:
         print(f"Adding species connectivity {conn_id} to collection {id}")
-        flame_data.query.add_species_connectivity_to_collection(id, conn_id)
+        query.add_species_connectivity_to_collection(id, conn_id)
 
-    return flame_data.response(201)
+    return response(201)
 
 
 @app.route("/api/collection/reaction/<id>", methods=["POST"])
@@ -383,15 +431,15 @@ def add_reaction_connectivities_to_user_collection(id):
     """
     user = get_user()
     if user is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
     conn_ids = flask.request.json.get("conn_ids")
 
     for conn_id in conn_ids:
         print(f"Adding reaction connectivity {conn_id} to collection {id}")
-        flame_data.query.add_reaction_connectivity_to_collection(id, conn_id)
+        query.add_reaction_connectivity_to_collection(id, conn_id)
 
-    return flame_data.response(201)
+    return response(201)
 
 
 @app.route("/api/collection/species/<id>", methods=["DELETE"])
@@ -403,15 +451,15 @@ def remove_species_connectivities_from_user_collection(id):
     """
     user = get_user()
     if user is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
     conn_ids = flask.request.json.get("conn_ids")
 
     for conn_id in conn_ids:
         print(f"Adding connectivity {conn_id} to collection {id}")
-        flame_data.query.remove_species_connectivity_from_collection(id, conn_id)
+        query.remove_species_connectivity_from_collection(id, conn_id)
 
-    return flame_data.response(204)
+    return response(204)
 
 
 @app.route("/api/collection/reaction/<id>", methods=["DELETE"])
@@ -423,15 +471,15 @@ def remove_reaction_connectivities_from_user_collection(id):
     """
     user = get_user()
     if user is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
     conn_ids = flask.request.json.get("conn_ids")
 
     for conn_id in conn_ids:
         print(f"Adding connectivity {conn_id} to collection {id}")
-        flame_data.query.remove_reaction_connectivity_from_collection(id, conn_id)
+        query.remove_reaction_connectivity_from_collection(id, conn_id)
 
-    return flame_data.response(204)
+    return response(204)
 
 
 @app.route("/api/collection/<id>", methods=["GET"])
@@ -444,14 +492,14 @@ def get_user_collection_data(id):
     """
     user = get_user()
     if user is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
-    name = flame_data.query.get_collection_name(id)
-    species_data = flame_data.query.get_collection_species_data(id)
-    reactions_data = flame_data.query.get_collection_reactions_data(id)
+    name = query.get_collection_name(id)
+    species_data = query.get_collection_species_data(id)
+    reactions_data = query.get_collection_reactions_data(id)
 
     coll_data = {"name": name, "species": species_data, "reactions": reactions_data}
-    return flame_data.response(200, contents=coll_data)
+    return response(200, contents=coll_data)
 
 
 @app.route("/api/collection/<id>", methods=["DELETE"])
@@ -464,13 +512,13 @@ def delete_user_collection(id):
     """
     user = get_user()
     if user is None:
-        return flame_data.response(401, error="Unauthorized")
+        return response(401, error="Unauthorized")
 
-    status, error = flame_data.query.delete_collection(id)
+    status, error = query.delete_collection(id)
     if status >= 400:
-        return flame_data.response(status, error=error)
+        return response(status, error=error)
 
-    return flame_data.response(204)
+    return response(204)
 
 
 # Helpers
@@ -480,6 +528,6 @@ def get_user() -> dict:
     user_id = flask.session.get("user_id", None)
 
     if user_id is not None:
-        user = flame_data.query.get_user(user_id)
+        user = query.get_user(user_id)
 
     return user
